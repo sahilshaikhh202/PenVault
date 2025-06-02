@@ -1,0 +1,296 @@
+/* story_new.css - Modern styles for Create New Story page */
+
+body {
+    background: linear-gradient(120deg, #f8fafc 0%, #e9f0fb 100%);
+}
+
+.story-new-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0;
+}
+
+.card {
+    border: none;
+    border-radius: 18px;
+    box-shadow: 0 6px 32px rgba(44, 62, 80, 0.08), 0 1.5px 6px rgba(44, 62, 80, 0.03);
+    background: #fff;
+}
+
+.card-body {
+    padding: 2.5rem 2.5rem 2rem 2.5rem;
+}
+
+.card-title {
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: #375a7f;
+    margin-bottom: 2rem;
+    letter-spacing: -1px;
+}
+
+form .form-label {
+    font-weight: 600;
+    color: #375a7f;
+    margin-bottom: 0.5rem;
+}
+
+form .form-control {
+    border-radius: 10px;
+    border: 1.5px solid #e3e6ee;
+    background: #f7fafd;
+    font-size: 1.08rem;
+    padding: 0.85rem 1.1rem;
+    margin-bottom: 0.5rem;
+    transition: border-color 0.2s;
+}
+
+form .form-control:focus {
+    border-color: #4a90e2;
+    background: #fff;
+    box-shadow: 0 0 0 0.15rem rgba(74, 144, 226, 0.12);
+}
+
+form .form-check-input {
+    border-radius: 0.35rem;
+    margin-right: 0.5rem;
+}
+
+form .form-check-label {
+    color: #375a7f;
+    font-weight: 500;
+}
+
+form .btn-primary {
+    background: linear-gradient(90deg, #4a90e2 0%, #375a7f 100%);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    padding: 0.7rem 1.5rem;
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.08);
+    transition: background 0.2s, box-shadow 0.2s;
+}
+
+form .btn-primary:hover {
+    background: linear-gradient(90deg, #375a7f 0%, #4a90e2 100%);
+    box-shadow: 0 4px 16px rgba(74, 144, 226, 0.13);
+}
+
+form .btn-outline-secondary {
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 1.05rem;
+    padding: 0.7rem 1.5rem;
+    border: 1.5px solid #4a90e2;
+    color: #4a90e2;
+    background: #f7fafd;
+    transition: background 0.2s, color 0.2s;
+}
+
+form .btn-outline-secondary:hover {
+    background: #4a90e2;
+    color: #fff;
+}
+
+form .text-danger {
+    font-size: 0.97rem;
+    margin-top: 0.2rem;
+    margin-bottom: 0.2rem;
+}
+
+/* Quill Editor Customization */
+#editor {
+    min-height: 220px;
+    border-radius: 10px;
+    background: #f7fafd;
+    border: 1.5px solid #e3e6ee;
+    margin-bottom: 1.2rem;
+}
+
+.ql-toolbar.ql-snow {
+    border-radius: 10px 10px 0 0;
+    background: #f0f4fa;
+    border: 1.5px solid #e3e6ee;
+    border-bottom: none;
+}
+
+.ql-container.ql-snow {
+    border-radius: 0 0 10px 10px;
+    border: 1.5px solid #e3e6ee;
+    border-top: none;
+    background: #f7fafd;
+}
+
+/* Hero Section */
+.story-new-hero {
+    margin-top: 30px;
+    margin-bottom: 48px;
+}
+.story-new-hero-icon {
+    font-size: 3.2rem;
+    color: #4a90e2;
+    background: #e9f0fb;
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px auto;
+    box-shadow: 0 2px 12px rgba(74,144,226,0.08);
+}
+.story-new-hero-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #375a7f;
+    margin-bottom: 0.5rem;
+    letter-spacing: -1px;
+}
+.story-new-hero-subtitle {
+    color: #6c7a89;
+    font-size: 1.15rem;
+    margin-bottom: 0;
+}
+
+/* Section Cards */
+.story-section-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(44,62,80,0.06);
+    padding: 0;
+    margin-bottom: 32px;
+    border: none;
+}
+.story-section-header {
+    font-size: 1.13rem;
+    font-weight: 700;
+    color: #4a90e2;
+    background: #f7fafd;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding: 0.85rem 1.5rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #e3e6ee;
+    letter-spacing: 0.5px;
+}
+.story-section-header i {
+    font-size: 1.1em;
+    margin-right: 0.5em;
+}
+.story-section-body {
+    padding: 1.3rem 1.5rem 1.1rem 1.5rem;
+}
+.story-section-input {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    font-size: 1.13rem;
+    padding-left: 0;
+    padding-right: 0;
+}
+.story-section-input:focus {
+    outline: none;
+    box-shadow: none;
+    background: transparent;
+}
+
+/* Action Bar */
+.story-action-bar {
+    position: sticky;
+    bottom: 0;
+    background: rgba(255,255,255,0.95);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(44,62,80,0.07);
+    padding: 1.1rem 1.5rem;
+    margin-top: 30px;
+    z-index: 10;
+}
+
+/* Hide default card and form styles for this page */
+.story-new-container .card,
+.story-new-container .card-body,
+.story-new-container .form-label,
+.story-new-container .form-control {
+    all: unset;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .story-new-hero-title {
+        font-size: 1.5rem;
+    }
+    .story-section-header, .story-section-body {
+        padding-left: 0.7rem;
+        padding-right: 0.7rem;
+    }
+    .story-action-bar {
+        padding: 0.7rem 0.7rem;
+    }
+}
+
+/* Dark mode for new elements */
+body.dark-mode .story-new-hero-icon {
+    background: #23272b;
+    color: #4a90e2;
+    box-shadow: 0 2px 12px rgba(74,144,226,0.13);
+}
+body.dark-mode .story-new-hero-title {
+    color: #e0e0e0;
+}
+body.dark-mode .story-new-hero-subtitle {
+    color: #b0b8c1;
+}
+body.dark-mode .story-section-card {
+    background: #23272b;
+    box-shadow: 0 2px 16px rgba(20,20,20,0.13);
+}
+body.dark-mode .story-section-header {
+    background: #23272b;
+    color: #4a90e2;
+    border-bottom: 1px solid #444;
+}
+body.dark-mode .story-section-body {
+    color: #e0e0e0;
+}
+body.dark-mode .story-action-bar {
+    background: rgba(35,39,43,0.97);
+}
+
+/* Dark mode support */
+body.dark-mode {
+    background: linear-gradient(120deg, #23272b 0%, #181a1b 100%) !important;
+}
+body.dark-mode .card {
+    background: #23272b !important;
+    box-shadow: 0 6px 32px rgba(20, 20, 20, 0.18), 0 1.5px 6px rgba(20, 20, 20, 0.08);
+}
+body.dark-mode .card-title,
+body.dark-mode .form-label,
+body.dark-mode .form-check-label {
+    color: #e0e0e0 !important;
+}
+body.dark-mode .form-control,
+body.dark-mode #editor,
+body.dark-mode .ql-container.ql-snow {
+    background: #23272b !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+body.dark-mode .ql-toolbar.ql-snow {
+    background: #23272b !important;
+    border-color: #444 !important;
+}
+body.dark-mode .btn-primary {
+    background: linear-gradient(90deg, #375a7f 0%, #4a90e2 100%) !important;
+}
+body.dark-mode .btn-outline-secondary {
+    background: #23272b !important;
+    color: #4a90e2 !important;
+    border-color: #4a90e2 !important;
+}
+body.dark-mode .btn-outline-secondary:hover {
+    background: #4a90e2 !important;
+    color: #fff !important;
+} 

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section py-5 mb-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-3">Where Words <span style="color: #0d6efd;">Come to</span> Life</h1>
+                <p class="lead mb-4">Join a community of creative writers sharing stories, poetry, and literary works. Find inspiration, connect with readers, and showcase your writing talent.</p>
+                <div class="d-flex gap-3">
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('main.new_story') }}" class="btn btn-primary">Start Writing</a>
+                    {% else %}
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Sign Up</a>
+                    {% endif %}
+                    <a href="#featured-stories" class="btn btn-outline-secondary">Explore Stories</a>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <img src="{{ url_for('static', filename='images/writer-desk.jpg') }}" alt="Writer's desk with laptop, coffee, and notebook" class="img-fluid rounded shadow-sm">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Why Join Section -->
+<section class="why-join-section py-5 mb-5 bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="h2 fw-bold">Why Join ScribeHub?</h2>
+            <p class="text-muted">A platform designed by writers, for writers, with everything you need to create, share, and connect.</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="feature-card p-4 text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-edit text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="fw-bold">Powerful Editor</h5>
+                    <p class="text-muted small">Write beautiful stories with our intuitive, feature-rich text editor designed for creative writing.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card p-4 text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-book text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="fw-bold">Showcase Your Work</h5>
+                    <p class="text-muted small">Create a beautiful portfolio of your writing and build a following of dedicated readers.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card p-4 text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-users text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="fw-bold">Connect & Collaborate</h5>
+                    <p class="text-muted small">Meet fellow writers, exchange feedback, and collaborate on creative projects.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card p-4 text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-chart-line text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="fw-bold">Grow Your Audience</h5>
+                    <p class="text-muted small">Get discovered with intelligent recommendations that connect your work with interested readers.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Hero CTA Section -->
+<section class="hero-cta-section py-5 mb-5 bg-light text-center">
+    <div class="container">
+        <div class="py-5">
+            <h2 class="h1 fw-bold mb-4">Start Your Writing Journey Today</h2>
+            <p class="lead mb-4">Join our community of writers and readers to share your stories with the world.</p>
+            <div class="d-flex justify-content-center gap-3">
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.new_story') }}" class="btn btn-primary btn-lg">Write a Story</a>
+                {% else %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Join ScribeHub</a>
+                {% endif %}
+                <a href="{{ url_for('main.discover') }}" class="btn btn-outline-primary btn-lg">Discover Stories</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Popular Tags and User Content Section -->
+<section class="user-content-section py-5 mb-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">Popular Tags</h5>
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            {% for tag in tags %}
+                            <a href="{{ url_for('main.tag', tag_name=tag.name) }}" class="badge bg-primary text-white text-decoration-none">
+                                {{ tag.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-8">
+                {% if current_user.is_authenticated %}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">Your Stories</h5>
+                        {% set user_stories = current_user.stories.limit(5).all() %}
+                        {% if user_stories %}
+                        <ul class="list-group list-group-flush">
+                            {% for story in user_stories %}
+                            <li class="list-group-item border-0 px-0">
+                                <a href="{{ url_for('main.story', story_id=story.id) }}" class="text-decoration-none text-primary">
+                                    {{ story.title }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% if current_user.stories.count() > 5 %}
+                        <div class="mt-3 text-center">
+                            <a href="{{ url_for('main.profile', username=current_user.username) }}" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <p class="text-muted mt-3">You haven't written any stories yet.</p>
+                        <a href="{{ url_for('main.new_story') }}" class="btn btn-sm btn-primary">Write a Story</a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">Your Reading List</h5>
+                        {% if current_user.saved_stories %}
+                        <ul class="list-group list-group-flush">
+                            {% for story in current_user.saved_stories %}
+                            <li class="list-group-item border-0 px-0">
+                                <a href="{{ url_for('main.story', story_id=story.id) }}" class="text-decoration-none text-primary">
+                                    {{ story.title }}
+                                </a>
+                                <small class="text-muted d-block">by {{ story.author.username }}</small>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-muted mt-3">Your reading list is empty. Save stories to read later!</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Section -->
+<section class="cta-section py-5 mb-5 bg-primary text-white text-center">
+    <div class="container">
+        <h2 class="display-6 fw-bold mb-3">Ready to Share Your Story?</h2>
+        <p class="lead mb-4">Join thousands of writers who have found their voice and their audience on ScribeHub.</p>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.new_story') }}" class="btn btn-light btn-lg">Start Writing Today</a>
+        {% else %}
+        <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg">Sign Up Now</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %} 

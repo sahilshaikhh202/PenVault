@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-4">Search Users</h1>
+            <form method="GET" action="{{ url_for('main.search') }}" class="mb-4">
+                <div class="input-group">
+                    <input type="text" name="query" class="form-control" placeholder="Search by username..." value="{{ query }}" required>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </form>
+            
+            {% if results %}
+                <h3>Search Results</h3>
+                <div class="list-group">
+                    {% for user in results %}
+                        <a href="{{ url_for('main.profile', username=user.username) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" 
+                                     class="rounded-circle me-3" style="width: 50px; height: 50px;" 
+                                     alt="{{ user.username }}">
+                                <div>
+                                    <h5 class="mb-1">{{ user.username }}</h5>
+                                    <small class="text-muted">{{ user.stories.count() }} stories</small>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% elif query %}
+                <div class="alert alert-info">
+                    No users found matching "{{ query }}".
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

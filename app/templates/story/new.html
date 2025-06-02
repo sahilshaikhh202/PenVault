@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/story_new.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title mb-4">Create New Story</h1>
+                <form method="POST" action="{{ url_for('main.new_story') }}" enctype="multipart/form-data" id="storyForm">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control") }}
+                        {% for error in form.title.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.summary.label(class="form-label") }}
+                        {{ form.summary(class="form-control", rows=3) }}
+                        {% for error in form.summary.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.cover_image.label(class="form-label") }}
+                        {{ form.cover_image(class="form-control") }}
+                        {% for error in form.cover_image.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.content.label(class="form-label") }}
+                        {{ form.content(class="form-control", id="content-field") }}
+                        <div id="quill-editor" style="height: 300px;"></div>
+                        {% for error in form.content.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3 form-check">
+                        {{ form.is_premium(class="form-check-input") }}
+                        {{ form.is_premium.label(class="form-check-label") }}
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="publish_mode" value="publish" class="btn btn-primary">
+                            Publish Story
+                        </button>
+                        <button type="submit" name="publish_mode" value="draft" class="btn btn-outline-secondary">
+                            Save as Draft
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script>
+var quill = new Quill('#quill-editor', {
+    theme: 'snow',
+    modules: {
+        toolbar: [
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            ['blockquote', 'code-block'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'script': 'sub'}, { 'script': 'super' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'direction': 'rtl' }],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'font': [] }],
+            [{ 'align': [] }],
+            ['clean'],
+            ['link', 'image', 'video']
+        ]
+    }
+});
+
+// Update form content before submission
+document.getElementById('storyForm').onsubmit = function() {
+    var contentField = document.getElementById('content-field');
+    contentField.value = quill.root.innerHTML;
+    console.log('Content updated:', contentField.value); // Debug log
+    return true;
+};
+</script>
+{% endblock %}

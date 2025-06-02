@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <article class="story-content">
+            <header class="mb-4">
+                <h1 class="display-4">{{ story.title }}</h1>
+                <div class="d-flex align-items-center mb-3">
+                    <img src="{{ url_for('static', filename='uploads/' + story.author.profile_picture) }}" 
+                         class="rounded-circle me-2" style="width: 40px; height: 40px;" 
+                         alt="{{ story.author.username }}">
+                    <div>
+                        <a href="{{ url_for('main.profile', username=story.author.username) }}" class="text-decoration-none">
+                            {{ story.author.username }}
+                        </a>
+                        <div class="text-muted small">
+                            Published {{ story.created_at.strftime('%B %d, %Y') }}
+                        </div>
+                    </div>
+                </div>
+                {% if story.cover_image %}
+                <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
+                     class="img-fluid rounded mb-4" alt="{{ story.title }}">
+                {% endif %}
+            </header>
+
+            <div class="story-body mb-4">
+                {{ story.content|safe }}
+            </div>
+
+            <div class="story-actions mb-4">
+                <div class="d-flex gap-2 flex-wrap align-items-center mb-3">
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('main.like_story', story_id=story.id) }}" class="btn btn-outline-primary mb-2">
+                        <i class="fas fa-heart"></i> Like ({{ story.likes }})
+                    </a>
+                    {% else %}
+                    <button class="btn btn-outline-primary mb-2" disabled>
+                        <i class="fas fa-heart"></i> Like ({{ story.likes }})
+                    </button>
+                    {% endif %}
+                    <button class="btn btn-outline-secondary mb-2" onclick="shareStory('{{ story.id }}')">
+                        <i class="fas fa-share"></i> Share
+                    </button>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('main.save_story', story_id=story.id) }}" class="btn btn-outline-success mb-2">
+                        <i class="fas fa-bookmark"></i> Save
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <!-- Publish button for author of unpublished stories -->
+                {% if current_user.is_authenticated and current_user == story.author and not story.is_published %}
+                <div class="mt-3">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i> This story is not published yet. It won't appear in the Discover section until you publish it.
+                    </div>
+                    <form method="POST" action="{{ url_for('main.publish_story', story_id=story.id) }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-globe me-1"></i> Publish Story
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="story-tags mb-4">
+                {% for tag in story.tags %}
+                <a href="{{ url_for('main.tag', tag_name=tag.name) }}" class="badge bg-primary text-decoration-none">
+                    {{ tag.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </article>
+
+        <section class="comments-section">
+            <h3>Comments</h3>
+            {% if current_user.is_authenticated %}
+            <div id="commentFormContainer">
+                <form method="POST" action="{{ url_for('main.comment', story_id=story.id) }}" class="mb-4">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.content.label(class="form-label") }}
+                        {{ form.content(class="form-control", rows=3) }}
+                    </div>
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+            {% endif %}
+
+            <div class="comments-list">
+                {% for comment in story.comments.filter_by(parent_id=None).order_by(Comment.created_at.asc()) %}
+                <div class="comment mb-3">
+                    <div class="d-flex">
+                        <img src="{{ url_for('static', filename='uploads/' + comment.author.profile_picture) }}" 
+                             class="rounded-circle me-2" style="width: 32px; height: 32px;" 
+                             alt="{{ comment.author.username }}">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <a href="{{ url_for('main.profile', username=comment.author.username) }}" 
+                                       class="text-decoration-none fw-bold">
+                                        {{ comment.author.username }}
+                                    </a>
+                                    {% if comment.author == story.author %}
+                                    <span class="badge bg-primary ms-1">Author</span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">
+                                    {{ comment.created_at.strftime('%B %d, %Y %H:%M') }}
+                                </small>
+                                {% if current_user.is_authenticated and (current_user == comment.author or current_user == story.author) %}
+                                <form method="POST" action="{{ url_for('main.delete_comment', comment_id=comment.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-link btn-sm text-danger p-0 ms-2" title="Delete Comment" onclick="return confirm('Delete this comment?');">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                            <p class="mb-1">{{ comment.content }}</p>
+                            <div class="comment-actions mb-2">
+                                <!-- Reply button removed -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">About the Author</h5>
+                <div class="d-flex align-items-center mb-3">
+                    <img src="{{ url_for('static', filename='uploads/' + story.author.profile_picture) }}" 
+                         class="rounded-circle me-2" style="width: 64px; height: 64px;" 
+                         alt="{{ story.author.username }}">
+                    <div>
+                        <a href="{{ url_for('main.profile', username=story.author.username) }}" class="text-decoration-none">
+                            {{ story.author.username }}
+                        </a>
+                        <p class="text-muted small mb-0">{{ story.author.stories.count() }} stories</p>
+                    </div>
+                </div>
+                <p class="card-text">{{ story.author.bio }}</p>
+                {% if current_user.is_authenticated and current_user != story.author %}
+                <a href="{{ url_for('main.follow', username=story.author.username) }}" class="btn btn-primary w-100">
+                    {% if current_user.is_following(story.author) %}
+                        Unfollow
+                    {% else %}
+                        Follow
+                    {% endif %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">More from {{ story.author.username }}</h5>
+                <div class="list-group list-group-flush">
+                    {% for other_story in story.author.stories.filter(Story.id != story.id).limit(3).all() %}
+                    <a href="{{ url_for('main.story', story_id=other_story.id) }}" class="list-group-item list-group-item-action">
+                        <h6 class="mb-1">{{ other_story.title }}</h6>
+                        <small class="text-muted">{{ other_story.created_at.strftime('%B %d, %Y') }}</small>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function likeStory(storyId) {
+    fetch(`/api/story/${storyId}/like`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const likeButton = document.querySelector(`button[onclick="likeStory('${storyId}')"]`);
+            const likeCount = likeButton.querySelector('i').nextSibling.textContent;
+            const newCount = parseInt(likeCount.match(/\d+/)[0]) + 1;
+            likeButton.querySelector('i').nextSibling.textContent = ` Like (${newCount})`;
+            showToast('Story liked successfully!');
+        }
+    })
+    .catch(error => {
+        showToast('Error liking story', 'error');
+    });
+}
+
+function shareStory(storyId) {
+    const url = window.location.origin + `/story/${storyId}`;
+    if (navigator.share) {
+        navigator.share({
+            title: document.title,
+            url: url
+        })
+        .then(() => showToast('Story shared successfully!'))
+        .catch(error => showToast('Error sharing story', 'error'));
+    } else {
+        navigator.clipboard.writeText(url)
+            .then(() => showToast('Link copied to clipboard!'))
+            .catch(error => showToast('Error copying link', 'error'));
+    }
+}
+
+function addToReadingList(storyId) {
+    fetch(`/api/story/${storyId}/reading-list`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Added to reading list!');
+        }
+    })
+    .catch(error => {
+        showToast('Error adding to reading list', 'error');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('showCommentFormBtn');
+    var form = document.getElementById('commentFormContainer');
+    if (btn && form) {
+        btn.addEventListener('click', function() {
+            console.log('Comment button clicked');
+            form.classList.toggle('d-none');
+            if (!form.classList.contains('d-none')) {
+                var textarea = form.querySelector('textarea');
+                if (textarea) textarea.focus();
+                form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }
+});
+</script>
+
+@media (max-width: 768px) {
+    .story-actions .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    .comments-section {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+}
+
+<style>
+.d-none { display: none !important; }
+</style>
+{% endblock %}
