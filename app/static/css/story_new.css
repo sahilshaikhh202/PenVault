@@ -6,8 +6,7 @@ body {
 
 .story-new-container {
     max-width: 800px;
-    margin: 40px auto;
-    padding: 0;
+    margin: 2rem auto;
 }
 
 .card {
@@ -106,6 +105,11 @@ form .text-danger {
     background: #f7fafd;
     border: 1.5px solid #e3e6ee;
     margin-bottom: 1.2rem;
+}
+
+#quill-editor {
+    min-height: 200px;
+    margin-bottom: 1rem;
 }
 
 .ql-toolbar.ql-snow {
@@ -293,4 +297,31 @@ body.dark-mode .btn-outline-secondary {
 body.dark-mode .btn-outline-secondary:hover {
     background: #4a90e2 !important;
     color: #fff !important;
-} 
+}
+
+.poetry-content {
+    font-family: 'Georgia', serif;
+    text-align: center;
+}
+
+.quote-content {
+    font-size: 1.2rem;
+    font-style: italic;
+    padding: 1rem;
+    border-left: 4px solid #007bff;
+}
+
+.essay-content {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+}
+
+/* Form transitions */
+.mb-3 {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Field visibility transitions */
+#poetryFields, #quoteFields, #essayFields, #otherFields {
+    transition: opacity 0.3s ease-in-out;
+}

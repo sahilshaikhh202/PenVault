@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ volume.title }}</h2>
+    <p>{{ volume.summary }}</p>
+    <div class="mb-4">
+        <a href="{{ url_for('main.novel_detail_slug', novel_slug=novel.slug) }}" class="btn btn-outline-secondary btn-sm">&larr; Back to Novel</a>
+        {% if current_user.is_authenticated and current_user == novel.story.author %}
+        <a href="{{ url_for('main.new_chapter', novel_id=novel.id, volume_id=volume.id) }}" class="btn btn-outline-success btn-sm">+ Add Chapter</a>
+        <a href="{{ url_for('main.edit_volume', volume_id=volume.id) }}" class="btn btn-outline-secondary btn-sm">Edit Volume</a>
+        <form method="POST" action="{{ url_for('main.delete_volume', volume_id=volume.id) }}" style="display:inline;" onsubmit="return confirm('Delete this volume and all its chapters?');">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Delete Volume</button>
+        </form>
+        {% endif %}
+    </div>
+    <h4>Chapters</h4>
+    <ul class="list-group">
+        {% for chapter in chapters %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}">{{ chapter.title }}</a>
+            <span>
+                {% if current_user.is_authenticated and current_user == novel.story.author %}
+                <a href="{{ url_for('main.edit_chapter', chapter_id=chapter.id) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                <form method="POST" action="{{ url_for('main.delete_chapter', chapter_id=chapter.id) }}" style="display:inline;" onsubmit="return confirm('Delete this chapter?');">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                </form>
+                {% endif %}
+            </span>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">No chapters yet.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

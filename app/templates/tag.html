@@ -10,10 +10,6 @@
             <div class="card h-100">
                 {% if story.cover_image %}
                 <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" class="card-img-top" alt="{{ story.title }}">
-                {% else %}
-                <div class="card-img-top bg-light text-center py-5">
-                    <i class="fas fa-book fa-3x text-muted"></i>
-                </div>
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ story.title }}</h5>

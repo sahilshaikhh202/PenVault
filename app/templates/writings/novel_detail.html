@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ novel.title }}</h2>
+    <div class="mb-3">
+        <span class="badge bg-secondary">{{ novel.status|capitalize }}</span>
+        <span class="badge bg-info">{{ novel.genre|capitalize }}</span>
+        {% if novel.is_mature %}<span class="badge bg-danger">Mature</span>{% endif %}
+    </div>
+    <p>{{ novel.summary }}</p>
+    {% if novel.cover_image %}
+    <img src="{{ url_for('static', filename='uploads/' + novel.cover_image) }}" alt="Cover" class="img-fluid mb-3" style="max-width:200px;">
+    {% endif %}
+    <div class="mb-4">
+        {% if current_user.is_authenticated and current_user == novel.story.author %}
+        <a href="{{ url_for('main.new_volume', novel_id=novel.id) }}" class="btn btn-outline-primary btn-sm">+ Add Volume</a>
+        <a href="{{ url_for('main.edit_novel', novel_id=novel.id) }}" class="btn btn-outline-secondary btn-sm">Edit Novel</a>
+        <form method="POST" action="{{ url_for('main.delete_novel', novel_id=novel.id) }}" style="display:inline;" onsubmit="return confirm('Delete this novel and all its volumes and chapters?');">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Delete Novel</button>
+        </form>
+        {% endif %}
+    </div>
+    <h4>Volumes</h4>
+    {% if volumes %}
+        <div class="accordion" id="volumesAccordion">
+        {% for volume in volumes %}
+            <div class="accordion-item mb-2">
+                <h2 class="accordion-header" id="heading{{ volume.id }}">
+                    <a href="{{ url_for('main.volume_detail_slug', novel_slug=novel.slug, volume_slug=volume.slug) }}" class="accordion-button collapsed" type="button">
+                        {{ volume.title }}
+                    </a>
+                </h2>
+                <div id="collapse{{ volume.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ volume.id }}" data-bs-parent="#volumesAccordion">
+                    <div class="accordion-body">
+                        <p>{{ volume.summary }}</p>
+                        {% if current_user.is_authenticated and current_user == novel.story.author %}
+                        <a href="{{ url_for('main.new_chapter', novel_id=novel.id, volume_id=volume.id) }}" class="btn btn-outline-success btn-sm mb-2">+ Add Chapter</a>
+                        <a href="{{ url_for('main.edit_volume', volume_id=volume.id) }}" class="btn btn-outline-secondary btn-sm mb-2">Edit Volume</a>
+                        <form method="POST" action="{{ url_for('main.delete_volume', volume_id=volume.id) }}" style="display:inline;" onsubmit="return confirm('Delete this volume and all its chapters?');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm mb-2">Delete Volume</button>
+                        </form>
+                        {% endif %}
+                        <h6>Chapters</h6>
+                        <ul class="list-group">
+                        {% for chapter in volume.chapters.order_by(Chapter.order).all() %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}">{{ chapter.title }}</a>
+                                <span>
+                                    {% if current_user.is_authenticated and current_user == novel.story.author %}
+                                    <a href="{{ url_for('main.edit_chapter', chapter_id=chapter.id) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                    <form method="POST" action="{{ url_for('main.delete_chapter', chapter_id=chapter.id) }}" style="display:inline;" onsubmit="return confirm('Delete this chapter?');">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                    </form>
+                                    {% endif %}
+                                </span>
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-muted">No chapters yet.</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">No volumes yet. <a href="{{ url_for('main.new_volume', novel_id=novel.id) }}">Add the first volume</a>.</p>
+    {% endif %}
+</div>
+{% endblock %} 

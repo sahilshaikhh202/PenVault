@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - ScribeHub</title>
+    <title>{{ title }} - PenVault</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -109,7 +109,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i class="fas fa-book-open"></i> ScribeHub
+                <i class="fas fa-book-open"></i> PenVault
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -123,8 +123,18 @@
                         <a class="nav-link" href="{{ url_for('main.discover') }}">Discover</a>
                     </li>
                     {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.new_story') }}">New Story</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="newWritingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            New Writing
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="newWritingDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='story') }}">Story</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='poetry') }}">Poetry</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='quote') }}">Quote</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='essay') }}">Essay</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='other') }}">Other</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_novel') }}">Novel</a></li>
+                        </ul>
                     </li>
                     {% endif %}
                 </ul>
@@ -141,9 +151,19 @@
                 
                 <div class="d-flex align-items-center">
                     {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('main.new_story') }}" class="btn btn-primary btn-sm me-3">
-                        <i class="fas fa-pen me-1"></i> Write
-                    </a>
+                    <div class="dropdown me-3">
+                        <a class="btn btn-primary btn-sm dropdown-toggle" href="#" id="writeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-pen me-1"></i> Write
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="writeDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='story') }}">Story</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='poetry') }}">Poetry</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='quote') }}">Quote</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='essay') }}">Essay</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='other') }}">Other</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.new_novel') }}">Novel</a></li>
+                        </ul>
+                    </div>
                     <div class="dropdown">
                         <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <img src="{{ url_for('static', filename='uploads/' + current_user.profile_picture) }}" alt="{{ current_user.username }}" class="avatar-sm me-2">

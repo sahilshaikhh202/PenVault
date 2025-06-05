@@ -1,6 +1,16 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, FileField, SearchField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError
+from flask_wtf.file import FileField, FileAllowed
+from wtforms import (
+    StringField, 
+    PasswordField, 
+    BooleanField, 
+    SubmitField, 
+    TextAreaField, 
+    SelectField, 
+    IntegerField,
+    SearchField
+)
+from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, Optional
 from app.models import User
 
 class LoginForm(FlaskForm):
@@ -38,7 +48,115 @@ class StoryForm(FlaskForm):
     content = TextAreaField('Content', validators=[DataRequired()])
     cover_image = FileField('Cover Image')
     is_premium = BooleanField('Premium Content')
-    submit = SubmitField('Publish Story')
+    writing_type = SelectField('Writing Type', choices=[
+        ('story', 'Story'),
+        ('poetry', 'Poetry'),
+        ('quote', 'Quote / One-liner'),
+        ('essay', 'Essay / Article'),
+        ('webnovel', 'Webnovel'),
+        ('other', 'Other')
+    ], default='story', validators=[DataRequired()])
+    submit = SubmitField('Publish')
+
+class PoetryForm(StoryForm):
+    title = StringField('Poem Title', validators=[DataRequired(), Length(max=200)])
+    content = TextAreaField('Poem', validators=[
+        DataRequired(),
+        Length(max=5000, message="Poem must be 5000 characters or less")
+    ])
+    form_type = SelectField('Poetry Form', choices=[
+        ('free_verse', 'Free Verse'),
+        ('haiku', 'Haiku'),
+        ('sonnet', 'Sonnet'),
+        ('limerick', 'Limerick'),
+        ('other', 'Other')
+    ])
+    notes = TextAreaField('Author Notes', validators=[Optional(), Length(max=500)])
+    submit = SubmitField('Publish Poem')
+
+    def validate_content(self, field):
+        if field.data.count('\n') < 2:
+            raise ValidationError('Poetry must contain at least 2 lines')
+
+class QuoteForm(FlaskForm):
+    content = StringField('Quote', validators=[
+        DataRequired(),
+        Length(max=300, message="Quote must be 300 characters or less")
+    ])
+    author = StringField('Original Author', validators=[Optional(), Length(max=100)])
+    source = StringField('Source/Context', validators=[Optional(), Length(max=200)])
+    category = SelectField('Category', choices=[
+        ('inspiration', 'Inspirational'),
+        ('wisdom', 'Wisdom'),
+        ('humor', 'Humor'),
+        ('philosophy', 'Philosophy'),
+        ('other', 'Other')
+    ])
+    submit = SubmitField('Publish Quote')
+
+class EssayForm(StoryForm):
+    title = StringField('Essay Title', validators=[DataRequired(), Length(max=200)])
+    subtitle = StringField('Subtitle', validators=[Optional(), Length(max=200)])
+    content = TextAreaField('Content', validators=[
+        DataRequired(),
+        Length(min=500, message="Essays should be at least 500 characters")
+    ])
+    category = SelectField('Category', choices=[
+        ('academic', 'Academic'),
+        ('opinion', 'Opinion'),
+        ('review', 'Review'),
+        ('analysis', 'Analysis'),
+        ('other', 'Other')
+    ])
+    references = TextAreaField('References', validators=[Optional()])
+    tags = StringField('Tags (comma separated)', validators=[Optional()])
+    submit = SubmitField('Publish Essay')
+
+class NovelForm(FlaskForm):
+    title = StringField('Novel Title', validators=[DataRequired(), Length(max=200)])
+    summary = TextAreaField('Summary', validators=[
+        DataRequired(),
+        Length(min=100, max=1000)
+    ])
+    genre = SelectField('Genre', choices=[
+        ('fantasy', 'Fantasy'),
+        ('scifi', 'Science Fiction'),
+        ('romance', 'Romance'),
+        ('mystery', 'Mystery'),
+        ('other', 'Other')
+    ])
+    status = SelectField('Status', choices=[
+        ('ongoing', 'Ongoing'),
+        ('completed', 'Completed'),
+        ('hiatus', 'On Hiatus')
+    ])
+    is_mature = BooleanField('Mature Content')
+    cover_image = FileField('Cover Image', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')
+    ])
+    submit = SubmitField('Create Novel')
+
+class VolumeForm(FlaskForm):
+    title = StringField('Volume Title', validators=[DataRequired(), Length(max=200)])
+    summary = TextAreaField('Summary', validators=[Length(max=1000)])
+    order = StringField('Order', validators=[DataRequired()])
+    submit = SubmitField('Add Volume')
+
+class ChapterForm(FlaskForm):
+    title = StringField('Chapter Title', validators=[DataRequired(), Length(max=200)])
+    content = TextAreaField('Content', validators=[
+        DataRequired(),
+        Length(min=500, message="Chapter should be at least 500 characters")
+    ])
+    order = IntegerField('Chapter Number', validators=[DataRequired()])
+    author_notes = TextAreaField('Author Notes', validators=[Optional(), Length(max=500)])
+    is_draft = BooleanField('Save as Draft')
+    submit = SubmitField('Add Chapter')
+
+class OtherWritingForm(StoryForm):
+    custom_type = StringField('Custom Type', validators=[DataRequired(), Length(max=50)])
+    pass
 
 class CommentForm(FlaskForm):
     content = TextAreaField('Comment', validators=[DataRequired(), Length(max=1000)])

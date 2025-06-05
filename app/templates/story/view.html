@@ -6,6 +6,9 @@
         <article class="story-content">
             <header class="mb-4">
                 <h1 class="display-4">{{ story.title }}</h1>
+                <div class="mb-2">
+                    <span class="badge bg-secondary">{{ story.writing_type|capitalize }}</span>
+                </div>
                 <div class="d-flex align-items-center mb-3">
                     <img src="{{ url_for('static', filename='uploads/' + story.author.profile_picture) }}" 
                          class="rounded-circle me-2" style="width: 40px; height: 40px;" 
@@ -25,9 +28,46 @@
                 {% endif %}
             </header>
 
+            {% if story.writing_type == 'poetry' %}
+            <div class="story-body mb-4" style="white-space: pre-line; font-family: 'Georgia', serif; font-size: 1.2em;">
+                {{ story.content|safe }}
+            </div>
+            {% elif story.writing_type == 'quote' %}
+            <blockquote class="blockquote mb-4">
+                <p class="mb-0">{{ story.content }}</p>
+                <footer class="blockquote-footer">{{ story.title if story.title != 'Quote' else story.author.username }}</footer>
+            </blockquote>
+            {% elif story.writing_type == 'webnovel' and story.novel %}
+            <h4>Volumes</h4>
+            <div class="accordion" id="volumesAccordion">
+                {% for volume in story.novel.volumes.order_by(Volume.order).all() %}
+                <div class="accordion-item mb-2">
+                    <h2 class="accordion-header" id="heading{{ volume.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ volume.id }}" aria-expanded="false" aria-controls="collapse{{ volume.id }}">
+                            {{ volume.title }}
+                        </button>
+                    </h2>
+                    <div id="collapse{{ volume.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ volume.id }}" data-bs-parent="#volumesAccordion">
+                        <div class="accordion-body">
+                            <ul class="list-group">
+                            {% for chapter in volume.chapters.order_by(Chapter.order).all() %}
+                                <li class="list-group-item">
+                                    <a href="{{ url_for('main.chapter_view_slug', novel_slug=story.novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}">{{ chapter.title }}</a>
+                                </li>
+                            {% else %}
+                                <li class="list-group-item text-muted">No chapters yet.</li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
             <div class="story-body mb-4">
                 {{ story.content|safe }}
             </div>
+            {% endif %}
 
             <div class="story-actions mb-4">
                 <div class="d-flex gap-2 flex-wrap align-items-center mb-3">

@@ -2,7 +2,22 @@
 
 {% block content %}
 <div class="container py-5">
-    <h1 class="h2 fw-bold mb-4">Discover Stories</h1>
+    <h1 class="h2 fw-bold mb-4">Discover Writings</h1>
+    <form method="get" class="mb-4">
+        <div class="row g-2 align-items-center">
+            <div class="col-auto">
+                <select name="type" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Types</option>
+                    <option value="story" {% if request.args.get('type') == 'story' %}selected{% endif %}>Story</option>
+                    <option value="poetry" {% if request.args.get('type') == 'poetry' %}selected{% endif %}>Poetry</option>
+                    <option value="quote" {% if request.args.get('type') == 'quote' %}selected{% endif %}>Quote</option>
+                    <option value="essay" {% if request.args.get('type') == 'essay' %}selected{% endif %}>Essay</option>
+                    <option value="webnovel" {% if request.args.get('type') == 'webnovel' %}selected{% endif %}>Webnovel</option>
+                    <option value="other" {% if request.args.get('type') == 'other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+        </div>
+    </form>
     
     {% if stories.items %}
     <div class="row g-4">
@@ -13,8 +28,6 @@
                     <div class="col-md-5">
                         {% if story.cover_image %}
                         <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" class="img-fluid rounded-start h-100" style="object-fit: cover;" alt="{{ story.title }}">
-                        {% else %}
-                        <img src="{{ url_for('static', filename='images/default-cover.jpg') }}" class="img-fluid rounded-start h-100" style="object-fit: cover;" alt="Default Cover">
                         {% endif %}
                     </div>
                     <div class="col-md-7">
@@ -22,9 +35,15 @@
                             <div class="d-flex align-items-center mb-2">
                                 <img src="{{ url_for('static', filename='uploads/' + story.author.profile_picture) if story.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" class="rounded-circle me-2" width="24" height="24" alt="{{ story.author.username }}">
                                 <small class="text-muted">{{ story.author.username }}</small>
+                                <span class="badge bg-secondary ms-2">{{ story.writing_type|capitalize }}</span>
                             </div>
                             <h5 class="card-title">{{ story.title }}</h5>
                             <p class="card-text small text-muted">{{ story.summary[:100] }}{% if story.summary and story.summary|length > 100 %}...{% endif %}</p>
+                            <div class="mb-2">
+                                {% for tag in story.tags %}
+                                <a href="{{ url_for('main.tag', tag_name=tag.name) }}" class="badge bg-primary text-white text-decoration-none me-1">{{ tag.name }}</a>
+                                {% endfor %}
+                            </div>
                             <div class="mt-auto">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center">
@@ -93,7 +112,18 @@
         </div>
         <h3>No stories yet</h3>
         <p class="text-muted">Be the first to publish a story on ScribeHub!</p>
-        <a href="{{ url_for('main.new_story') }}" class="btn btn-primary mt-2">Write a Story</a>
+        <div class="dropdown mt-2">
+            <a class="btn btn-primary dropdown-toggle" href="#" id="writeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Write
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="writeDropdown">
+                <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='story') }}">Story</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='poetry') }}">Poetry</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='quote') }}">Quote</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='essay') }}">Essay</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='other') }}">Other</a></li>
+            </ul>
+        </div>
     </div>
     {% endif %}
 </div>

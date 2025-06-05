@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Add a New Chapter</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.title.label(class="form-label") }}
+            {{ form.title(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.content.label(class="form-label") }}
+            {{ form.content(class="form-control", rows=10) }}
+        </div>
+        <div class="mb-3">
+            {{ form.order.label(class="form-label") }}
+            {{ form.order(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.author_notes.label(class="form-label") }}
+            {{ form.author_notes(class="form-control") }}
+        </div>
+        <div class="mb-3 form-check">
+            {{ form.is_draft(class="form-check-input") }}
+            {{ form.is_draft.label(class="form-check-label") }}
+        </div>
+        <div class="d-grid gap-2">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+</div>
+{% endblock %} 

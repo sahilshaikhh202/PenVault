@@ -5,62 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-10">
-        <div class="card story-section-card">
-            <div class="card-body">
-                <h1 class="card-title mb-4 story-new-hero-title">Edit Story</h1>
-                <form method="POST" action="" enctype="multipart/form-data" id="storyForm">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
-                        {{ form.title.label(class="form-label") }}
-                        {{ form.title(class="form-control") }}
-                        {% for error in form.title.errors %}
-                        <span class="text-danger">{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.summary.label(class="form-label") }}
-                        {{ form.summary(class="form-control", rows=3) }}
-                        {% for error in form.summary.errors %}
-                        <span class="text-danger">{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.cover_image.label(class="form-label") }}
-                        {{ form.cover_image(class="form-control") }}
-                        {% if story.cover_image %}
-                        <div class="mt-2">
-                            <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" alt="Current Cover" style="max-width: 180px; border-radius: 8px;">
-                        </div>
-                        {% endif %}
-                        {% for error in form.cover_image.errors %}
-                        <span class="text-danger">{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.content.label(class="form-label") }}
-                        {{ form.content(class="form-control", id="content-field") }}
-                        <div id="quill-editor" style="height: 300px;"></div>
-                        {% for error in form.content.errors %}
-                        <span class="text-danger">{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                    <div class="mb-3 form-check">
-                        {{ form.is_premium(class="form-check-input") }}
-                        {{ form.is_premium.label(class="form-check-label") }}
-                    </div>
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            Update Story
-                        </button>
-                        <a href="{{ url_for('main.profile', username=current_user.username) }}" class="btn btn-outline-secondary">Cancel</a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="alert alert-info mt-5">Please use the edit option from your profile or story page. Editing is now handled per writing type.</div>
 {% endblock %}
 
 {% block scripts %}

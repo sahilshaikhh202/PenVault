@@ -2,6 +2,7 @@ from app import db, login_manager
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from slugify import slugify
 
 # Define association table for Story and Tag relationship
 story_tags = db.Table('story_tags',
@@ -72,6 +73,7 @@ class Story(db.Model):
     is_premium = db.Column(db.Boolean, default=False)
     views = db.Column(db.Integer, default=0)
     likes = db.Column(db.Integer, default=0)
+    writing_type = db.Column(db.String(50), nullable=False, server_default='story')  # Add this line
     
     # Foreign Keys
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -79,6 +81,8 @@ class Story(db.Model):
     # Relationships
     comments = db.relationship('Comment', backref='story', lazy='dynamic', cascade="all, delete-orphan")
     tags = db.relationship('Tag', secondary='story_tags', backref='stories')
+    # Webnovel relationship
+    novel = db.relationship('Novel', backref='story', uselist=False)
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -102,3 +106,57 @@ class Follow(db.Model):
     follower_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     followed_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Webnovel Models
+class Novel(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    story_id = db.Column(db.Integer, db.ForeignKey('story.id'), nullable=False, unique=True)
+    title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(200), unique=True, nullable=False)
+    summary = db.Column(db.Text)
+    cover_image = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Relationships
+    volumes = db.relationship('Volume', backref='novel', lazy='dynamic', cascade="all, delete-orphan")
+    chapters = db.relationship('Chapter', backref='novel', lazy='dynamic', cascade="all, delete-orphan")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.slug:
+            self.slug = slugify(self.title)
+
+class Volume(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    novel_id = db.Column(db.Integer, db.ForeignKey('novel.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(200), nullable=False)
+    summary = db.Column(db.Text)
+    order = db.Column(db.Integer, default=1)
+    # Relationships
+    chapters = db.relationship('Chapter', backref='volume', lazy='dynamic', cascade="all, delete-orphan")
+
+    __table_args__ = (db.UniqueConstraint('novel_id', 'slug', name='uq_volume_novel_slug'),)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.slug:
+            self.slug = slugify(self.title)
+
+class Chapter(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    novel_id = db.Column(db.Integer, db.ForeignKey('novel.id'), nullable=False)
+    volume_id = db.Column(db.Integer, db.ForeignKey('volume.id'), nullable=True)
+    title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    order = db.Column(db.Integer, default=1)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('volume_id', 'slug', name='uq_chapter_volume_slug'),)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.slug:
+            self.slug = slugify(self.title)

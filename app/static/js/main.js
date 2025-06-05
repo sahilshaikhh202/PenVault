@@ -87,6 +87,26 @@ document.addEventListener('DOMContentLoaded', function() {
             updateThemeIcon(isDark);
         });
     }
+
+    // Writing type dynamic fields
+    const typeSelect = document.getElementById('writing-type-select');
+    if (typeSelect) {
+        function updateFields() {
+            const type = typeSelect.value;
+            const titleField = document.getElementById('title-field');
+            const summaryField = document.getElementById('summary-field');
+            const coverImageField = document.getElementById('cover-image-field');
+            const isPremiumField = document.getElementById('is-premium-field');
+            const contentFieldGroup = document.getElementById('content-field-group');
+            if (titleField) titleField.style.display = (type === 'quote') ? 'none' : '';
+            if (summaryField) summaryField.style.display = (type === 'quote' || type === 'poetry') ? 'none' : '';
+            if (coverImageField) coverImageField.style.display = (type === 'quote' || type === 'poetry') ? 'none' : '';
+            if (isPremiumField) isPremiumField.style.display = (type === 'quote') ? 'none' : '';
+            if (contentFieldGroup) contentFieldGroup.style.display = '';
+        }
+        typeSelect.addEventListener('change', updateFields);
+        updateFields();
+    }
 });
 
 // Toast notification function

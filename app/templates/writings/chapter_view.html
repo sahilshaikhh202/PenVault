@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-2">
+        <a href="{{ url_for('main.novel_detail_slug', novel_slug=novel.slug) }}">&larr; Back to Novel</a>
+        {% if volume %} &middot; <a href="{{ url_for('main.volume_detail_slug', novel_slug=novel.slug, volume_slug=volume.slug) }}">Back to Volume</a>{% endif %}
+    </div>
+    <h2>{{ chapter.title }}</h2>
+    <div class="mb-3 text-muted">Volume: {{ volume.title if volume else 'N/A' }}</div>
+    <div class="mb-4" style="white-space: pre-line; font-size: 1.15em;">
+        {{ chapter.content|safe }}
+    </div>
+    {% if chapter.author_notes %}
+    <div class="alert alert-info"><strong>Author Notes:</strong><br>{{ chapter.author_notes }}</div>
+    {% endif %}
+</div>
+{% endblock %} 
