@@ -16,6 +16,13 @@ reading_list = db.Table('reading_list',
     db.Column('story_id', db.Integer, db.ForeignKey('story.id'), primary_key=True)
 )
 
+# Add story_likes table
+story_likes = db.Table('story_likes',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('story_id', db.Integer, db.ForeignKey('story.id'), primary_key=True),
+    db.Column('created_at', db.DateTime, default=datetime.utcnow)
+)
+
 @login_manager.user_loader
 def load_user(id):
     return User.query.get(int(id))
@@ -25,10 +32,13 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128))
-    profile_picture = db.Column(db.String(200), default='default.jpg')
+    profile_picture = db.Column(db.String(128), default='default.jpg')
     bio = db.Column(db.Text)
+    theme = db.Column(db.String(10), default='light')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_premium = db.Column(db.Boolean, default=False)
+    hide_saved_list = db.Column(db.Boolean, default=False)
+    hide_recent_reads = db.Column(db.Boolean, default=False)
     
     # Relationships
     stories = db.relationship('Story', backref='author', lazy='dynamic')
@@ -36,6 +46,7 @@ class User(UserMixin, db.Model):
     following = db.relationship('Follow', foreign_keys='Follow.follower_id', backref='follower', lazy='dynamic')
     comments = db.relationship('Comment', backref='author', lazy='dynamic')
     saved_stories = db.relationship('Story', secondary='reading_list', backref=db.backref('saved_by', lazy='dynamic'))
+    reading_history = db.relationship('ReadingHistory', backref='reader', lazy='dynamic', cascade='all, delete-orphan')
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -73,7 +84,29 @@ class Story(db.Model):
     is_premium = db.Column(db.Boolean, default=False)
     views = db.Column(db.Integer, default=0)
     likes = db.Column(db.Integer, default=0)
-    writing_type = db.Column(db.String(50), nullable=False, server_default='story')  # Add this line
+    writing_type = db.Column(db.String(50), nullable=False, server_default='story')
+    
+    # Add likes relationship
+    liked_by = db.relationship('User', secondary='story_likes',
+                             backref=db.backref('liked_stories', lazy='dynamic'),
+                             lazy='dynamic')
+    
+    # Poetry specific fields
+    form_type = db.Column(db.String(50))  # e.g., haiku, sonnet, etc.
+    notes = db.Column(db.Text)
+
+    # Quote specific fields
+    quote_author = db.Column(db.String(100))
+    quote_source = db.Column(db.String(200))
+    quote_category = db.Column(db.String(50))
+
+    # Essay specific fields
+    subtitle = db.Column(db.String(200))
+    essay_category = db.Column(db.String(50))
+    references = db.Column(db.Text)
+
+    # Other writing type
+    custom_type = db.Column(db.String(50))
     
     # Foreign Keys
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -160,3 +193,11 @@ class Chapter(db.Model):
         super().__init__(*args, **kwargs)
         if not self.slug:
             self.slug = slugify(self.title)
+
+class ReadingHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    story_id = db.Column(db.Integer, db.ForeignKey('story.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    story = db.relationship('Story')

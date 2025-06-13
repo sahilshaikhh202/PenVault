@@ -24,12 +24,18 @@
             {{ form.cover_image.label(class="form-label") }}
             {{ form.cover_image(class="form-control") }}
         </div>
+        <div class="mb-3">
+            {{ form.tags.label(class="form-label") }}
+            {{ form.tags(class="form-control") }}
+            <small class="form-text text-muted">Comma-separated, e.g. inspiration, love, nature</small>
+        </div>
         <div class="mb-3 form-check">
             {{ form.is_premium(class="form-check-input") }}
             {{ form.is_premium.label(class="form-check-label") }}
         </div>
-        <div class="d-grid gap-2">
+        <div class="d-flex gap-2">
             {{ form.submit(class="btn btn-primary") }}
+            {{ form.save_draft(class="btn btn-outline-secondary") }}
         </div>
     </form>
 </div>

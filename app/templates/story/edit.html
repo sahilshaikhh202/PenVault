@@ -5,7 +5,94 @@
 {% endblock %}
 
 {% block content %}
-<div class="alert alert-info mt-5">Please use the edit option from your profile or story page. Editing is now handled per writing type.</div>
+<div class="container mt-4">
+    <h2>Edit {{ story.writing_type|capitalize }}</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        {% if form.title %}
+        <div class="mb-3">
+            {{ form.title.label(class="form-label") }}
+            {{ form.title(class="form-control") }}
+        </div>
+        {% endif %}
+        {% if form.subtitle %}
+        <div class="mb-3">
+            {{ form.subtitle.label(class="form-label") }}
+            {{ form.subtitle(class="form-control") }}
+        </div>
+        {% endif %}
+        {% if form.form_type %}
+        <div class="mb-3">
+            {{ form.form_type.label(class="form-label") }}
+            {{ form.form_type(class="form-select") }}
+        </div>
+        {% endif %}
+        {% if form.content %}
+        <div class="mb-3">
+            {{ form.content.label(class="form-label") }}
+            {{ form.content(class="form-control", rows=8) }}
+        </div>
+        {% endif %}
+        {% if form.notes %}
+        <div class="mb-3">
+            {{ form.notes.label(class="form-label") }}
+            {{ form.notes(class="form-control") }}
+        </div>
+        {% endif %}
+        {% if form.author %}
+        <div class="mb-3">
+            {{ form.author.label(class="form-label") }}
+            {{ form.author(class="form-control") }}
+        </div>
+        {% endif %}
+        {% if form.source %}
+        <div class="mb-3">
+            {{ form.source.label(class="form-label") }}
+            {{ form.source(class="form-control") }}
+        </div>
+        {% endif %}
+        {% if form.category %}
+        <div class="mb-3">
+            {{ form.category.label(class="form-label") }}
+            {{ form.category(class="form-select") }}
+        </div>
+        {% endif %}
+        {% if form.references %}
+        <div class="mb-3">
+            {{ form.references.label(class="form-label") }}
+            {{ form.references(class="form-control") }}
+        </div>
+        {% endif %}
+        {% if form.custom_type %}
+        <div class="mb-3">
+            {{ form.custom_type.label(class="form-label") }}
+            {{ form.custom_type(class="form-control") }}
+        </div>
+        {% endif %}
+        {% if form.tags %}
+        <div class="mb-3">
+            {{ form.tags.label(class="form-label") }}
+            {{ form.tags(class="form-control") }}
+            <small class="form-text text-muted">Comma-separated, e.g. inspiration, love, nature</small>
+        </div>
+        {% endif %}
+        {% if form.cover_image %}
+        <div class="mb-3">
+            {{ form.cover_image.label(class="form-label") }}
+            {{ form.cover_image(class="form-control") }}
+        </div>
+        {% endif %}
+        {% if form.is_premium %}
+        <div class="mb-3 form-check">
+            {{ form.is_premium(class="form-check-input") }}
+            {{ form.is_premium.label(class="form-check-label") }}
+        </div>
+        {% endif %}
+        <div class="d-grid gap-2">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+</div>
 {% endblock %}
 
 {% block scripts %}

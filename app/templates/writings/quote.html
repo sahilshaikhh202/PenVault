@@ -5,23 +5,37 @@
     <form method="POST">
         {{ form.hidden_tag() }}
         <div class="mb-3">
+            {{ form.title.label(class="form-label") }}
+            <div class="input-group">
+                {{ form.title(class="form-control", placeholder="Optional: Add a title for your quote") }}
+                <span class="input-group-text"><i class="fas fa-info-circle" title="If left empty, the quote content will be used as the title"></i></span>
+            </div>
+            <small class="form-text text-muted">If you don't provide a title, the quote content will be used as the title.</small>
+        </div>
+        <div class="mb-3">
             {{ form.content.label(class="form-label") }}
-            {{ form.content(class="form-control") }}
+            {{ form.content(class="form-control", rows=3, placeholder="Enter your quote here...") }}
         </div>
         <div class="mb-3">
             {{ form.author.label(class="form-label") }}
-            {{ form.author(class="form-control") }}
+            {{ form.author(class="form-control", placeholder="Who said this quote? (Optional)") }}
         </div>
         <div class="mb-3">
             {{ form.source.label(class="form-label") }}
-            {{ form.source(class="form-control") }}
+            {{ form.source(class="form-control", placeholder="Where is this quote from? (Optional)") }}
         </div>
         <div class="mb-3">
             {{ form.category.label(class="form-label") }}
             {{ form.category(class="form-select") }}
         </div>
-        <div class="d-grid gap-2">
+        <div class="mb-3">
+            {{ form.tags.label(class="form-label") }}
+            {{ form.tags(class="form-control") }}
+            <small class="form-text text-muted">Comma-separated, e.g. inspiration, wisdom, humor</small>
+        </div>
+        <div class="d-flex gap-2">
             {{ form.submit(class="btn btn-primary") }}
+            {{ form.save_draft(class="btn btn-outline-secondary") }}
         </div>
     </form>
 </div>

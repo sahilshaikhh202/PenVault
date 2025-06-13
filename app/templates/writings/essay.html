@@ -27,7 +27,7 @@
         <div class="mb-3">
             {{ form.tags.label(class="form-label") }}
             {{ form.tags(class="form-control") }}
-            <small class="form-text text-muted">Comma-separated, e.g. adventure, fantasy, romance</small>
+            <small class="form-text text-muted">Comma-separated, e.g. academic, opinion, review</small>
         </div>
         <div class="mb-3">
             {{ form.cover_image.label(class="form-label") }}
@@ -37,8 +37,9 @@
             {{ form.is_premium(class="form-check-input") }}
             {{ form.is_premium.label(class="form-check-label") }}
         </div>
-        <div class="d-grid gap-2">
+        <div class="d-flex gap-2">
             {{ form.submit(class="btn btn-primary") }}
+            {{ form.save_draft(class="btn btn-outline-secondary") }}
         </div>
     </form>
 </div>

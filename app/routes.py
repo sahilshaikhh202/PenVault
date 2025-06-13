@@ -3,9 +3,11 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 import os
-from app.models import User, Story, Comment, Tag, Follow, Novel, Volume, Chapter
-from app.forms import LoginForm, RegistrationForm, ProfileForm, StoryForm, CommentForm, SearchForm, PoetryForm, QuoteForm, EssayForm, NovelForm, VolumeForm, ChapterForm, OtherWritingForm
+from app.models import User, Story, Comment, Tag, Follow, Novel, Volume, Chapter, ReadingHistory
+from app.forms import LoginForm, RegistrationForm, ProfileForm, StoryForm, CommentForm, SearchForm, PoetryForm, QuoteForm, EssayForm, NovelForm, VolumeForm, ChapterForm, OtherWritingForm, EditCommentForm
 from app import db
+from datetime import datetime, timedelta
+import math
 
 main = Blueprint('main', __name__)
 auth = Blueprint('auth', __name__)
@@ -103,11 +105,10 @@ def register():
     return render_template('auth/register.html', title='Register', form=form)
 
 @main.route('/profile/<username>')
-@login_required
-def profile(username):
+def profile(username):  # Remove @login_required decorator
     user = User.query.filter_by(username=username).first_or_404()
-    stories = Story.query.filter_by(author=user).order_by(Story.created_at.desc()).all()
-    return render_template('profile.html', user=user, stories=stories)
+    stories = Story.query.filter_by(author=user, is_published=True).order_by(Story.created_at.desc()).all()
+    return render_template('profile.html', user=user, stories=stories, ReadingHistory=ReadingHistory)
 
 @main.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
@@ -152,23 +153,28 @@ def new_story():
     template = template_map.get(writing_type, 'writings/story.html')
     form = FormClass()
     if form.validate_on_submit():
+        if writing_type == 'quote':
+            title = form.title.data if form.title.data else form.content.data[:50] + '...' if len(form.content.data) > 50 else form.content.data
+        else:
+            title = form.title.data if hasattr(form, 'title') else None
         story = Story(
-            title=form.title.data if hasattr(form, 'title') else None,
+            title=title,
             content=form.content.data,
             summary=form.summary.data if hasattr(form, 'summary') else None,
             author=current_user,
-            writing_type=writing_type
+            writing_type=writing_type,
+            form_type=form.form_type.data if hasattr(form, 'form_type') else None,
+            notes=form.notes.data if hasattr(form, 'notes') else None,
+            quote_author=form.author.data if hasattr(form, 'author') else None,
+            quote_source=form.source.data if hasattr(form, 'source') else None,
+            quote_category=form.category.data if hasattr(form, 'category') else None,
+            subtitle=form.subtitle.data if hasattr(form, 'subtitle') else None,
+            essay_category=form.category.data if hasattr(form, 'category') else None,
+            references=form.references.data if hasattr(form, 'references') else None,
+            custom_type=form.custom_type.data if hasattr(form, 'custom_type') else None,
+            is_published=not form.save_draft.data  # Set is_published based on which button was clicked
         )
-        if writing_type == 'poetry':
-            # Add poetry-specific fields if you want to store them
-            pass
-        elif writing_type == 'quote':
-            pass
-        elif writing_type == 'essay':
-            pass
-        elif writing_type == 'other':
-            pass
-        # Handle tags for forms with a tags field
+        # Always handle tags for all types
         if hasattr(form, 'tags') and form.tags.data:
             tag_names = [t.strip() for t in form.tags.data.split(',') if t.strip()]
             story.tags = []
@@ -180,22 +186,43 @@ def new_story():
                 story.tags.append(tag)
         db.session.add(story)
         db.session.commit()
-        flash('Your story has been created!', 'success')
-        return redirect(url_for('main.story', story_id=story.id))
+        if form.save_draft.data:
+            flash('Your draft has been saved!', 'success')
+            return redirect(url_for('main.drafts'))
+        else:
+            flash('Your story has been published!', 'success')
+            return redirect(url_for('main.story', story_id=story.id))
     return render_template(template, form=form, title='New ' + writing_type.capitalize())
 
 @main.route('/story/<int:story_id>')
 def story(story_id):
     story = Story.query.get_or_404(story_id)
     form = CommentForm()
+    # Increment view if not author (or always, if not logged in)
+    if (not current_user.is_authenticated) or (current_user.is_authenticated and current_user.id != story.author_id):
+        story.views = (story.views or 0) + 1
+        db.session.commit()
+        # Add to reading history (FIFO, max 20) only if logged in
+        if current_user.is_authenticated:
+            existing = ReadingHistory.query.filter_by(user_id=current_user.id, story_id=story.id).first()
+            if existing:
+                existing.timestamp = datetime.utcnow()
+            else:
+                db.session.add(ReadingHistory(user_id=current_user.id, story_id=story.id))
+            db.session.commit()
+            # Keep only 20 most recent
+            history = ReadingHistory.query.filter_by(user_id=current_user.id).order_by(ReadingHistory.timestamp.desc()).all()
+            if len(history) > 20:
+                for h in history[20:]:
+                    db.session.delete(h)
+                db.session.commit()
     return render_template('story/view.html', 
         story=story, 
         form=form, 
         Story=Story, 
         Comment=Comment, 
         Chapter=Chapter,
-        Volume=Volume  # Add Volume to the template context
-    )
+        Volume=Volume)
 
 @main.route('/story/<int:story_id>/publish', methods=['POST'])
 @login_required
@@ -212,8 +239,11 @@ def publish_story(story_id):
     return redirect(url_for('main.story', story_id=story.id))
 
 @main.route('/story/<int:story_id>/comment', methods=['POST'])
-@login_required
 def comment(story_id):
+    if not current_user.is_authenticated:
+        flash('Please log in to comment.', 'info')
+        return redirect(url_for('auth.login', next=url_for('main.story', story_id=story_id)))
+    
     story = Story.query.get_or_404(story_id)
     form = CommentForm()
     if form.validate_on_submit():
@@ -224,46 +254,78 @@ def comment(story_id):
         )
         db.session.add(comment)
         db.session.commit()
-        flash('Your comment has been added.')
-    return redirect(url_for('main.story', story_id=story.id))
+        flash('Your comment has been added.', 'success')
+        
+        # If the comment was made on a novel page, stay on that page
+        if request.referrer and 'novel' in request.referrer:
+            return redirect(request.referrer + f'#comment-{comment.id}')
+        return redirect(url_for('main.story', story_id=story_id))
+    
+    return redirect(url_for('main.story', story_id=story_id))
 
 @main.route('/follow/<username>')
-@login_required
 def follow(username):
-    user = User.query.filter_by(username=username).first()
-    if user is None:
-        flash('User {} not found.'.format(username))
-        return redirect(url_for('main.index'))
+    if not current_user.is_authenticated:
+        flash('Please log in to follow users.', 'info')
+        return redirect(url_for('auth.login', next=url_for('main.profile', username=username)))
+    
+    user = User.query.filter_by(username=username).first_or_404()
     if user == current_user:
-        flash('You cannot follow yourself!')
+        flash('You cannot follow yourself!', 'warning')
         return redirect(url_for('main.profile', username=username))
+    
     current_user.follow(user)
     db.session.commit()
-    flash('You are following {}!'.format(username))
+    flash(f'You are now following {username}!', 'success')
     return redirect(url_for('main.profile', username=username))
 
 @main.route('/unfollow/<username>')
-@login_required
 def unfollow(username):
-    user = User.query.filter_by(username=username).first()
-    if user is None:
-        flash('User {} not found.'.format(username))
-        return redirect(url_for('main.index'))
+    if not current_user.is_authenticated:
+        flash('Please log in to unfollow users.', 'info')
+        return redirect(url_for('auth.login', next=url_for('main.profile', username=username)))
+    
+    user = User.query.filter_by(username=username).first_or_404()
     if user == current_user:
-        flash('You cannot unfollow yourself!')
+        flash('You cannot unfollow yourself!', 'warning')
         return redirect(url_for('main.profile', username=username))
+    
     current_user.unfollow(user)
     db.session.commit()
-    flash('You are not following {}.'.format(username))
+    flash(f'You are no longer following {username}.', 'info')
     return redirect(url_for('main.profile', username=username))
+
+@main.route('/tag', methods=['GET'])
+def tag_search():
+    search = request.args.get('search', '').strip()
+    page = request.args.get('page', 1, type=int)
+    tag = None
+    stories = None
+    
+    # Check if search starts with '#' and has content after it
+    if search and search.startswith('#') and len(search) > 1:
+        # Remove the '#' before searching
+        tag_name = search[1:]
+        tag = Tag.query.filter(Tag.name.ilike(tag_name)).first()
+        if tag:
+            stories = Story.query.filter(
+                Story.tags.any(id=tag.id),
+                Story.is_published == True
+            ).order_by(Story.created_at.desc()).paginate(
+                page=page, per_page=9, error_out=False)
+    
+    return render_template('tag.html', tag=tag, stories=stories, search=search)
 
 @main.route('/tag/<tag_name>')
 def tag(tag_name):
     tag = Tag.query.filter_by(name=tag_name).first_or_404()
     page = request.args.get('page', 1, type=int)
-    stories = tag.stories.filter_by(is_published=True).order_by(Story.created_at.desc()).paginate(
+    stories = Story.query.filter(
+        Story.tags.any(id=tag.id),
+        Story.is_published == True
+    ).order_by(Story.created_at.desc()).paginate(
         page=page, per_page=9, error_out=False)
-    return render_template('tag.html', tag=tag, stories=stories)
+    return render_template('tag.html', tag=tag, stories=stories, search=None)
 
 @main.route('/search', methods=['GET', 'POST'])
 def search():
@@ -277,14 +339,28 @@ def search():
         
     return render_template('search.html', form=form, results=results, query=request.args.get('query', ''))
 
-@main.route('/story/<int:story_id>/like')
-@login_required
+@main.route('/story/<int:story_id>/like', methods=['GET', 'POST'])  # Add POST to allowed methods
 def like_story(story_id):
+    if not current_user.is_authenticated:
+        flash('Please log in to like stories.', 'info')
+        return redirect(url_for('auth.login', next=url_for('main.story', story_id=story_id)))
+    
     story = Story.query.get_or_404(story_id)
-    # Increment the like count
-    story.likes += 1
-    db.session.commit()
-    flash('Story liked!')
+    if story.author == current_user:
+        flash('You cannot like your own story.', 'warning')
+        return redirect(url_for('main.story', story_id=story_id))
+    
+    if story in current_user.liked_stories:
+        current_user.liked_stories.remove(story)
+        story.likes = (story.likes or 0) - 1
+        db.session.commit()
+        flash('You have unliked this story.', 'info')
+    else:
+        current_user.liked_stories.append(story)
+        story.likes = (story.likes or 0) + 1
+        db.session.commit()
+        flash('You have liked this story.', 'success')
+    
     return redirect(url_for('main.story', story_id=story_id))
 
 @main.route('/story/<int:story_id>/save')
@@ -320,20 +396,38 @@ def edit_story(story_id):
     story = Story.query.get_or_404(story_id)
     if story.author != current_user:
         abort(403)
-    form = StoryForm(obj=story)
+    # Use the correct form class based on writing_type
+    form_classes = {
+        'story': StoryForm,
+        'poetry': PoetryForm,
+        'quote': QuoteForm,
+        'essay': EssayForm,
+        'other': OtherWritingForm
+    }
+    FormClass = form_classes.get(story.writing_type, StoryForm)
+    form = FormClass(obj=story)
     if form.validate_on_submit():
-        story.title = form.title.data
-        story.summary = form.summary.data
+        story.title = form.title.data if hasattr(form, 'title') else story.title
+        story.summary = form.summary.data if hasattr(form, 'summary') else story.summary
         story.content = form.content.data
-        story.is_premium = form.is_premium.data
+        story.is_premium = form.is_premium.data if hasattr(form, 'is_premium') else story.is_premium
+        story.form_type = form.form_type.data if hasattr(form, 'form_type') else story.form_type
+        story.notes = form.notes.data if hasattr(form, 'notes') else story.notes
+        story.quote_author = form.author.data if hasattr(form, 'author') else story.quote_author
+        story.quote_source = form.source.data if hasattr(form, 'source') else story.quote_source
+        story.quote_category = form.category.data if hasattr(form, 'category') else story.quote_category
+        story.subtitle = form.subtitle.data if hasattr(form, 'subtitle') else story.subtitle
+        story.essay_category = form.category.data if hasattr(form, 'category') else story.essay_category
+        story.references = form.references.data if hasattr(form, 'references') else story.references
+        story.custom_type = form.custom_type.data if hasattr(form, 'custom_type') else story.custom_type
         # Handle cover image upload
-        if form.cover_image.data:
+        if hasattr(form, 'cover_image') and form.cover_image.data:
             file = form.cover_image.data
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
                 story.cover_image = filename
-        # Handle tags for forms with a tags field
+        # Always handle tags for all types
         if hasattr(form, 'tags') and form.tags.data:
             tag_names = [t.strip() for t in form.tags.data.split(',') if t.strip()]
             story.tags = []
@@ -348,11 +442,39 @@ def edit_story(story_id):
         return redirect(url_for('main.story', story_id=story.id))
     # Pre-fill form for GET
     if request.method == 'GET':
-        form.title.data = story.title
-        form.summary.data = story.summary
-        form.content.data = story.content
-        form.is_premium.data = story.is_premium
+        if hasattr(form, 'title'): form.title.data = story.title
+        if hasattr(form, 'summary'): form.summary.data = story.summary
+        if hasattr(form, 'content'): form.content.data = story.content
+        if hasattr(form, 'is_premium'): form.is_premium.data = story.is_premium
+        if hasattr(form, 'form_type'): form.form_type.data = story.form_type
+        if hasattr(form, 'notes'): form.notes.data = story.notes
+        if hasattr(form, 'author'): form.author.data = story.quote_author
+        if hasattr(form, 'source'): form.source.data = story.quote_source
+        if hasattr(form, 'category'): form.category.data = story.quote_category or story.essay_category
+        if hasattr(form, 'subtitle'): form.subtitle.data = story.subtitle
+        if hasattr(form, 'references'): form.references.data = story.references
+        if hasattr(form, 'custom_type'): form.custom_type.data = story.custom_type
+        if hasattr(form, 'tags'): form.tags.data = ', '.join([tag.name for tag in story.tags])
     return render_template('story/edit.html', title='Edit Story', form=form, story=story)
+
+@main.route('/comment/<int:comment_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    story = comment.story
+    if current_user != comment.author and current_user != story.author:
+        abort(403)
+    form = EditCommentForm(obj=comment)
+    if form.validate_on_submit():
+        comment.content = form.content.data
+        db.session.commit()
+        flash('Comment updated successfully.', 'success')
+        # Redirect to the correct detail page
+        if story.writing_type == 'webnovel' and story.novel:
+            return redirect(url_for('main.novel_detail', novel_id=story.novel.id))
+        else:
+            return redirect(url_for('main.story', story_id=story.id))
+    return render_template('edit_comment.html', form=form, comment=comment)
 
 @main.route('/comment/<int:comment_id>/delete', methods=['POST'])
 @login_required
@@ -364,7 +486,11 @@ def delete_comment(comment_id):
     db.session.delete(comment)
     db.session.commit()
     flash('Comment deleted successfully.', 'success')
-    return redirect(url_for('main.story', story_id=story.id))
+    # Redirect to the correct detail page
+    if story.writing_type == 'webnovel' and story.novel:
+        return redirect(url_for('main.novel_detail', novel_id=story.novel.id))
+    else:
+        return redirect(url_for('main.story', story_id=story.id))
 
 @main.route('/api/comment/<int:comment_id>/reply', methods=['POST'])
 @login_required
@@ -396,10 +522,52 @@ def unsave_story(story_id):
         flash('Story was not in your reading list.')
     return redirect(request.referrer or url_for('main.profile', username=current_user.username))
 
-@main.route('/settings')
+@main.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
-    return render_template('settings.html', title='Settings')
+    if request.method == 'POST':
+        hide_saved = request.form.get('hide_saved_list') == 'on'
+        hide_recent_reads = request.form.get('hide_recent_reads') == 'on'
+        current_user.hide_saved_list = hide_saved
+        current_user.hide_recent_reads = hide_recent_reads
+        db.session.commit()
+        flash('Settings updated!', 'success')
+        return redirect(url_for('main.settings'))
+    return render_template('settings.html', title='Settings', current_theme=current_user.theme)
+
+@main.route('/settings/theme', methods=['POST'])
+@login_required
+def update_theme():
+    try:
+        print('Theme update route called')
+        data = request.get_json()
+        print('Received data:', data)
+        if not data:
+            print('No data provided')
+            return jsonify({'error': 'No data provided'}), 400
+        theme = data.get('theme', 'light')
+        print('Theme to save:', theme)
+        if theme not in ['light', 'dark']:
+            print('Invalid theme value')
+            return jsonify({'error': 'Invalid theme'}), 400
+        current_user.theme = theme
+        db.session.commit()
+        print('Theme saved successfully for user:', current_user.username)
+        return jsonify({'success': True, 'theme': theme})
+    except Exception as e:
+        print('Error in theme update:', str(e))
+        return jsonify({'error': str(e)}), 500
+
+@main.route('/history/delete/<int:history_id>', methods=['POST'])
+@login_required
+def delete_history_item(history_id):
+    history = ReadingHistory.query.get_or_404(history_id)
+    if history.user_id != current_user.id:
+        abort(403)
+    db.session.delete(history)
+    db.session.commit()
+    flash('History item deleted.', 'success')
+    return redirect(request.referrer or url_for('main.profile', username=current_user.username))
 
 # Webnovel creation routes
 @main.route('/novel/new', methods=['GET', 'POST'])
@@ -441,7 +609,27 @@ def novel_detail(novel_id):
     novel = Novel.query.get_or_404(novel_id)
     volumes = novel.volumes.order_by(Volume.order).all()
     chapters = novel.chapters.order_by(Chapter.order).all()
-    return render_template('writings/novel_detail.html', novel=novel, volumes=volumes, chapters=chapters, Chapter=Chapter)
+    form = CommentForm()
+    # Increment view for all users (not just logged in)
+    story = novel.story
+    if (not current_user.is_authenticated) or (current_user.is_authenticated and current_user.id != story.author_id):
+        story.views = (story.views or 0) + 1
+        db.session.commit()
+        # Add to reading history (FIFO, max 20) only if logged in
+        if current_user.is_authenticated:
+            existing = ReadingHistory.query.filter_by(user_id=current_user.id, story_id=story.id).first()
+            if existing:
+                existing.timestamp = datetime.utcnow()
+            else:
+                db.session.add(ReadingHistory(user_id=current_user.id, story_id=story.id))
+            db.session.commit()
+            # Keep only 20 most recent
+            history = ReadingHistory.query.filter_by(user_id=current_user.id).order_by(ReadingHistory.timestamp.desc()).all()
+            if len(history) > 20:
+                for h in history[20:]:
+                    db.session.delete(h)
+                db.session.commit()
+    return render_template('writings/novel_detail.html', novel=novel, volumes=volumes, chapters=chapters, Chapter=Chapter, form=form, Comment=Comment)
 
 @main.route('/novel/<int:novel_id>/volume/new', methods=['GET', 'POST'])
 @login_required
@@ -624,4 +812,166 @@ def chapter_view_slug(novel_slug, volume_slug, chapter_slug):
     novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
     volume = Volume.query.filter_by(novel_id=novel.id, slug=volume_slug).first_or_404()
     chapter = Chapter.query.filter_by(volume_id=volume.id, slug=chapter_slug).first_or_404()
-    return render_template('writings/chapter_view.html', chapter=chapter, novel=novel, volume=volume)
+    # Get all chapters in the novel, ordered by volume.order, chapter.order
+    all_chapters = Chapter.query.filter_by(novel_id=novel.id).join(Volume).order_by(Volume.order, Chapter.order).all()
+    idx = next((i for i, c in enumerate(all_chapters) if c.id == chapter.id), None)
+    prev_chapter = all_chapters[idx-1] if idx is not None and idx > 0 else None
+    next_chapter = all_chapters[idx+1] if idx is not None and idx < len(all_chapters)-1 else None
+    # Increment view and add to reading history if not author
+    if current_user.is_authenticated and current_user.id != novel.story.author_id:
+        chapter.views = (getattr(chapter, 'views', 0) or 0) + 1
+        db.session.commit()
+        # Add to reading history (FIFO, max 20)
+        existing = ReadingHistory.query.filter_by(user_id=current_user.id, story_id=novel.story.id).first()
+        if existing:
+            existing.timestamp = datetime.utcnow()
+        else:
+            db.session.add(ReadingHistory(user_id=current_user.id, story_id=novel.story.id))
+        db.session.commit()
+        # Keep only 20 most recent
+        history = ReadingHistory.query.filter_by(user_id=current_user.id).order_by(ReadingHistory.timestamp.desc()).all()
+        if len(history) > 20:
+            for h in history[20:]:
+                db.session.delete(h)
+            db.session.commit()
+    return render_template('writings/chapter_view.html', chapter=chapter, novel=novel, volume=volume, prev_chapter=prev_chapter, next_chapter=next_chapter)
+
+@main.route('/feed')
+@login_required
+def feed():
+    # Get the IDs of users that the current user follows
+    following_ids = [follow.followed_id for follow in current_user.following]
+    
+    # Get stories from followed users, ordered by creation date
+    stories = Story.query.filter(
+        Story.author_id.in_(following_ids),
+        Story.is_published == True
+    ).order_by(Story.created_at.desc()).all()
+    
+    return render_template('story/feed.html', stories=stories)
+
+@main.route('/drafts')
+@login_required
+def drafts():
+    drafts = Story.query.filter_by(author=current_user, is_published=False).order_by(Story.updated_at.desc()).all()
+    return render_template('drafts.html', title='My Drafts', drafts=drafts)
+
+@main.route('/statistics')
+@login_required
+def statistics():
+    # Get overall statistics
+    overall_stats = {
+        'views': db.session.query(db.func.sum(Story.views)).filter(Story.author_id == current_user.id).scalar() or 0,
+        'likes': db.session.query(db.func.sum(Story.likes)).filter(Story.author_id == current_user.id).scalar() or 0,
+        'comments': db.session.query(db.func.count(Comment.id)).filter(Comment.story_id.in_(
+            db.session.query(Story.id).filter(Story.author_id == current_user.id)
+        )).scalar() or 0,
+        'followers': current_user.followers.count()
+    }
+
+    # Get monthly statistics
+    month_ago = datetime.utcnow() - timedelta(days=30)
+    monthly_stats = {
+        'views': db.session.query(db.func.sum(Story.views)).filter(
+            Story.author_id == current_user.id,
+            Story.created_at >= month_ago
+        ).scalar() or 0,
+        'likes': db.session.query(db.func.sum(Story.likes)).filter(
+            Story.author_id == current_user.id,
+            Story.created_at >= month_ago
+        ).scalar() or 0,
+        'comments': db.session.query(db.func.count(Comment.id)).filter(
+            Comment.story_id.in_(
+                db.session.query(Story.id).filter(Story.author_id == current_user.id)
+            ),
+            Comment.created_at >= month_ago
+        ).scalar() or 0,
+        'new_followers': db.session.query(db.func.count(Follow.id)).filter(
+            Follow.followed_id == current_user.id,
+            Follow.created_at >= month_ago
+        ).scalar() or 0
+    }
+
+    # Get weekly statistics
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    weekly_stats = {
+        'views': db.session.query(db.func.sum(Story.views)).filter(
+            Story.author_id == current_user.id,
+            Story.created_at >= week_ago
+        ).scalar() or 0,
+        'likes': db.session.query(db.func.sum(Story.likes)).filter(
+            Story.author_id == current_user.id,
+            Story.created_at >= week_ago
+        ).scalar() or 0,
+        'comments': db.session.query(db.func.count(Comment.id)).filter(
+            Comment.story_id.in_(
+                db.session.query(Story.id).filter(Story.author_id == current_user.id)
+            ),
+            Comment.created_at >= week_ago
+        ).scalar() or 0,
+        'new_followers': db.session.query(db.func.count(Follow.id)).filter(
+            Follow.followed_id == current_user.id,
+            Follow.created_at >= week_ago
+        ).scalar() or 0
+    }
+
+    # Calculate Pulse Score
+    # MS = RoundTo10(0.05F + 0.02√V + 0.1L + 0.5C)
+    # Where F = followers, V = views in last 20 days, L = likes, C = comments
+    twenty_days_ago = datetime.utcnow() - timedelta(days=20)
+    recent_views = db.session.query(db.func.sum(Story.views)).filter(
+        Story.author_id == current_user.id,
+        Story.created_at >= twenty_days_ago
+    ).scalar() or 0
+
+    pulse_score = 0.05 * overall_stats['followers'] + \
+                 0.02 * math.sqrt(recent_views) + \
+                 0.1 * overall_stats['likes'] + \
+                 0.5 * overall_stats['comments']
+    
+    # Round to nearest multiple of 10
+    pulse_score = round(pulse_score / 10) * 10
+
+    # Determine tier and message
+    if pulse_score >= 250:
+        tier = "Nova"
+        tier_emoji = "✨🟡"
+        message = "You're shining brighter than ever. Keep inspiring, creating, and leading by example — you're setting the bar."
+    elif pulse_score >= 200:
+        tier = "Surge"
+        tier_emoji = "🟤"
+        message = "Your reach and influence are expanding. Your content is thriving — this is your creative zone."
+    elif pulse_score >= 170:
+        tier = "Pulse"
+        tier_emoji = "🟣"
+        message = "You're in sync with your audience! This is a strong, active phase. Lean into it and share your best work."
+    elif pulse_score >= 140:
+        tier = "Shine"
+        tier_emoji = "🔵"
+        message = "You're becoming a familiar name. Your effort shows — stay consistent and keep the energy high."
+    elif pulse_score >= 110:
+        tier = "Glow"
+        tier_emoji = "🟢"
+        message = "Your content is connecting! Now's the time to build your style, voice, and loyal readers."
+    elif pulse_score >= 80:
+        tier = "Flame"
+        tier_emoji = "🟡"
+        message = "You're heating up! People are noticing your work — keep up the momentum and stay active."
+    elif pulse_score >= 50:
+        tier = "Spark"
+        tier_emoji = "🟠"
+        message = "You're beginning to find your rhythm! Keep sharing and engaging to grow your presence."
+    else:
+        tier = "Seed"
+        tier_emoji = "🔴"
+        message = "You're just starting out. Post consistently, explore your voice, and connect with readers — small steps lead to big progress."
+
+    return render_template('statistics.html',
+                         title='Statistics',
+                         overall_stats=overall_stats,
+                         monthly_stats=monthly_stats,
+                         weekly_stats=weekly_stats,
+                         pulse_score=pulse_score,
+                         tier=tier,
+                         tier_emoji=tier_emoji,
+                         tier_message=message)

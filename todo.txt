@@ -1,0 +1,56 @@
+Pulse Monetization Score (MS)=RoundTo10(0.05F+0.02root(V)+0.1L+0.5C)
+Where:
+
+𝐹
+F = number of followers
+
+𝑉
+V = views in the last 20 days
+
+𝐿
+L = likes across all content
+
+𝐶
+C = total comments
+
+RoundTo10(x) = rounds x to the nearest multiple of 10 (e.g., 93 → 90)
+
+| Tier Name    | MS Score Range   | Description                                 |
+| ------------ | --------------   | ------------------------------------------- |
+| 🔴 **Seed**  | 0–49            | Just started; learning and growing.         |
+| 🟠 **Spark** | 50–79           | Gaining some attention. Keep pushing!       |
+| 🟡 **Flame** | 80–109          | Solid start; visible to early readers.      |
+| 🟢 **Glow**  | 110–139         | Strong growth and decent engagement.        |
+| 🔵 **Shine** | 140–169         | Influential! Close to monetization.         |
+| 🟣 **Pulse** | 170–199         | Monetization unlocked! You're a pro.        |
+| 🟤 **Surge** | 200–249         | Top-tier creator. Consider premium content. |
+| 🟡✨ **Nova** | 250+           | Elite! You're among the platform's best.    |
+
+
+Pulse-Based Revenue Sharing Model
+✅ Step 1: Unlock Monetization
+One-time requirement: Reach Pulse Score ≥ 170 in any 20-day window.
+
+Once unlocked, monetization is permanent.
+
+📈 Step 2: Revenue % Scales with Pulse Tier
+Pulse Score Tier	Tier Name	Revenue Share %	Notes
+250+	Nova	90%	Elite creator
+200–249	Surge	80%	Top-tier visibility
+170–199	Pulse	70%	Monetization baseline
+140–169	Shine	50%	Active but reduced
+110–139	Glow	30%	Minimal share
+< 110	Below Glow	10% or 0%	Monetized but very low %
+
+💡 You can optionally set a minimum score (e.g., 100) below which revenue is paused, but this depends on how strict you want to be.
+
+🎮 Example Walkthrough:
+20-Day Period	Pulse Score	Monetized?	Revenue %
+Day 1–20	175	✅ Yes	70%
+Day 21–40	145	✅ Yes	50%
+Day 41–60	210	✅ Yes	80%
+Day 61–80	95	✅ Yes	10%
+
+make the following changes :, on statistics page add an i button beside pulse score display the tier list (not messages only list and range), if a logged out (or not signed in user) tries to like a writing(content), then redirect it to login page,
+a not signed in user can also view the profile (of other users) but cannot follow
+make all these changes without affecting the other working things.

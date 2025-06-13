@@ -1,308 +1,281 @@
 {% extends "base.html" %}
 
+{% block head %}
+<style>
+    .reading-options {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: #ffffff;
+        padding: 12px 15px;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        z-index: 1000;
+        width: 200px;
+    }
+
+    .reading-options .form-group {
+        margin-bottom: 10px;
+    }
+
+    .reading-options label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 6px;
+    }
+
+    .reading-options select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        background-color: #fff;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23333' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        padding-right: 28px;
+    }
+
+    .reading-options select:focus {
+        outline: none;
+        border-color: #80bdff;
+        box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+    }
+
+    /* Dark mode styles */
+    body.dark-mode .reading-options {
+        background: #2d3136;
+        border: 1px solid #404040;
+    }
+
+    body.dark-mode .reading-options label {
+        color: #e0e0e0;
+    }
+
+    body.dark-mode .reading-options select {
+        background-color: #23272b;
+        border-color: #404040;
+        color: #e0e0e0;
+    }
+</style>
+
+{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <article class="story-content">
-            <header class="mb-4">
-                <h1 class="display-4">{{ story.title }}</h1>
+<div class="reading-options">
+    <div class="form-group">
+        <label>Font Size</label>
+        <select id="fontSize" class="form-select">
+            <option value="small">Small</option>
+            <option value="medium" selected>Medium</option>
+            <option value="large">Large</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Background</label>
+        <select id="bgColorDropdown" class="form-select">
+            <option value="#ffffff">White</option>
+            <option value="#1a1a1a">Dark</option>
+            <option value="#f4ecd8">Sepia</option>
+            <option value="#edf2ff">Cool</option>
+        </select>
+    </div>
+</div>
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Story Header -->
+            <div class="mb-4">
+                <div class="d-flex align-items-center mb-2">
+                    <img src="{{ url_for('static', filename='uploads/' + story.author.profile_picture) if story.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
+                         class="rounded-circle me-2" width="32" height="32" alt="{{ story.author.username }}">
+                    <a href="{{ url_for('main.profile', username=story.author.username) }}" class="text-decoration-none text-dark">
+                        {{ story.author.username }}
+                    </a>
+                    <span class="badge bg-secondary ms-2">{{ story.writing_type|capitalize }}</span>
+                </div>
+                <h1 class="h2 mb-3">{{ story.title }}</h1>
+                {% if story.writing_type == 'poetry' and story.form_type %}
+                <span class="badge bg-info mb-2">{{ story.form_type|capitalize }}</span>
+                {% endif %}
+                {% if story.writing_type == 'quote' %}
                 <div class="mb-2">
-                    <span class="badge bg-secondary">{{ story.writing_type|capitalize }}</span>
+                    {% if story.quote_author %}<span class="text-muted">— {{ story.quote_author }}</span>{% endif %}
+                    {% if story.quote_source %}<span class="text-muted ms-2"><i>({{ story.quote_source }})</i></span>{% endif %}
+                    {% if story.quote_category %}<span class="badge bg-secondary ms-2">{{ story.quote_category|capitalize }}</span>{% endif %}
                 </div>
+                {% endif %}
+                {% if story.writing_type == 'essay' %}
+                {% if story.subtitle %}<div class="lead mb-2 text-muted">{{ story.subtitle }}</div>{% endif %}
+                {% if story.essay_category %}<span class="badge bg-info mb-2">{{ story.essay_category|capitalize }}</span>{% endif %}
+                {% endif %}
+                {% if story.writing_type == 'other' and story.custom_type %}
+                <span class="badge bg-info mb-2">{{ story.custom_type|capitalize }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Story Content -->
+            <div class="story-content mb-4" id="storyContent">
+                {% if story.writing_type == 'poetry' %}
+                <div class="poetry-content" style="white-space: pre-line; font-family: 'Georgia', serif; font-size: 1.2em;">
+                    {{ story.content|safe }}
+                    {% if story.notes %}
+                    <div class="alert alert-secondary mt-3"><strong>Author Notes:</strong> {{ story.notes }}</div>
+                    {% endif %}
+                </div>
+                {% elif story.writing_type == 'quote' %}
+                <blockquote class="blockquote p-4 bg-light rounded">
+                    <p class="mb-0" style="font-size: 1.5em; font-style: italic;">{{ story.content }}</p>
+                </blockquote>
+                {% elif story.writing_type == 'essay' %}
+                <div class="essay-content">
+                    {{ story.content|safe }}
+                    {% if story.references %}
+                    <div class="mt-4">
+                        <h5>References</h5>
+                        <div class="references">{{ story.references|safe }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="story-body">
+                    {{ story.content|safe }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Story Footer -->
+            <div class="story-footer">
                 <div class="d-flex align-items-center mb-3">
-                    <img src="{{ url_for('static', filename='uploads/' + story.author.profile_picture) }}" 
-                         class="rounded-circle me-2" style="width: 40px; height: 40px;" 
-                         alt="{{ story.author.username }}">
-                    <div>
-                        <a href="{{ url_for('main.profile', username=story.author.username) }}" class="text-decoration-none">
-                            {{ story.author.username }}
-                        </a>
-                        <div class="text-muted small">
-                            Published {{ story.created_at.strftime('%B %d, %Y') }}
-                        </div>
+                    <div class="me-3">
+                        <form method="POST" action="{{ url_for('main.like_story', story_id=story.id) }}" class="d-inline">
+                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-heart{% if current_user.is_authenticated and story in current_user.liked_stories %} text-danger{% endif %}"></i>
+                                <span class="ms-1">{{ story.likes }}</span>
+                            </button>
+                        </form>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                    <div class="me-3">
+                        <form method="POST" action="{{ url_for('main.save_story', story_id=story.id) }}" class="d-inline">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-bookmark{% if story in current_user.saved_stories %} text-primary{% endif %}"></i>
+                                <span class="ms-1">Save</span>
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                    <div class="text-muted">
+                        <small>
+                            <i class="fas fa-eye me-1"></i>{{ story.views }} views
+                            <span class="mx-2">•</span>
+                            <i class="fas fa-clock me-1"></i>{{ story.created_at.strftime('%B %d, %Y') }}
+                        </small>
                     </div>
                 </div>
-                {% if story.cover_image %}
-                <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
-                     class="img-fluid rounded mb-4" alt="{{ story.title }}">
+
+                <!-- Tags -->
+                {% if story.tags %}
+                <div class="mb-4">
+                    {% for tag in story.tags %}
+                    <a href="{{ url_for('main.discover', tag=tag.name) }}" class="badge bg-light text-dark text-decoration-none me-1">
+                        #{{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
                 {% endif %}
-            </header>
 
-            {% if story.writing_type == 'poetry' %}
-            <div class="story-body mb-4" style="white-space: pre-line; font-family: 'Georgia', serif; font-size: 1.2em;">
-                {{ story.content|safe }}
-            </div>
-            {% elif story.writing_type == 'quote' %}
-            <blockquote class="blockquote mb-4">
-                <p class="mb-0">{{ story.content }}</p>
-                <footer class="blockquote-footer">{{ story.title if story.title != 'Quote' else story.author.username }}</footer>
-            </blockquote>
-            {% elif story.writing_type == 'webnovel' and story.novel %}
-            <h4>Volumes</h4>
-            <div class="accordion" id="volumesAccordion">
-                {% for volume in story.novel.volumes.order_by(Volume.order).all() %}
-                <div class="accordion-item mb-2">
-                    <h2 class="accordion-header" id="heading{{ volume.id }}">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ volume.id }}" aria-expanded="false" aria-controls="collapse{{ volume.id }}">
-                            {{ volume.title }}
-                        </button>
-                    </h2>
-                    <div id="collapse{{ volume.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ volume.id }}" data-bs-parent="#volumesAccordion">
-                        <div class="accordion-body">
-                            <ul class="list-group">
-                            {% for chapter in volume.chapters.order_by(Chapter.order).all() %}
-                                <li class="list-group-item">
-                                    <a href="{{ url_for('main.chapter_view_slug', novel_slug=story.novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}">{{ chapter.title }}</a>
-                                </li>
-                            {% else %}
-                                <li class="list-group-item text-muted">No chapters yet.</li>
-                            {% endfor %}
-                            </ul>
+                <!-- Comments Section -->
+                <div class="comments-section mt-4">
+                    <h4 class="mb-3">Comments</h4>
+                    {% if current_user.is_authenticated %}
+                    <form method="POST" action="{{ url_for('main.comment', story_id=story.id) }}" class="mb-4">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.content(class="form-control", rows=3, placeholder="Write a comment...") }}
                         </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="story-body mb-4">
-                {{ story.content|safe }}
-            </div>
-            {% endif %}
-
-            <div class="story-actions mb-4">
-                <div class="d-flex gap-2 flex-wrap align-items-center mb-3">
-                    {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('main.like_story', story_id=story.id) }}" class="btn btn-outline-primary mb-2">
-                        <i class="fas fa-heart"></i> Like ({{ story.likes }})
-                    </a>
-                    {% else %}
-                    <button class="btn btn-outline-primary mb-2" disabled>
-                        <i class="fas fa-heart"></i> Like ({{ story.likes }})
-                    </button>
-                    {% endif %}
-                    <button class="btn btn-outline-secondary mb-2" onclick="shareStory('{{ story.id }}')">
-                        <i class="fas fa-share"></i> Share
-                    </button>
-                    {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('main.save_story', story_id=story.id) }}" class="btn btn-outline-success mb-2">
-                        <i class="fas fa-bookmark"></i> Save
-                    </a>
-                    {% endif %}
-                </div>
-                
-                <!-- Publish button for author of unpublished stories -->
-                {% if current_user.is_authenticated and current_user == story.author and not story.is_published %}
-                <div class="mt-3">
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i> This story is not published yet. It won't appear in the Discover section until you publish it.
-                    </div>
-                    <form method="POST" action="{{ url_for('main.publish_story', story_id=story.id) }}">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-globe me-1"></i> Publish Story
-                        </button>
+                        {{ form.submit(class="btn btn-primary") }}
                     </form>
-                </div>
-                {% endif %}
-            </div>
+                    {% endif %}
 
-            <div class="story-tags mb-4">
-                {% for tag in story.tags %}
-                <a href="{{ url_for('main.tag', tag_name=tag.name) }}" class="badge bg-primary text-decoration-none">
-                    {{ tag.name }}
-                </a>
-                {% endfor %}
-            </div>
-        </article>
-
-        <section class="comments-section">
-            <h3>Comments</h3>
-            {% if current_user.is_authenticated %}
-            <div id="commentFormContainer">
-                <form method="POST" action="{{ url_for('main.comment', story_id=story.id) }}" class="mb-4">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
-                        {{ form.content.label(class="form-label") }}
-                        {{ form.content(class="form-control", rows=3) }}
-                    </div>
-                    {{ form.submit(class="btn btn-primary w-100") }}
-                </form>
-            </div>
-            {% endif %}
-
-            <div class="comments-list">
-                {% for comment in story.comments.filter_by(parent_id=None).order_by(Comment.created_at.asc()) %}
-                <div class="comment mb-3">
-                    <div class="d-flex">
-                        <img src="{{ url_for('static', filename='uploads/' + comment.author.profile_picture) }}" 
-                             class="rounded-circle me-2" style="width: 32px; height: 32px;" 
-                             alt="{{ comment.author.username }}">
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center gap-2">
-                                    <a href="{{ url_for('main.profile', username=comment.author.username) }}" 
-                                       class="text-decoration-none fw-bold">
+                    {% for comment in story.comments.filter_by(parent_id=None).order_by(Comment.created_at.desc()).all() %}
+                    <div class="comment mb-3">
+                        <div class="d-flex">
+                            <img src="{{ url_for('static', filename='uploads/' + comment.author.profile_picture) if comment.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
+                                 class="rounded-circle me-2" width="32" height="32" alt="{{ comment.author.username }}">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <a href="{{ url_for('main.profile', username=comment.author.username) }}" class="text-decoration-none text-dark fw-bold me-2">
                                         {{ comment.author.username }}
                                     </a>
-                                    {% if comment.author == story.author %}
-                                    <span class="badge bg-primary ms-1">Author</span>
+                                    <small class="text-muted">{{ comment.created_at.strftime('%B %d, %Y') }}</small>
+                                    {% if current_user.is_authenticated and (current_user == comment.author or current_user == story.author) %}
+                                    <div class="ms-auto">
+                                        <a href="{{ url_for('main.edit_comment', comment_id=comment.id) }}" class="btn btn-sm btn-outline-primary me-1">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        <form method="POST" action="{{ url_for('main.delete_comment', comment_id=comment.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this comment?')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
                                     {% endif %}
                                 </div>
-                                <small class="text-muted">
-                                    {{ comment.created_at.strftime('%B %d, %Y %H:%M') }}
-                                </small>
-                                {% if current_user.is_authenticated and (current_user == comment.author or current_user == story.author) %}
-                                <form method="POST" action="{{ url_for('main.delete_comment', comment_id=comment.id) }}" style="display:inline;">
-                                    <button type="submit" class="btn btn-link btn-sm text-danger p-0 ms-2" title="Delete Comment" onclick="return confirm('Delete this comment?');">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
-                                {% endif %}
-                            </div>
-                            <p class="mb-1">{{ comment.content }}</p>
-                            <div class="comment-actions mb-2">
-                                <!-- Reply button removed -->
+                                <p class="mb-1">{{ comment.content }}</p>
                             </div>
                         </div>
                     </div>
-                </div>
-                {% endfor %}
-            </div>
-        </section>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">About the Author</h5>
-                <div class="d-flex align-items-center mb-3">
-                    <img src="{{ url_for('static', filename='uploads/' + story.author.profile_picture) }}" 
-                         class="rounded-circle me-2" style="width: 64px; height: 64px;" 
-                         alt="{{ story.author.username }}">
-                    <div>
-                        <a href="{{ url_for('main.profile', username=story.author.username) }}" class="text-decoration-none">
-                            {{ story.author.username }}
-                        </a>
-                        <p class="text-muted small mb-0">{{ story.author.stories.count() }} stories</p>
-                    </div>
-                </div>
-                <p class="card-text">{{ story.author.bio }}</p>
-                {% if current_user.is_authenticated and current_user != story.author %}
-                <a href="{{ url_for('main.follow', username=story.author.username) }}" class="btn btn-primary w-100">
-                    {% if current_user.is_following(story.author) %}
-                        Unfollow
-                    {% else %}
-                        Follow
-                    {% endif %}
-                </a>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">More from {{ story.author.username }}</h5>
-                <div class="list-group list-group-flush">
-                    {% for other_story in story.author.stories.filter(Story.id != story.id).limit(3).all() %}
-                    <a href="{{ url_for('main.story', story_id=other_story.id) }}" class="list-group-item list-group-item-action">
-                        <h6 class="mb-1">{{ other_story.title }}</h6>
-                        <small class="text-muted">{{ other_story.created_at.strftime('%B %d, %Y') }}</small>
-                    </a>
                     {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock content %}
 
 {% block scripts %}
 {{ super() }}
 <script>
-function likeStory(storyId) {
-    fetch(`/api/story/${storyId}/like`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const likeButton = document.querySelector(`button[onclick="likeStory('${storyId}')"]`);
-            const likeCount = likeButton.querySelector('i').nextSibling.textContent;
-            const newCount = parseInt(likeCount.match(/\d+/)[0]) + 1;
-            likeButton.querySelector('i').nextSibling.textContent = ` Like (${newCount})`;
-            showToast('Story liked successfully!');
-        }
-    })
-    .catch(error => {
-        showToast('Error liking story', 'error');
-    });
-}
-
-function shareStory(storyId) {
-    const url = window.location.origin + `/story/${storyId}`;
-    if (navigator.share) {
-        navigator.share({
-            title: document.title,
-            url: url
-        })
-        .then(() => showToast('Story shared successfully!'))
-        .catch(error => showToast('Error sharing story', 'error'));
-    } else {
-        navigator.clipboard.writeText(url)
-            .then(() => showToast('Link copied to clipboard!'))
-            .catch(error => showToast('Error copying link', 'error'));
-    }
-}
-
-function addToReadingList(storyId) {
-    fetch(`/api/story/${storyId}/reading-list`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Added to reading list!');
-        }
-    })
-    .catch(error => {
-        showToast('Error adding to reading list', 'error');
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    var btn = document.getElementById('showCommentFormBtn');
-    var form = document.getElementById('commentFormContainer');
-    if (btn && form) {
-        btn.addEventListener('click', function() {
-            console.log('Comment button clicked');
-            form.classList.toggle('d-none');
-            if (!form.classList.contains('d-none')) {
-                var textarea = form.querySelector('textarea');
-                if (textarea) textarea.focus();
-                form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.addEventListener('DOMContentLoaded', function() {
+        // Font size control
+        const fontSizeSelect = document.getElementById('fontSize');
+        const storyContent = document.getElementById('storyContent');
+        
+        fontSizeSelect.addEventListener('change', function() {
+            const size = this.value;
+            switch(size) {
+                case 'small':
+                    storyContent.style.fontSize = '0.9em';
+                    break;
+                case 'medium':
+                    storyContent.style.fontSize = '1em';
+                    break;
+                case 'large':
+                    storyContent.style.fontSize = '1.2em';
+                    break;
             }
         });
-    }
-});
+    
+        const bgColorDropdown = document.getElementById('bgColorDropdown');
+        bgColorDropdown.addEventListener('change', function() {
+            const color = this.value;
+            storyContent.style.backgroundColor = color;
+            // Set text color based on background
+            if (color === '#1a1a1a') {
+                storyContent.style.color = '#ffffff';
+            } else {
+                storyContent.style.color = '#000000';
+            }
+            storyContent.style.padding = '20px';
+            storyContent.style.borderRadius = '8px';
+        });
+    });
 </script>
-
-@media (max-width: 768px) {
-    .story-actions .btn {
-        width: 100%;
-        margin-bottom: 0.5rem;
-    }
-    .comments-section {
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-    }
-}
-
-<style>
-.d-none { display: none !important; }
-</style>
-{% endblock %}
+{% endblock scripts %}

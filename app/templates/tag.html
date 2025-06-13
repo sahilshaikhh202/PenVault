@@ -2,71 +2,95 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="mb-4">Stories tagged with "{{ tag.name }}"</h1>
-    
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-        {% for story in stories.items %}
-        <div class="col">
-            <div class="card h-100">
-                {% if story.cover_image %}
-                <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" class="card-img-top" alt="{{ story.title }}">
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ story.title }}</h5>
-                    <p class="card-text">{{ story.summary }}</p>
-                </div>
-                <div class="card-footer">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">By <a href="{{ url_for('main.profile', username=story.author.username) }}">{{ story.author.username }}</a></small>
-                        <a href="{{ url_for('main.story', story_id=story.id) }}" class="btn btn-sm btn-primary">Read</a>
+    <form method="get" action="{{ url_for('main.tag_search') }}" class="mb-4">
+        <div class="input-group">
+            <input type="text" 
+                   class="form-control" 
+                   name="search" 
+                   placeholder="Search for a tag... (e.g. #fantasy)" 
+                   value="{{ search or '' }}"
+                   pattern="#.*"
+                   title="Tag search must start with #">
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+        {% if not search or not search.startswith('#') %}
+        <small class="text-muted">Tag search must start with # (e.g. #fantasy)</small>
+        {% endif %}
+    </form>
+
+    {% if tag %}
+        <h1 class="mb-4">Stories tagged with "#{{ tag.name }}"</h1>
+        {% if stories and stories.items|length > 0 %}
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for story in stories.items %}
+            <div class="col">
+                <div class="card h-100">
+                    {% if story.cover_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" class="card-img-top" alt="{{ story.title }}">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ story.title }}</h5>
+                        <p class="card-text">{{ story.summary }}</p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">By <a href="{{ url_for('main.profile', username=story.author.username) }}">{{ story.author.username }}</a></small>
+                            <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail', novel_id=story.novel.id) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" class="btn btn-sm btn-primary">Read</a>
+                        </div>
                     </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-    
-    <!-- Pagination -->
-    <nav aria-label="Page navigation" class="mt-4">
-        <ul class="pagination justify-content-center">
-            {% if stories.has_prev %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=stories.prev_num) }}">Previous</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-                <span class="page-link">Previous</span>
-            </li>
-            {% endif %}
-            
-            {% for page_num in stories.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-                {% if page_num %}
-                    {% if page_num == stories.page %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ page_num }}</span>
-                    </li>
-                    {% else %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=page_num) }}">{{ page_num }}</a>
-                    </li>
-                    {% endif %}
+        <!-- Pagination -->
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if stories.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=stories.prev_num) }}">Previous</a>
+                </li>
                 {% else %}
                 <li class="page-item disabled">
-                    <span class="page-link">...</span>
+                    <span class="page-link">Previous</span>
                 </li>
                 {% endif %}
-            {% endfor %}
-            
-            {% if stories.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=stories.next_num) }}">Next</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-                <span class="page-link">Next</span>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
+                {% for page_num in stories.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == stories.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                {% if stories.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=stories.next_num) }}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% else %}
+            <div class="alert alert-info">No stories found for this tag.</div>
+        {% endif %}
+    {% elif search %}
+        {% if not search.startswith('#') %}
+            <div class="alert alert-warning">Please start your tag search with # (e.g. #fantasy)</div>
+        {% else %}
+            <div class="alert alert-warning">No content found for tag "{{ search }}"</div>
+        {% endif %}
+    {% endif %}
 </div>
 {% endblock %}

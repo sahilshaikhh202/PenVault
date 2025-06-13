@@ -38,7 +38,31 @@
                                 <span class="badge bg-secondary ms-2">{{ story.writing_type|capitalize }}</span>
                             </div>
                             <h5 class="card-title">{{ story.title }}</h5>
-                            <p class="card-text small text-muted">{{ story.summary[:100] }}{% if story.summary and story.summary|length > 100 %}...{% endif %}</p>
+                            {% if story.writing_type == 'poetry' and story.form_type %}
+                            <span class="badge bg-info mb-1">{{ story.form_type|capitalize }}</span>
+                            {% endif %}
+                            {% if story.writing_type == 'quote' %}
+                            <p class="card-text small text-muted">{{ story.content[:100] }}{% if story.content|length > 100 %}...{% endif %}</p>
+                            <div class="mb-1">
+                                {% if story.quote_author %}<span class="text-muted">— {{ story.quote_author }}</span>{% endif %}
+                                {% if story.quote_category %}<span class="badge bg-secondary ms-2">{{ story.quote_category|capitalize }}</span>{% endif %}
+                            </div>
+                            {% elif story.writing_type == 'essay' %}
+                            {% if story.subtitle %}<div class="text-muted small mb-1">{{ story.subtitle }}</div>{% endif %}
+                            {% if story.essay_category %}<span class="badge bg-info mb-1">{{ story.essay_category|capitalize }}</span>{% endif %}
+                            {% if story.summary %}
+                            <p class="card-text small text-muted">{{ story.summary[:100] }}{% if story.summary|length > 100 %}...{% endif %}</p>
+                            {% endif %}
+                            {% elif story.writing_type == 'other' %}
+                            {% if story.custom_type %}<span class="badge bg-info mb-1">{{ story.custom_type|capitalize }}</span>{% endif %}
+                            {% if story.summary %}
+                            <p class="card-text small text-muted">{{ story.summary[:100] }}{% if story.summary|length > 100 %}...{% endif %}</p>
+                            {% endif %}
+                            {% else %}
+                            {% if story.summary %}
+                            <p class="card-text small text-muted">{{ story.summary[:100] }}{% if story.summary|length > 100 %}...{% endif %}</p>
+                            {% endif %}
+                            {% endif %}
                             <div class="mb-2">
                                 {% for tag in story.tags %}
                                 <a href="{{ url_for('main.tag', tag_name=tag.name) }}" class="badge bg-primary text-white text-decoration-none me-1">{{ tag.name }}</a>
@@ -48,9 +72,10 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center">
                                         <span class="me-3"><i class="far fa-heart me-1"></i> {{ story.likes }}</span>
-                                        <span><i class="far fa-comment me-1"></i> {{ story.comments.count() }}</span>
+                                        <span class="me-3"><i class="far fa-comment me-1"></i> {{ story.comments.count() }}</span>
+                                        <span><i class="fas fa-eye me-1"></i> {{ story.views }}</span>
                                     </div>
-                                    <a href="{{ url_for('main.story', story_id=story.id) }}" class="btn btn-sm btn-outline-primary">Read</a>
+                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail', novel_id=story.novel.id) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" class="btn btn-sm btn-outline-primary">Read</a>
                                 </div>
                             </div>
                         </div>
@@ -66,25 +91,15 @@
         <ul class="pagination justify-content-center">
             {% if stories.has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('main.discover', page=stories.prev_num) }}" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-                <a class="page-link" href="#" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
+                <a class="page-link" href="{{ url_for('main.discover', page=stories.prev_num, type=request.args.get('type', '')) }}">Previous</a>
             </li>
             {% endif %}
             
-            {% for page_num in stories.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% for page_num in stories.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
                 {% if page_num %}
-                    {% if page_num == stories.page %}
-                    <li class="page-item active"><a class="page-link" href="{{ url_for('main.discover', page=page_num) }}">{{ page_num }}</a></li>
-                    {% else %}
-                    <li class="page-item"><a class="page-link" href="{{ url_for('main.discover', page=page_num) }}">{{ page_num }}</a></li>
-                    {% endif %}
+                    <li class="page-item {% if page_num == stories.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('main.discover', page=page_num, type=request.args.get('type', '')) }}">{{ page_num }}</a>
+                    </li>
                 {% else %}
                     <li class="page-item disabled"><span class="page-link">...</span></li>
                 {% endif %}
@@ -92,15 +107,7 @@
             
             {% if stories.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('main.discover', page=stories.next_num) }}" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-                <a class="page-link" href="#" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
+                <a class="page-link" href="{{ url_for('main.discover', page=stories.next_num, type=request.args.get('type', '')) }}">Next</a>
             </li>
             {% endif %}
         </ul>

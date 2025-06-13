@@ -1,17 +1,116 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container mt-4">
-    <div class="mb-2">
+    <div class="mb-2 d-flex justify-content-between align-items-center">
+        <div>
         <a href="{{ url_for('main.novel_detail_slug', novel_slug=novel.slug) }}">&larr; Back to Novel</a>
         {% if volume %} &middot; <a href="{{ url_for('main.volume_detail_slug', novel_slug=novel.slug, volume_slug=volume.slug) }}">Back to Volume</a>{% endif %}
+        </div>
+        <div>
+            {% if prev_chapter %}
+            <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=prev_chapter.volume.slug, chapter_slug=prev_chapter.slug) }}" class="btn btn-outline-secondary btn-sm me-2">&larr; Previous Chapter</a>
+            {% endif %}
+            {% if next_chapter %}
+            <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=next_chapter.volume.slug, chapter_slug=next_chapter.slug) }}" class="btn btn-outline-secondary btn-sm">Next Chapter &rarr;</a>
+            {% endif %}
+        </div>
     </div>
     <h2>{{ chapter.title }}</h2>
     <div class="mb-3 text-muted">Volume: {{ volume.title if volume else 'N/A' }}</div>
-    <div class="mb-4" style="white-space: pre-line; font-size: 1.15em;">
+    <div class="position-relative">
+        <div class="chapter-toolbar position-absolute top-0 end-0 p-2" style="z-index:2;">
+            <div class="btn-group me-2">
+                <button class="btn btn-sm btn-outline-secondary" id="decreaseTextSize" title="Decrease text size">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" id="increaseTextSize" title="Increase text size">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <select class="form-select form-select-sm d-inline-block" style="width: auto;" id="bgColorSelect" title="Background color">
+                <option value="#fff">White</option>
+                <option value="#000">Dark</option>
+                <option value="#f7f7d7">Sepia</option>
+                <option value="#e3f0ff">Cool</option>
+            </select>
+        </div>
+        <div id="chapterContentContainer" class="mb-4 p-4 rounded shadow-sm" style="white-space: pre-line; font-size: 18px; background: #fff; color: #222; min-height: 200px; transition: background 0.2s, font-size 0.2s, color 0.2s;">
         {{ chapter.content|safe }}
+        </div>
     </div>
     {% if chapter.author_notes %}
     <div class="alert alert-info"><strong>Author Notes:</strong><br>{{ chapter.author_notes }}</div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.chapter-toolbar {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#chapterContentContainer {
+    transition: font-size 0.2s ease, background-color 0.3s ease, color 0.3s ease !important;
+    line-height: 1.6;
+    padding: 2rem;
+    margin-top: 3rem;
+}
+
+.btn-group .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.form-select-sm {
+    padding-right: 2rem;
+}
+
+@media (max-width: 768px) {
+    .chapter-toolbar {
+        position: fixed !important;
+        bottom: 1rem !important;
+        top: auto !important;
+        right: 1rem !important;
+    }
+}
+
+/* Ensure text color changes are applied immediately */
+#chapterContentContainer * {
+    color: inherit !important;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function() {
+    console.log('Chapter view JS loaded');
+    const content = document.getElementById('chapterContentContainer');
+    const incBtn = document.getElementById('increaseTextSize');
+    const decBtn = document.getElementById('decreaseTextSize');
+    const bgSelect = document.getElementById('bgColorSelect');
+    let fontSize = 18;
+    incBtn.addEventListener('click', function() {
+        fontSize = Math.min(fontSize + 2, 36);
+        content.style.fontSize = fontSize + 'px';
+    });
+    decBtn.addEventListener('click', function() {
+        fontSize = Math.max(fontSize - 2, 12);
+        content.style.fontSize = fontSize + 'px';
+    });
+    bgSelect.addEventListener('change', function() {
+        content.style.background = this.value;
+        content.style.color = (this.value === '#000') ? '#fff' : '#222';
+    });
+})();
+</script>
+<!--
+NOTE: To fully support slug updates when a novel, volume, or chapter name changes,
+you should update the slug in the database and redirect to the new URL after editing.
+This requires changes in the edit routes for each model.
+-->
 {% endblock %} 

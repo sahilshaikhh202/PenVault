@@ -56,7 +56,9 @@ class StoryForm(FlaskForm):
         ('webnovel', 'Webnovel'),
         ('other', 'Other')
     ], default='story', validators=[DataRequired()])
+    tags = StringField('Tags (comma-separated)', validators=[Optional()])
     submit = SubmitField('Publish')
+    save_draft = SubmitField('Save as Draft')
 
 class PoetryForm(StoryForm):
     title = StringField('Poem Title', validators=[DataRequired(), Length(max=200)])
@@ -72,13 +74,16 @@ class PoetryForm(StoryForm):
         ('other', 'Other')
     ])
     notes = TextAreaField('Author Notes', validators=[Optional(), Length(max=500)])
+    tags = StringField('Tags (comma separated)', validators=[Optional()])
     submit = SubmitField('Publish Poem')
+    save_draft = SubmitField('Save as Draft')
 
     def validate_content(self, field):
         if field.data.count('\n') < 2:
             raise ValidationError('Poetry must contain at least 2 lines')
 
 class QuoteForm(FlaskForm):
+    title = StringField('Title (Optional)', validators=[Optional(), Length(max=200)])
     content = StringField('Quote', validators=[
         DataRequired(),
         Length(max=300, message="Quote must be 300 characters or less")
@@ -92,7 +97,9 @@ class QuoteForm(FlaskForm):
         ('philosophy', 'Philosophy'),
         ('other', 'Other')
     ])
+    tags = StringField('Tags (comma separated)', validators=[Optional()])
     submit = SubmitField('Publish Quote')
+    save_draft = SubmitField('Save as Draft')
 
 class EssayForm(StoryForm):
     title = StringField('Essay Title', validators=[DataRequired(), Length(max=200)])
@@ -111,6 +118,7 @@ class EssayForm(StoryForm):
     references = TextAreaField('References', validators=[Optional()])
     tags = StringField('Tags (comma separated)', validators=[Optional()])
     submit = SubmitField('Publish Essay')
+    save_draft = SubmitField('Save as Draft')
 
 class NovelForm(FlaskForm):
     title = StringField('Novel Title', validators=[DataRequired(), Length(max=200)])
@@ -156,11 +164,16 @@ class ChapterForm(FlaskForm):
 
 class OtherWritingForm(StoryForm):
     custom_type = StringField('Custom Type', validators=[DataRequired(), Length(max=50)])
+    tags = StringField('Tags (comma separated)', validators=[Optional()])
     pass
 
 class CommentForm(FlaskForm):
     content = TextAreaField('Comment', validators=[DataRequired(), Length(max=1000)])
     submit = SubmitField('Post Comment')
+
+class EditCommentForm(FlaskForm):
+    content = TextAreaField('Edit Comment', validators=[DataRequired(), Length(max=1000)])
+    submit = SubmitField('Update Comment')
 
 class SearchForm(FlaskForm):
     query = StringField('Search', validators=[DataRequired()])

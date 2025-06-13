@@ -24,8 +24,9 @@
             {{ form.is_premium(class="form-check-input") }}
             {{ form.is_premium.label(class="form-check-label") }}
         </div>
-        <div class="d-grid gap-2">
+        <div class="d-flex gap-2">
             {{ form.submit(class="btn btn-primary") }}
+            {{ form.save_draft(class="btn btn-outline-secondary") }}
         </div>
     </form>
 </div>

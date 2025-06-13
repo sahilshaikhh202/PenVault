@@ -6,88 +6,71 @@
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h3 class="card-title mb-4">Settings</h3>
-                    <div class="mb-4">
-                        <h5>Edit Profile</h5>
-                        <a href="{{ url_for('main.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a>
-                    </div>
-                    <hr>
-                    <div>
-                        <h5>Theme</h5>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="darkModeSwitch">
-                            <label class="form-check-label" for="darkModeSwitch">Enable Dark Mode</label>
+                    
+                    <form method="POST" action="{{ url_for('main.settings') }}" id="settingsForm">
+                        <div class="mb-4">
+                            <h5>Edit Profile</h5>
+                            <a href="{{ url_for('main.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a>
                         </div>
-                    </div>
+                        <hr>
+                        
+                        <div class="mb-4">
+                            <h5>Theme</h5>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="themeSwitch" name="theme" value="dark" {% if current_user.theme == 'dark' %}checked{% endif %}>
+                                <label class="form-check-label" for="themeSwitch">Dark Mode</label>
+                            </div>
+                            <small class="text-muted d-block mt-2">Choose between light and dark theme. Your preference will be saved across devices.</small>
+                        </div>
+                        <hr>
+                        
+                        <div class="mb-4">
+                            <h5>Saved List Privacy</h5>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="hideSavedListSwitch" name="hide_saved_list" {% if current_user.hide_saved_list %}checked{% endif %}>
+                                <label class="form-check-label" for="hideSavedListSwitch">
+                                    Hide my saved list from other users
+                                </label>
+                            </div>
+                        </div>
+                        <hr>
+                        
+                        <div class="mb-4">
+                            <h5>Recent Reads Privacy</h5>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="hideRecentReadsSwitch" name="hide_recent_reads" {% if current_user.hide_recent_reads %}checked{% endif %}>
+                                <label class="form-check-label" for="hideRecentReadsSwitch">
+                                    Hide my recent reads from other users
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Save All Settings</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+
 {% block scripts %}
 {{ super() }}
 <script>
-// Settings page dark mode toggle logic
-
-// Use DOMContentLoaded to ensure the page structure is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('settings.html script start (DOMContentLoaded)');
-    
-    const darkModeSwitch = document.getElementById('darkModeSwitch');
-
-    if (darkModeSwitch) {
-        console.log('settings.html: darkModeSwitch element found!', darkModeSwitch);
-
-        // Set initial state of the switch based on localStorage
-        const currentTheme = localStorage.getItem('theme');
-        console.log('settings.html: Initial theme from localStorage:', currentTheme);
-
-        if (currentTheme === 'dark') {
-            darkModeSwitch.checked = true;
-            console.log('settings.html: Initial switch state set to checked (dark)');
-        } else {
-            darkModeSwitch.checked = false;
-            console.log('settings.html: Initial switch state set to unchecked (light)');
-        }
-
-        // Add event listener for toggling
-        darkModeSwitch.addEventListener('change', function() {
-            console.log('settings.html: darkModeSwitch toggled');
-            if (this.checked) {
-                localStorage.setItem('theme', 'dark');
-                document.body.classList.add('dark-mode'); // Apply immediately for feedback
-                console.log('settings.html: Dark mode enabled, localStorage set to dark');
-            } else {
-                localStorage.setItem('theme', 'light');
-                document.body.classList.remove('dark-mode'); // Apply immediately for feedback
-                console.log('settings.html: Dark mode disabled, localStorage set to light');
-            }
-        });
-
-    } else {
-        console.error('settings.html: darkModeSwitch element NOT found!');
-        // Log nearby HTML to help diagnose if element ID is wrong or HTML not loaded
-        const themeContainer = document.querySelector('.form-check.form-switch');
-        if(themeContainer) {
-             console.log('settings.html: Parent container HTML:', themeContainer.innerHTML);
-        } else {
-             console.log('settings.html: Theme container not found either.');
-        }
+    const themeSwitch = document.getElementById('themeSwitch');
+    if (!themeSwitch) {
+        console.error('No element with id themeSwitch found!');
+        return;
     }
-    console.log('settings.html script end (DOMContentLoaded)');
+    themeSwitch.checked = document.documentElement.getAttribute('data-theme') === 'dark';
+    themeSwitch.addEventListener('change', function() {
+        const theme = this.checked ? 'dark' : 'light';
+        console.log('Theme toggled, new theme:', theme);
+        setTheme(theme);
+    });
 });
-
-// Also add a window.onload listener as a fallback/comparison
-window.onload = function() {
-    console.log('settings.html script start (window.onload)');
-    const darkModeSwitchOnLoad = document.getElementById('darkModeSwitch');
-    if(darkModeSwitchOnLoad) {
-        console.log('settings.html: darkModeSwitch element found on window.onload!', darkModeSwitchOnLoad);
-    } else {
-        console.error('settings.html: darkModeSwitch element NOT found on window.onload!');
-    }
-    console.log('settings.html script end (window.onload)');
-};
-
 </script>
-{% endblock %} 
+{% endblock %}

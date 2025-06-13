@@ -4,9 +4,35 @@
     <h2>{{ novel.title }}</h2>
     <div class="mb-3">
         <span class="badge bg-secondary">{{ novel.status|capitalize }}</span>
-        <span class="badge bg-info">{{ novel.genre|capitalize }}</span>
+        {% if novel.genre %}
+            <span class="badge bg-info">{{ novel.genre|capitalize }}</span>
+        {% endif %}
         {% if novel.is_mature %}<span class="badge bg-danger">Mature</span>{% endif %}
     </div>
+    
+    <!-- Add stats section -->
+    <div class="mb-3">
+        <div class="d-flex gap-3">
+            <div class="stats-item">
+                <i class="fas fa-book-open text-muted"></i>
+                <span>{{ volumes|length }} Volume{{ 's' if volumes|length != 1 }}</span>
+            </div>
+            <div class="stats-item">
+                <i class="fas fa-list text-muted"></i>
+                <span>
+                    {% set total_chapters = chapters|length %}
+                    {{ total_chapters }} Chapter{{ 's' if total_chapters != 1 }}
+                </span>
+            </div>
+            {% if novel.genre %}
+                <div class="stats-item">
+                    <i class="fas fa-bookmark text-muted"></i>
+                    <span>{{ novel.genre|capitalize }}</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
     <p>{{ novel.summary }}</p>
     {% if novel.cover_image %}
     <img src="{{ url_for('static', filename='uploads/' + novel.cover_image) }}" alt="Cover" class="img-fluid mb-3" style="max-width:200px;">
@@ -26,9 +52,9 @@
         {% for volume in volumes %}
             <div class="accordion-item mb-2">
                 <h2 class="accordion-header" id="heading{{ volume.id }}">
-                    <a href="{{ url_for('main.volume_detail_slug', novel_slug=novel.slug, volume_slug=volume.slug) }}" class="accordion-button collapsed" type="button">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ volume.id }}" aria-expanded="false" aria-controls="collapse{{ volume.id }}">
                         {{ volume.title }}
-                    </a>
+                    </button>
                 </h2>
                 <div id="collapse{{ volume.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ volume.id }}" data-bs-parent="#volumesAccordion">
                     <div class="accordion-body">
@@ -66,5 +92,72 @@
     {% else %}
         <p class="text-muted">No volumes yet. <a href="{{ url_for('main.new_volume', novel_id=novel.id) }}">Add the first volume</a>.</p>
     {% endif %}
+
+    <!-- Comments Section -->
+    <div class="comments-section mt-5">
+        <h4 class="mb-3">Comments</h4>
+        {% if current_user.is_authenticated %}
+        <form method="POST" action="{{ url_for('main.comment', story_id=novel.story.id) }}" class="mb-4">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.content(class="form-control", rows=3, placeholder="Write a comment...") }}
+            </div>
+            {{ form.submit(class="btn btn-primary") }}
+        </form>
+        {% endif %}
+
+        {% for comment in novel.story.comments.filter_by(parent_id=None).order_by(Comment.created_at.desc()).all() %}
+        <div class="comment mb-3 position-relative">
+            <div class="d-flex">
+                <img src="{{ url_for('static', filename='uploads/' + comment.author.profile_picture) if comment.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
+                     class="rounded-circle me-2" width="32" height="32" alt="{{ comment.author.username }}">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center mb-1">
+                        <a href="{{ url_for('main.profile', username=comment.author.username) }}" class="text-decoration-none text-dark fw-bold me-2">
+                            {{ comment.author.username }}
+                        </a>
+                        <small class="text-muted">{{ comment.created_at.strftime('%B %d, %Y') }}</small>
+                    </div>
+                    <p class="mb-1">{{ comment.content }}</p>
+                </div>
+                {% if current_user.is_authenticated and (current_user == comment.author or current_user == novel.story.author) %}
+                <div class="dropdown position-absolute top-0 end-0">
+                    <button class="btn btn-link text-dark p-0" type="button" id="dropdownMenuButtonComment{{ comment.id }}" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.2rem;">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonComment{{ comment.id }}">
+                        <li><a class="dropdown-item" href="{{ url_for('main.edit_comment', comment_id=comment.id) }}">Edit</a></li>
+                        <li>
+                            <form method="POST" action="{{ url_for('main.delete_comment', comment_id=comment.id) }}" onsubmit="return confirm('Delete this comment?');">
+                                <button type="submit" class="dropdown-item text-danger">Delete</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
-{% endblock %} 
+{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .stats-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6c757d;
+    }
+    
+    .stats-item i {
+        font-size: 0.9rem;
+    }
+    
+    .stats-item span {
+        font-size: 0.95rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title mb-4">Edit Comment</h4>
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.content(class="form-control", rows=3) }}
+                </div>
+                {{ form.submit(class="btn btn-primary") }}
+                {% if comment.story.writing_type == 'webnovel' and comment.story.novel %}
+                <a href="{{ url_for('main.novel_detail', novel_id=comment.story.novel.id) }}" class="btn btn-secondary ms-2">Cancel</a>
+                {% else %}
+                <a href="{{ url_for('main.story', story_id=comment.story.id) }}" class="btn btn-secondary ms-2">Cancel</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5" style="background-color: #f9f9fb;">
+    <h1 class="mb-5 fw-bold text-dark">📊 Your Creator Dashboard</h1>
+
+    <!-- Pulse Score Card -->
+    <div class="card shadow-sm mb-5 border-0" style="border-radius: 16px;">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="card-title h4 text-dark mb-1">Pulse Score</h2>
+                    <p class="text-muted small">Last 20-day window</p>
+                </div>
+                <div class="d-flex align-items-center">
+                    <button type="button" class="btn btn-link text-muted p-0 me-3" data-bs-toggle="modal" data-bs-target="#tierInfoModal">
+                        <i class="fas fa-info-circle fs-4"></i>
+                    </button>
+                    <div class="fs-3">{{ tier_emoji }}</div>
+                </div>
+            </div>
+            <div class="display-3 fw-bold text-gradient mb-3" style="color: #6f42c1;">{{ pulse_score }}</div>
+            <h5 class="text-dark mb-2">You're in the <span class="badge bg-primary rounded-pill">{{ tier }}</span> tier</h5>
+            <p class="text-muted">{{ tier_message }}</p>
+        </div>
+    </div>
+
+    <!-- Tier Info Modal -->
+    <div class="modal fade" id="tierInfoModal" tabindex="-1" aria-labelledby="tierInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tierInfoModalLabel">Pulse Score Tiers</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>✨🟡 Nova</span>
+                            <span class="badge bg-primary rounded-pill">250+</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>🟤 Surge</span>
+                            <span class="badge bg-primary rounded-pill">200-249</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>🟣 Pulse</span>
+                            <span class="badge bg-primary rounded-pill">170-199</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>🔵 Shine</span>
+                            <span class="badge bg-primary rounded-pill">140-169</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>🟢 Glow</span>
+                            <span class="badge bg-primary rounded-pill">110-139</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>🟡 Flame</span>
+                            <span class="badge bg-primary rounded-pill">80-109</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>🟠 Spark</span>
+                            <span class="badge bg-primary rounded-pill">50-79</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>🔴 Seed</span>
+                            <span class="badge bg-primary rounded-pill">0-49</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Statistics -->
+    <h2 class="h5 fw-semibold text-dark mb-3">🔢 Lifetime Statistics</h2>
+    <div class="row g-3 mb-4">
+        {% for stat in ['views', 'likes', 'comments', 'followers'] %}
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        {% if stat == 'views' %}
+                        <i class="bi bi-eye fs-2 text-secondary"></i>
+                        {% elif stat == 'likes' %}
+                        <i class="bi bi-heart-fill fs-2 text-danger"></i>
+                        {% elif stat == 'comments' %}
+                        <i class="bi bi-chat-dots fs-2 text-info"></i>
+                        {% elif stat == 'followers' %}
+                        <i class="bi bi-people-fill fs-2 text-success"></i>
+                        {% endif %}
+                    </div>
+                    <h5 class="text-muted text-capitalize">{{ stat.replace('_', ' ') }}</h5>
+                    <div class="display-6 fw-semibold">{{ overall_stats[stat] }}</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Monthly Statistics -->
+    <h2 class="h5 fw-semibold text-dark mb-3">📆 Monthly Statistics</h2>
+    <div class="row g-3 mb-4">
+        {% for stat in ['views', 'likes', 'comments', 'new_followers'] %}
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-capitalize">{{ stat.replace('_', ' ') }}</h6>
+                    <div class="display-6 fw-semibold">{{ monthly_stats[stat] }}</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Weekly Statistics -->
+    <h2 class="h5 fw-semibold text-dark mb-3">📅 Weekly Statistics</h2>
+    <div class="row g-3 mb-5">
+        {% for stat in ['views', 'likes', 'comments', 'new_followers'] %}
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-capitalize">{{ stat.replace('_', ' ') }}</h6>
+                    <div class="display-6 fw-semibold">{{ weekly_stats[stat] }}</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

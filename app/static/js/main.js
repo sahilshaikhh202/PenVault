@@ -39,74 +39,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // Dark mode toggle logic
-    const themeToggleBtn = document.querySelector('.theme-toggle');
-    const body = document.body;
-    const darkModeClass = 'dark-mode';
-    const darkIconClass = 'fa-moon';
-    const lightIconClass = 'fa-sun';
-
-    // Helper to update icon
-    function updateThemeIcon(isDark) {
-        if (!themeToggleBtn) return;
-        const icon = themeToggleBtn.querySelector('i');
-        if (icon) {
-            icon.classList.remove(isDark ? lightIconClass : darkIconClass);
-            icon.classList.add(isDark ? darkIconClass : lightIconClass);
-        }
-    }
-
-    // Set theme from localStorage or system
-    function setInitialTheme() {
-        let theme = localStorage.getItem('theme');
-        if (!theme) {
-            // Use system preference if not set
-            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
-        if (theme === 'dark') {
-            body.classList.add(darkModeClass);
-            updateThemeIcon(true);
-        } else {
-            body.classList.remove(darkModeClass);
-            updateThemeIcon(false);
-        }
-    }
-
-    setInitialTheme();
-
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', function() {
-            const isDark = !body.classList.contains(darkModeClass);
-            if (isDark) {
-                body.classList.add(darkModeClass);
-                localStorage.setItem('theme', 'dark');
-            } else {
-                body.classList.remove(darkModeClass);
-                localStorage.setItem('theme', 'light');
+    // Reply button for comments (novel detail)
+    document.querySelectorAll('.reply-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var commentId = this.getAttribute('data-comment-id');
+            var replyForm = document.getElementById('replyForm' + commentId);
+            if (replyForm) {
+                replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
             }
-            updateThemeIcon(isDark);
         });
-    }
-
-    // Writing type dynamic fields
-    const typeSelect = document.getElementById('writing-type-select');
-    if (typeSelect) {
-        function updateFields() {
-            const type = typeSelect.value;
-            const titleField = document.getElementById('title-field');
-            const summaryField = document.getElementById('summary-field');
-            const coverImageField = document.getElementById('cover-image-field');
-            const isPremiumField = document.getElementById('is-premium-field');
-            const contentFieldGroup = document.getElementById('content-field-group');
-            if (titleField) titleField.style.display = (type === 'quote') ? 'none' : '';
-            if (summaryField) summaryField.style.display = (type === 'quote' || type === 'poetry') ? 'none' : '';
-            if (coverImageField) coverImageField.style.display = (type === 'quote' || type === 'poetry') ? 'none' : '';
-            if (isPremiumField) isPremiumField.style.display = (type === 'quote') ? 'none' : '';
-            if (contentFieldGroup) contentFieldGroup.style.display = '';
-        }
-        typeSelect.addEventListener('change', updateFields);
-        updateFields();
-    }
+    });
 });
 
 // Toast notification function

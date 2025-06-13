@@ -14,11 +14,11 @@
                     {% else %}
                     <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Sign Up</a>
                     {% endif %}
-                    <a href="#featured-stories" class="btn btn-outline-secondary">Explore Stories</a>
+                    <a href="{{ url_for('main.discover') }}" class="btn btn-outline-secondary">Discover Stories</a>
                 </div>
             </div>
             <div class="col-lg-6 d-none d-lg-block">
-                <img src="{{ url_for('static', filename='images/writer-desk.jpg') }}" alt="Writer's desk with laptop, coffee, and notebook" class="img-fluid rounded shadow-sm">
+                <img src="{{ url_for('static', filename='images/writers-desk.png') }}" alt="Writer's desk with laptop, coffee, and notebook" class="img-fluid rounded shadow-sm">
             </div>
         </div>
     </div>
@@ -120,7 +120,7 @@
                         <ul class="list-group list-group-flush">
                             {% for story in user_stories %}
                             <li class="list-group-item border-0 px-0">
-                                <a href="{{ url_for('main.story', story_id=story.id) }}" class="text-decoration-none text-primary">
+                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail', novel_id=story.novel.id) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" class="text-decoration-none text-primary">
                                     {{ story.title }}
                                 </a>
                             </li>
@@ -145,7 +145,7 @@
                         <ul class="list-group list-group-flush">
                             {% for story in current_user.saved_stories %}
                             <li class="list-group-item border-0 px-0">
-                                <a href="{{ url_for('main.story', story_id=story.id) }}" class="text-decoration-none text-primary">
+                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail', novel_id=story.novel.id) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" class="text-decoration-none text-primary">
                                     {{ story.title }}
                                 </a>
                                 <small class="text-muted d-block">by {{ story.author.username }}</small>
