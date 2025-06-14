@@ -75,7 +75,7 @@
                                         <span class="me-3"><i class="far fa-comment me-1"></i> {{ story.comments.count() }}</span>
                                         <span><i class="fas fa-eye me-1"></i> {{ story.views }}</span>
                                     </div>
-                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail', novel_id=story.novel.id) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" class="btn btn-sm btn-outline-primary">Read</a>
+                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" class="btn btn-sm btn-outline-primary">Read</a>
                                 </div>
                             </div>
                         </div>

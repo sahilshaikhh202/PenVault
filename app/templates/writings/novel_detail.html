@@ -39,9 +39,9 @@
     {% endif %}
     <div class="mb-4">
         {% if current_user.is_authenticated and current_user == novel.story.author %}
-        <a href="{{ url_for('main.new_volume', novel_id=novel.id) }}" class="btn btn-outline-primary btn-sm">+ Add Volume</a>
-        <a href="{{ url_for('main.edit_novel', novel_id=novel.id) }}" class="btn btn-outline-secondary btn-sm">Edit Novel</a>
-        <form method="POST" action="{{ url_for('main.delete_novel', novel_id=novel.id) }}" style="display:inline;" onsubmit="return confirm('Delete this novel and all its volumes and chapters?');">
+        <a href="{{ url_for('main.new_volume', novel_slug=novel.slug) }}" class="btn btn-outline-primary btn-sm">+ Add Volume</a>
+        <a href="{{ url_for('main.edit_novel', novel_slug=novel.slug) }}" class="btn btn-outline-secondary btn-sm">Edit Novel</a>
+        <form method="POST" action="{{ url_for('main.delete_novel', novel_slug=novel.slug) }}" style="display:inline;" onsubmit="return confirm('Delete this novel and all its volumes and chapters?');">
             <button type="submit" class="btn btn-outline-danger btn-sm">Delete Novel</button>
         </form>
         {% endif %}
@@ -50,47 +50,44 @@
     {% if volumes %}
         <div class="accordion" id="volumesAccordion">
         {% for volume in volumes %}
-            <div class="accordion-item mb-2">
-                <h2 class="accordion-header" id="heading{{ volume.id }}">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ volume.id }}" aria-expanded="false" aria-controls="collapse{{ volume.id }}">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#volume{{ volume.id }}">
                         {{ volume.title }}
                     </button>
                 </h2>
-                <div id="collapse{{ volume.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ volume.id }}" data-bs-parent="#volumesAccordion">
+                <div id="volume{{ volume.id }}" class="accordion-collapse collapse">
                     <div class="accordion-body">
-                        <p>{{ volume.summary }}</p>
+                        {% if volume.summary %}<p class="text-muted">{{ volume.summary }}</p>{% endif %}
                         {% if current_user.is_authenticated and current_user == novel.story.author %}
-                        <a href="{{ url_for('main.new_chapter', novel_id=novel.id, volume_id=volume.id) }}" class="btn btn-outline-success btn-sm mb-2">+ Add Chapter</a>
-                        <a href="{{ url_for('main.edit_volume', volume_id=volume.id) }}" class="btn btn-outline-secondary btn-sm mb-2">Edit Volume</a>
-                        <form method="POST" action="{{ url_for('main.delete_volume', volume_id=volume.id) }}" style="display:inline;" onsubmit="return confirm('Delete this volume and all its chapters?');">
+                        <a href="{{ url_for('main.new_chapter', novel_slug=novel.slug, volume_slug=volume.slug) }}" class="btn btn-outline-success btn-sm mb-2">+ Add Chapter</a>
+                        <a href="{{ url_for('main.edit_volume', volume_slug=volume.slug) }}" class="btn btn-outline-secondary btn-sm mb-2">Edit Volume</a>
+                        <form method="POST" action="{{ url_for('main.delete_volume', volume_slug=volume.slug) }}" style="display:inline;" onsubmit="return confirm('Delete this volume and all its chapters?');">
                             <button type="submit" class="btn btn-outline-danger btn-sm mb-2">Delete Volume</button>
                         </form>
                         {% endif %}
-                        <h6>Chapters</h6>
-                        <ul class="list-group">
-                        {% for chapter in volume.chapters.order_by(Chapter.order).all() %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}">{{ chapter.title }}</a>
-                                <span>
-                                    {% if current_user.is_authenticated and current_user == novel.story.author %}
-                                    <a href="{{ url_for('main.edit_chapter', chapter_id=chapter.id) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
-                                    <form method="POST" action="{{ url_for('main.delete_chapter', chapter_id=chapter.id) }}" style="display:inline;" onsubmit="return confirm('Delete this chapter?');">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                        <div class="list-group">
+                            {% for chapter in volume.chapters.order_by(Chapter.order).all() %}
+                            <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}" class="list-group-item list-group-item-action">
+                                {{ chapter.title }}
+                                {% if current_user.is_authenticated and current_user == novel.story.author %}
+                                <div class="float-end">
+                                    <a href="{{ url_for('main.edit_chapter', chapter_slug=chapter.slug) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                    <form method="POST" action="{{ url_for('main.delete_chapter', chapter_slug=chapter.slug) }}" style="display:inline;" onsubmit="return confirm('Delete this chapter?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                     </form>
-                                    {% endif %}
-                                </span>
-                            </li>
-                        {% else %}
-                            <li class="list-group-item text-muted">No chapters yet.</li>
-                        {% endfor %}
-                        </ul>
+                                </div>
+                                {% endif %}
+                            </a>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>
         {% endfor %}
         </div>
     {% else %}
-        <p class="text-muted">No volumes yet. <a href="{{ url_for('main.new_volume', novel_id=novel.id) }}">Add the first volume</a>.</p>
+        <p class="text-muted">No volumes yet. <a href="{{ url_for('main.new_volume', novel_slug=novel.slug) }}">Add the first volume</a>.</p>
     {% endif %}
 
     <!-- Comments Section -->
@@ -121,15 +118,15 @@
                     <p class="mb-1">{{ comment.content }}</p>
                 </div>
                 {% if current_user.is_authenticated and (current_user == comment.author or current_user == novel.story.author) %}
-                <div class="dropdown position-absolute top-0 end-0">
-                    <button class="btn btn-link text-dark p-0" type="button" id="dropdownMenuButtonComment{{ comment.id }}" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.2rem;">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-muted" type="button" data-bs-toggle="dropdown">
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonComment{{ comment.id }}">
+                    <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ url_for('main.edit_comment', comment_id=comment.id) }}">Edit</a></li>
                         <li>
-                            <form method="POST" action="{{ url_for('main.delete_comment', comment_id=comment.id) }}" onsubmit="return confirm('Delete this comment?');">
-                                <button type="submit" class="dropdown-item text-danger">Delete</button>
+                            <form method="POST" action="{{ url_for('main.delete_comment', comment_id=comment.id) }}" style="display:inline;">
+                                <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Delete this comment?')">Delete</button>
                             </form>
                         </li>
                     </ul>

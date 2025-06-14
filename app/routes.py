@@ -8,6 +8,7 @@ from app.forms import LoginForm, RegistrationForm, ProfileForm, StoryForm, Comme
 from app import db
 from datetime import datetime, timedelta
 import math
+from slugify import slugify
 
 main = Blueprint('main', __name__)
 auth = Blueprint('auth', __name__)
@@ -471,7 +472,7 @@ def edit_comment(comment_id):
         flash('Comment updated successfully.', 'success')
         # Redirect to the correct detail page
         if story.writing_type == 'webnovel' and story.novel:
-            return redirect(url_for('main.novel_detail', novel_id=story.novel.id))
+            return redirect(url_for('main.novel_detail_slug', novel_slug=story.novel.slug))
         else:
             return redirect(url_for('main.story', story_id=story.id))
     return render_template('edit_comment.html', form=form, comment=comment)
@@ -488,7 +489,7 @@ def delete_comment(comment_id):
     flash('Comment deleted successfully.', 'success')
     # Redirect to the correct detail page
     if story.writing_type == 'webnovel' and story.novel:
-        return redirect(url_for('main.novel_detail', novel_id=story.novel.id))
+        return redirect(url_for('main.novel_detail_slug', novel_slug=story.novel.slug))
     else:
         return redirect(url_for('main.story', story_id=story.id))
 
@@ -601,12 +602,12 @@ def new_novel():
         db.session.add(novel)
         db.session.commit()
         flash('Novel created! Now add volumes and chapters.')
-        return redirect(url_for('main.novel_detail', novel_id=novel.id))
+        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
     return render_template('writings/novel.html', form=form)
 
-@main.route('/novel/<int:novel_id>')
-def novel_detail(novel_id):
-    novel = Novel.query.get_or_404(novel_id)
+@main.route('/novel/<novel_slug>')
+def novel_detail_slug(novel_slug):
+    novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
     volumes = novel.volumes.order_by(Volume.order).all()
     chapters = novel.chapters.order_by(Chapter.order).all()
     form = CommentForm()
@@ -631,10 +632,10 @@ def novel_detail(novel_id):
                 db.session.commit()
     return render_template('writings/novel_detail.html', novel=novel, volumes=volumes, chapters=chapters, Chapter=Chapter, form=form, Comment=Comment)
 
-@main.route('/novel/<int:novel_id>/volume/new', methods=['GET', 'POST'])
+@main.route('/novel/<novel_slug>/volume/new', methods=['GET', 'POST'])
 @login_required
-def new_volume(novel_id):
-    novel = Novel.query.get_or_404(novel_id)
+def new_volume(novel_slug):
+    novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
     form = VolumeForm()
     if form.validate_on_submit():
         volume = Volume(
@@ -646,14 +647,14 @@ def new_volume(novel_id):
         db.session.add(volume)
         db.session.commit()
         flash('Volume added!')
-        return redirect(url_for('main.novel_detail', novel_id=novel.id))
+        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
     return render_template('writings/volume.html', form=form, novel=novel)
 
-@main.route('/novel/<int:novel_id>/volume/<int:volume_id>/chapter/new', methods=['GET', 'POST'])
+@main.route('/novel/<novel_slug>/volume/<volume_slug>/chapter/new', methods=['GET', 'POST'])
 @login_required
-def new_chapter(novel_id, volume_id):
-    novel = Novel.query.get_or_404(novel_id)
-    volume = Volume.query.get_or_404(volume_id)
+def new_chapter(novel_slug, volume_slug):
+    novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
+    volume = Volume.query.filter_by(novel_id=novel.id, slug=volume_slug).first_or_404()
     form = ChapterForm()
     if form.validate_on_submit():
         chapter = Chapter(
@@ -666,13 +667,13 @@ def new_chapter(novel_id, volume_id):
         db.session.add(chapter)
         db.session.commit()
         flash('Chapter added!')
-        return redirect(url_for('main.novel_detail', novel_id=novel.id))
+        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
     return render_template('writings/chapter.html', form=form, novel=novel, volume=volume)
 
-@main.route('/novel/<int:novel_id>/edit', methods=['GET', 'POST'])
+@main.route('/novel/<novel_slug>/edit', methods=['GET', 'POST'])
 @login_required
-def edit_novel(novel_id):
-    novel = Novel.query.get_or_404(novel_id)
+def edit_novel(novel_slug):
+    novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
     story = novel.story
     if story.author != current_user:
         abort(403)
@@ -683,6 +684,8 @@ def edit_novel(novel_id):
         novel.genre = form.genre.data
         novel.status = form.status.data
         novel.is_mature = form.is_mature.data
+        # Update slug if title changed
+        novel.update_slug()
         if form.cover_image.data:
             file = form.cover_image.data
             if file and allowed_file(file.filename):
@@ -705,13 +708,13 @@ def edit_novel(novel_id):
                 story.tags.append(tag)
         db.session.commit()
         flash('Novel updated!', 'success')
-        return redirect(url_for('main.novel_detail', novel_id=novel.id))
+        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
     return render_template('writings/novel.html', form=form, novel=novel)
 
-@main.route('/novel/<int:novel_id>/delete', methods=['POST'])
+@main.route('/novel/<novel_slug>/delete', methods=['POST'])
 @login_required
-def delete_novel(novel_id):
-    novel = Novel.query.get_or_404(novel_id)
+def delete_novel(novel_slug):
+    novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
     story = novel.story
     if story.author != current_user:
         abort(403)
@@ -721,10 +724,10 @@ def delete_novel(novel_id):
     flash('Novel and all its volumes and chapters deleted.', 'success')
     return redirect(url_for('main.profile', username=current_user.username))
 
-@main.route('/volume/<int:volume_id>/edit', methods=['GET', 'POST'])
+@main.route('/volume/<volume_slug>/edit', methods=['GET', 'POST'])
 @login_required
-def edit_volume(volume_id):
-    volume = Volume.query.get_or_404(volume_id)
+def edit_volume(volume_slug):
+    volume = Volume.query.filter_by(slug=volume_slug).first_or_404()
     novel = volume.novel
     story = novel.story
     if story.author != current_user:
@@ -734,15 +737,17 @@ def edit_volume(volume_id):
         volume.title = form.title.data
         volume.summary = form.summary.data
         volume.order = int(form.order.data)
+        # Update slug if title changed
+        volume.slug = slugify(volume.title)
         db.session.commit()
         flash('Volume updated!', 'success')
-        return redirect(url_for('main.novel_detail', novel_id=novel.id))
+        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
     return render_template('writings/volume.html', form=form, novel=novel, volume=volume)
 
-@main.route('/volume/<int:volume_id>/delete', methods=['POST'])
+@main.route('/volume/<volume_slug>/delete', methods=['POST'])
 @login_required
-def delete_volume(volume_id):
-    volume = Volume.query.get_or_404(volume_id)
+def delete_volume(volume_slug):
+    volume = Volume.query.filter_by(slug=volume_slug).first_or_404()
     novel = volume.novel
     story = novel.story
     if story.author != current_user:
@@ -750,12 +755,12 @@ def delete_volume(volume_id):
     db.session.delete(volume)
     db.session.commit()
     flash('Volume and all its chapters deleted.', 'success')
-    return redirect(url_for('main.novel_detail', novel_id=novel.id))
+    return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
 
-@main.route('/chapter/<int:chapter_id>/edit', methods=['GET', 'POST'])
+@main.route('/chapter/<chapter_slug>/edit', methods=['GET', 'POST'])
 @login_required
-def edit_chapter(chapter_id):
-    chapter = Chapter.query.get_or_404(chapter_id)
+def edit_chapter(chapter_slug):
+    chapter = Chapter.query.filter_by(slug=chapter_slug).first_or_404()
     novel = chapter.novel
     story = novel.story
     if story.author != current_user:
@@ -767,15 +772,17 @@ def edit_chapter(chapter_id):
         chapter.order = int(form.order.data)
         chapter.author_notes = form.author_notes.data
         chapter.is_draft = form.is_draft.data
+        # Update slug if title changed
+        chapter.slug = slugify(chapter.title)
         db.session.commit()
         flash('Chapter updated!', 'success')
-        return redirect(url_for('main.novel_detail', novel_id=novel.id))
+        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
     return render_template('writings/chapter.html', form=form, novel=novel, volume=chapter.volume, chapter=chapter)
 
-@main.route('/chapter/<int:chapter_id>/delete', methods=['POST'])
+@main.route('/chapter/<chapter_slug>/delete', methods=['POST'])
 @login_required
-def delete_chapter(chapter_id):
-    chapter = Chapter.query.get_or_404(chapter_id)
+def delete_chapter(chapter_slug):
+    chapter = Chapter.query.filter_by(slug=chapter_slug).first_or_404()
     novel = chapter.novel
     story = novel.story
     if story.author != current_user:
@@ -783,22 +790,7 @@ def delete_chapter(chapter_id):
     db.session.delete(chapter)
     db.session.commit()
     flash('Chapter deleted.', 'success')
-    return redirect(url_for('main.novel_detail', novel_id=novel.id))
-
-@main.route('/chapter/<int:chapter_id>')
-def view_chapter(chapter_id):
-    chapter = Chapter.query.get_or_404(chapter_id)
-    novel = chapter.novel
-    volume = chapter.volume
-    return render_template('writings/chapter_view.html', chapter=chapter, novel=novel, volume=volume)
-
-# Add new pretty URL routes for novels, volumes, and chapters using slugs
-@main.route('/novel/<novel_slug>')
-def novel_detail_slug(novel_slug):
-    novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
-    volumes = novel.volumes.order_by(Volume.order).all()
-    chapters = novel.chapters.order_by(Chapter.order).all()
-    return render_template('writings/novel_detail.html', novel=novel, volumes=volumes, chapters=chapters, Chapter=Chapter)
+    return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
 
 @main.route('/novel/<novel_slug>/<volume_slug>')
 def volume_detail_slug(novel_slug, volume_slug):

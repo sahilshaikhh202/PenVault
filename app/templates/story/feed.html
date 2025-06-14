@@ -61,7 +61,7 @@
                             <!-- Story Footer -->
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <div class="btn-group">
-                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail', novel_id=story.novel.id) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-book-open me-1"></i> Read More
                                     </a>

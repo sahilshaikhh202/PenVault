@@ -159,6 +159,17 @@ class Novel(db.Model):
         if not self.slug:
             self.slug = slugify(self.title)
 
+    def update_slug(self):
+        """Update the slug when the title changes"""
+        self.slug = slugify(self.title)
+        # Update volume and chapter slugs if they contain the novel title
+        for volume in self.volumes:
+            if volume.title.startswith(self.title):
+                volume.slug = slugify(volume.title)
+        for chapter in self.chapters:
+            if chapter.title.startswith(self.title):
+                chapter.slug = slugify(chapter.title)
+
 class Volume(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     novel_id = db.Column(db.Integer, db.ForeignKey('novel.id'), nullable=False)
