@@ -8,6 +8,7 @@
             <span class="badge bg-info">{{ novel.genre|capitalize }}</span>
         {% endif %}
         {% if novel.is_mature %}<span class="badge bg-danger">Mature</span>{% endif %}
+        {% if novel.is_premium %}<span class="premium-badge"><i class="fas fa-crown"></i> Premium</span>{% endif %}
     </div>
     
     <!-- Add stats section -->
@@ -54,6 +55,7 @@
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#volume{{ volume.id }}">
                         {{ volume.title }}
+                        {% if volume.is_premium %}<span class="premium-badge ms-2"><i class="fas fa-crown"></i> Premium</span>{% endif %}
                     </button>
                 </h2>
                 <div id="volume{{ volume.id }}" class="accordion-collapse collapse">
@@ -70,6 +72,7 @@
                             {% for chapter in volume.chapters.order_by(Chapter.order).all() %}
                             <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}" class="list-group-item list-group-item-action">
                                 {{ chapter.title }}
+                                {% if chapter.is_premium_content %}<span class="premium-badge ms-2"><i class="fas fa-crown"></i> Premium</span>{% endif %}
                                 {% if current_user.is_authenticated and current_user == novel.story.author %}
                                 <div class="float-end">
                                     <a href="{{ url_for('main.edit_chapter', chapter_slug=chapter.slug) }}" class="btn btn-sm btn-outline-secondary">Edit</a>

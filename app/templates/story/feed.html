@@ -36,6 +36,11 @@
                             <span class="badge bg-primary mb-2">
                                 {{ story.writing_type|title }}
                             </span>
+                            {% if story.is_premium %}
+                            <span class="premium-badge ms-2">
+                                <i class="fas fa-crown"></i> Premium
+                            </span>
+                            {% endif %}
                             
                             <!-- Story Title -->
                             <h5 class="card-title">
@@ -55,7 +60,14 @@
                             
                             <!-- Story Preview -->
                             <p class="card-text">
+                                {% if story.is_premium and current_user != story.author %}
+                                <div class="premium-content-lock">
+                                    <i class="fas fa-lock"></i>
+                                    <p>Premium content - Only available to the author</p>
+                                </div>
+                                {% else %}
                                 {{ story.summary or story.content[:200] + '...' }}
+                                {% endif %}
                             </p>
                             
                             <!-- Story Footer -->

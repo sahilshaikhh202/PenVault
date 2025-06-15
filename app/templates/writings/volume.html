@@ -16,6 +16,11 @@
             {{ form.order.label(class="form-label") }}
             {{ form.order(class="form-control") }}
         </div>
+        <div class="mb-3 form-check">
+            {{ form.is_premium(class="form-check-input") }}
+            {{ form.is_premium.label(class="form-check-label") }}
+            <small class="form-text text-muted">If checked, all chapters in this volume will be premium content.</small>
+        </div>
         <div class="d-grid gap-2">
             {{ form.submit(class="btn btn-primary") }}
         </div>

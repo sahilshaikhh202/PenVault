@@ -139,6 +139,7 @@ class NovelForm(FlaskForm):
         ('hiatus', 'On Hiatus')
     ])
     is_mature = BooleanField('Mature Content')
+    is_premium = BooleanField('Premium Content (All volumes and chapters will be premium)')
     cover_image = FileField('Cover Image', validators=[
         Optional(),
         FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')
@@ -149,6 +150,7 @@ class VolumeForm(FlaskForm):
     title = StringField('Volume Title', validators=[DataRequired(), Length(max=200)])
     summary = TextAreaField('Summary', validators=[Length(max=1000)])
     order = StringField('Order', validators=[DataRequired()])
+    is_premium = BooleanField('Premium Content (All chapters in this volume will be premium)')
     submit = SubmitField('Add Volume')
 
 class ChapterForm(FlaskForm):
@@ -160,6 +162,7 @@ class ChapterForm(FlaskForm):
     order = IntegerField('Chapter Number', validators=[DataRequired()])
     author_notes = TextAreaField('Author Notes', validators=[Optional(), Length(max=500)])
     is_draft = BooleanField('Save as Draft')
+    is_premium = BooleanField('Premium Content (Only this chapter will be premium)')
     submit = SubmitField('Add Chapter')
 
 class OtherWritingForm(StoryForm):

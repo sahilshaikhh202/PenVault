@@ -36,13 +36,27 @@
                                 <img src="{{ url_for('static', filename='uploads/' + story.author.profile_picture) if story.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" class="rounded-circle me-2" width="24" height="24" alt="{{ story.author.username }}">
                                 <small class="text-muted">{{ story.author.username }}</small>
                                 <span class="badge bg-secondary ms-2">{{ story.writing_type|capitalize }}</span>
+                                {% if story.is_premium %}
+                                <span class="premium-badge ms-2">
+                                    <i class="fas fa-crown"></i> Premium
+                                </span>
+                                {% endif %}
                             </div>
                             <h5 class="card-title">{{ story.title }}</h5>
                             {% if story.writing_type == 'poetry' and story.form_type %}
                             <span class="badge bg-info mb-1">{{ story.form_type|capitalize }}</span>
                             {% endif %}
                             {% if story.writing_type == 'quote' %}
-                            <p class="card-text small text-muted">{{ story.content[:100] }}{% if story.content|length > 100 %}...{% endif %}</p>
+                            <p class="card-text small text-muted">
+                                {% if story.is_premium and current_user != story.author %}
+                                <div class="premium-content-lock">
+                                    <i class="fas fa-lock"></i>
+                                    <p>Premium content - Only available to the author</p>
+                                </div>
+                                {% else %}
+                                {{ story.content[:100] }}{% if story.content|length > 100 %}...{% endif %}
+                                {% endif %}
+                            </p>
                             <div class="mb-1">
                                 {% if story.quote_author %}<span class="text-muted">— {{ story.quote_author }}</span>{% endif %}
                                 {% if story.quote_category %}<span class="badge bg-secondary ms-2">{{ story.quote_category|capitalize }}</span>{% endif %}

@@ -580,7 +580,7 @@ def new_novel():
             title=form.title.data,
             content='',
             summary=form.summary.data,
-            is_premium=False,
+            is_premium=form.is_premium.data,
             author=current_user,
             is_published=False,
             writing_type='webnovel'
@@ -591,7 +591,8 @@ def new_novel():
             story_id=story.id,
             title=form.title.data,
             summary=form.summary.data,
-            cover_image=None
+            cover_image=None,
+            is_premium=form.is_premium.data
         )
         if form.cover_image.data:
             file = form.cover_image.data
@@ -642,7 +643,8 @@ def new_volume(novel_slug):
             novel_id=novel.id,
             title=form.title.data,
             summary=form.summary.data,
-            order=int(form.order.data)
+            order=int(form.order.data),
+            is_premium=form.is_premium.data
         )
         db.session.add(volume)
         db.session.commit()
@@ -662,7 +664,10 @@ def new_chapter(novel_slug, volume_slug):
             volume_id=volume.id,
             title=form.title.data,
             content=form.content.data,
-            order=int(form.order.data)
+            order=int(form.order.data),
+            is_premium=form.is_premium.data,
+            author_notes=form.author_notes.data,
+            is_draft=form.is_draft.data
         )
         db.session.add(chapter)
         db.session.commit()
@@ -804,11 +809,18 @@ def chapter_view_slug(novel_slug, volume_slug, chapter_slug):
     novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
     volume = Volume.query.filter_by(novel_id=novel.id, slug=volume_slug).first_or_404()
     chapter = Chapter.query.filter_by(volume_id=volume.id, slug=chapter_slug).first_or_404()
+    
+    # Check if content is premium and user is not the author
+    if chapter.is_premium_content and (not current_user.is_authenticated or current_user != novel.story.author):
+        flash('This is premium content. Only the author can view it.', 'info')
+        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+    
     # Get all chapters in the novel, ordered by volume.order, chapter.order
     all_chapters = Chapter.query.filter_by(novel_id=novel.id).join(Volume).order_by(Volume.order, Chapter.order).all()
     idx = next((i for i, c in enumerate(all_chapters) if c.id == chapter.id), None)
     prev_chapter = all_chapters[idx-1] if idx is not None and idx > 0 else None
     next_chapter = all_chapters[idx+1] if idx is not None and idx < len(all_chapters)-1 else None
+    
     # Increment view and add to reading history if not author
     if current_user.is_authenticated and current_user.id != novel.story.author_id:
         chapter.views = (getattr(chapter, 'views', 0) or 0) + 1

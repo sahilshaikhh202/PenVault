@@ -24,6 +24,11 @@
             {{ form.is_mature(class="form-check-input") }}
             {{ form.is_mature.label(class="form-check-label") }}
         </div>
+        <div class="mb-3 form-check">
+            {{ form.is_premium(class="form-check-input") }}
+            {{ form.is_premium.label(class="form-check-label") }}
+            <small class="form-text text-muted">If checked, all volumes and chapters in this novel will be premium content.</small>
+        </div>
         <div class="mb-3">
             {{ form.cover_image.label(class="form-label") }}
             {{ form.cover_image(class="form-control") }}

@@ -150,6 +150,7 @@ class Novel(db.Model):
     cover_image = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_premium = db.Column(db.Boolean, default=False)  # If true, all volumes and chapters are premium
     # Relationships
     volumes = db.relationship('Volume', backref='novel', lazy='dynamic', cascade="all, delete-orphan")
     chapters = db.relationship('Chapter', backref='novel', lazy='dynamic', cascade="all, delete-orphan")
@@ -177,6 +178,7 @@ class Volume(db.Model):
     slug = db.Column(db.String(200), nullable=False)
     summary = db.Column(db.Text)
     order = db.Column(db.Integer, default=1)
+    is_premium = db.Column(db.Boolean, default=False)  # If true, all chapters in this volume are premium
     # Relationships
     chapters = db.relationship('Chapter', backref='volume', lazy='dynamic', cascade="all, delete-orphan")
 
@@ -197,6 +199,9 @@ class Chapter(db.Model):
     order = db.Column(db.Integer, default=1)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_premium = db.Column(db.Boolean, default=False)  # Individual chapter premium status
+    author_notes = db.Column(db.Text)
+    is_draft = db.Column(db.Boolean, default=False)
 
     __table_args__ = (db.UniqueConstraint('volume_id', 'slug', name='uq_chapter_volume_slug'),)
 
@@ -204,6 +209,15 @@ class Chapter(db.Model):
         super().__init__(*args, **kwargs)
         if not self.slug:
             self.slug = slugify(self.title)
+
+    @property
+    def is_premium_content(self):
+        """Check if this chapter is premium based on novel, volume, or chapter settings"""
+        if self.novel.is_premium:
+            return True
+        if self.volume and self.volume.is_premium:
+            return True
+        return self.is_premium
 
 class ReadingHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -63,6 +63,59 @@
         border-color: #404040;
         color: #e0e0e0;
     }
+
+    /* Premium content styles */
+    .premium-content-lock {
+        position: relative;
+        min-height: 200px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .premium-content-lock i {
+        font-size: 3rem;
+        color: #ffd700;
+        margin-bottom: 1rem;
+    }
+
+    .premium-content-lock h3 {
+        color: #333;
+        margin-bottom: 1rem;
+    }
+
+    .premium-content-lock p {
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+
+    body.dark-mode .premium-content-lock {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    body.dark-mode .premium-content-lock h3 {
+        color: #e0e0e0;
+    }
+
+    body.dark-mode .premium-content-lock p {
+        color: #b0b0b0;
+    }
+
+    .premium-badge {
+        background: linear-gradient(45deg, #ffd700, #ffa500);
+        color: #000;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 </style>
 
 {% endblock %}
@@ -99,6 +152,11 @@
                         {{ story.author.username }}
                     </a>
                     <span class="badge bg-secondary ms-2">{{ story.writing_type|capitalize }}</span>
+                    {% if story.is_premium %}
+                    <span class="premium-badge ms-2">
+                        <i class="fas fa-crown"></i> Premium
+                    </span>
+                    {% endif %}
                 </div>
                 <h1 class="h2 mb-3">{{ story.title }}</h1>
                 {% if story.writing_type == 'poetry' and story.form_type %}
@@ -122,6 +180,18 @@
 
             <!-- Story Content -->
             <div class="story-content mb-4" id="storyContent">
+                {% if story.is_premium and current_user != story.author %}
+                <div class="premium-content-lock">
+                    <i class="fas fa-lock"></i>
+                    <h3>Premium Content</h3>
+                    <p>This content is only available to the author.</p>
+                    {% if current_user.is_authenticated %}
+                    <p class="text-muted">You can create your own premium content by writing a story and marking it as premium.</p>
+                    {% else %}
+                    <p class="text-muted">Please log in to create your own premium content.</p>
+                    {% endif %}
+                </div>
+                {% else %}
                 {% if story.writing_type == 'poetry' %}
                 <div class="poetry-content" style="white-space: pre-line; font-family: 'Georgia', serif; font-size: 1.2em;">
                     {{ story.content|safe }}
@@ -147,6 +217,7 @@
                 <div class="story-body">
                     {{ story.content|safe }}
                 </div>
+                {% endif %}
                 {% endif %}
             </div>
 
