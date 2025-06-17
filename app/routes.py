@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 import os
-from app.models import User, Story, Comment, Tag, Follow, Novel, Volume, Chapter, ReadingHistory
+from app.models import User, Story, Comment, Tag, Follow, Novel, Volume, Chapter, ReadingHistory, PointsTransaction
 from app.forms import LoginForm, RegistrationForm, ProfileForm, StoryForm, CommentForm, SearchForm, PoetryForm, QuoteForm, EssayForm, NovelForm, VolumeForm, ChapterForm, OtherWritingForm, EditCommentForm
 from app import db
 from datetime import datetime, timedelta
@@ -21,8 +21,9 @@ def allowed_file(filename):
 def index():
     # Get all tags for the sidebar
     tags = Tag.query.all()
-    
-    return render_template('index.html', title='Home', tags=tags)
+    # Get featured stories (published and featured)
+    featured_stories = Story.query.filter_by(is_featured=True, is_published=True).order_by(Story.created_at.desc()).limit(5).all()
+    return render_template('index.html', title='Home', tags=tags, featured_stories=featured_stories)
 
 @main.route('/discover')
 def discover():
@@ -62,14 +63,23 @@ def login():
             return redirect(url_for('auth.login'))
         
         login_user(user, remember=form.remember_me.data)
+        
+        try:
+            # Award daily login points
+            if user.can_earn_daily_login_points():
+                user.add_points(5, 'daily_login')
+                user.last_daily_login = datetime.utcnow().date()
+                db.session.commit()
+                flash('You earned 5 points for logging in today!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Error awarding points. Please try again.', 'error')
+        
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('main.index')
         flash('Welcome back!', 'success')
         return redirect(next_page)
-    
-    # Log form errors when validation fails
-    print("Login form validation errors:", form.errors)
     
     return render_template('auth/login.html', title='Sign In', form=form)
 
@@ -187,6 +197,18 @@ def new_story():
                 story.tags.append(tag)
         db.session.add(story)
         db.session.commit()
+        
+        try:
+            # Award points for new post
+            if current_user.can_earn_post_points():
+                current_user.add_points(25, 'new_post', f'Posted {writing_type}')
+                current_user.last_post_points = datetime.utcnow().date()
+                db.session.commit()
+                flash('You earned 25 points for posting!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Error awarding points. Please try again.', 'error')
+        
         if form.save_draft.data:
             flash('Your draft has been saved!', 'success')
             return redirect(url_for('main.drafts'))
@@ -248,36 +270,59 @@ def comment(story_id):
     story = Story.query.get_or_404(story_id)
     form = CommentForm()
     if form.validate_on_submit():
-        comment = Comment(
-            content=form.content.data,
-            author=current_user,
-            story=story
-        )
-        db.session.add(comment)
-        db.session.commit()
-        flash('Your comment has been added.', 'success')
+        try:
+            comment = Comment(
+                content=form.content.data,
+                author=current_user,
+                story=story
+            )
+            db.session.add(comment)
+            
+            # Award points for meaningful comment
+            word_count = len(form.content.data.split())
+            if word_count >= 20 and current_user.can_earn_comment_points():
+                current_user.add_points(4, 'meaningful_comment', f'Comment on {story.title}')
+                current_user.comment_points_count += 1
+                db.session.commit()
+                flash('You earned 4 points for your meaningful comment!', 'success')
+            
+            # Award points to story author for receiving comment
+            if word_count >= 10 and story.author.can_earn_comment_points():
+                story.author.add_points(3, 'received_comment', f'Comment on {story.title}')
+                story.author.comment_points_count += 1
+                db.session.commit()
+            
+            db.session.commit()
+            flash('Your comment has been added.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Error processing comment. Please try again.', 'error')
         
-        # If the comment was made on a novel page, stay on that page
-        if request.referrer and 'novel' in request.referrer:
-            return redirect(request.referrer + f'#comment-{comment.id}')
-        return redirect(url_for('main.story', story_id=story_id))
+        return redirect(url_for('main.story', story_id=story.id))
     
-    return redirect(url_for('main.story', story_id=story_id))
+    return render_template('story/view.html', story=story, form=form)
 
 @main.route('/follow/<username>')
+@login_required
 def follow(username):
-    if not current_user.is_authenticated:
-        flash('Please log in to follow users.', 'info')
-        return redirect(url_for('auth.login', next=url_for('main.profile', username=username)))
-    
     user = User.query.filter_by(username=username).first_or_404()
     if user == current_user:
-        flash('You cannot follow yourself!', 'warning')
+        flash('You cannot follow yourself!', 'error')
         return redirect(url_for('main.profile', username=username))
     
-    current_user.follow(user)
-    db.session.commit()
-    flash(f'You are now following {username}!', 'success')
+    try:
+        current_user.follow(user)
+        db.session.commit()
+        
+        # Award points to followed user
+        user.add_points(5, 'new_follower', f'Followed by {current_user.username}')
+        db.session.commit()
+        
+        flash(f'You are now following {username}!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error processing follow request. Please try again.', 'error')
+    
     return redirect(url_for('main.profile', username=username))
 
 @main.route('/unfollow/<username>')
@@ -979,3 +1024,94 @@ def statistics():
                          tier=tier,
                          tier_emoji=tier_emoji,
                          tier_message=message)
+
+@main.route('/story/<int:story_id>/share', methods=['POST'])
+@login_required
+def share_story(story_id):
+    story = Story.query.get_or_404(story_id)
+    try:
+        if current_user.can_earn_share_points():
+            current_user.add_points(5, 'share_story', f'Shared {story.title}')
+            current_user.share_points_count += 1
+            db.session.commit()
+            flash('You earned 5 points for sharing!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error processing share. Please try again.', 'error')
+    
+    return redirect(url_for('main.story', story_id=story_id))
+
+@main.route('/redeem', methods=['GET', 'POST'])
+@login_required
+def redeem_points():
+    if request.method == 'POST':
+        try:
+            action = request.form.get('action')
+            item_id = request.form.get('item_id')
+            
+            redemption_costs = {
+                'premium_post': 50,
+                'premium_volume': 100,
+                'premium_novel': 250,
+                'feature_post': 150
+            }
+            
+            if action not in redemption_costs:
+                flash('Invalid redemption action', 'error')
+                return redirect(url_for('main.redeem_points'))
+            
+            required_points = redemption_costs[action]
+            
+            if not current_user.has_enough_points(required_points):
+                flash('Not enough points for this redemption', 'error')
+                return redirect(url_for('main.redeem_points'))
+            
+            if action == 'premium_post':
+                story = Story.query.get_or_404(item_id)
+                if story.is_premium:
+                    current_user.add_points(-required_points, 'redeem_premium_post', f'Unlocked {story.title}')
+                    flash(f'Successfully unlocked {story.title}!', 'success')
+            
+            elif action == 'premium_volume':
+                volume = Volume.query.get_or_404(item_id)
+                if volume.is_premium:
+                    current_user.add_points(-required_points, 'redeem_premium_volume', f'Unlocked {volume.title}')
+                    flash(f'Successfully unlocked {volume.title}!', 'success')
+            
+            elif action == 'premium_novel':
+                novel = Novel.query.get_or_404(item_id)
+                if novel.is_premium:
+                    current_user.add_points(-required_points, 'redeem_premium_novel', f'Unlocked {novel.title}')
+                    flash(f'Successfully unlocked {novel.title}!', 'success')
+            
+            elif action == 'feature_post':
+                story = Story.query.get_or_404(item_id)
+                if not story.is_featured:
+                    story.is_featured = True
+                    current_user.add_points(-required_points, 'feature_post', f'Featured {story.title}')
+                    flash(f'Successfully featured {story.title}!', 'success')
+            
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash('Error processing redemption. Please try again.', 'error')
+        
+        return redirect(url_for('main.redeem_points'))
+    
+    # Get user's point transactions
+    transactions = PointsTransaction.query.filter_by(user_id=current_user.id).order_by(PointsTransaction.timestamp.desc()).all()
+    
+    # Get available premium content
+    premium_stories = Story.query.filter(
+        Story.is_premium == True,
+        Story.author_id != current_user.id
+    ).all()
+    premium_volumes = Volume.query.filter_by(is_premium=True).all()
+    premium_novels = Novel.query.filter_by(is_premium=True).all()
+    
+    return render_template('redeem.html',
+                         title='Redeem Points',
+                         transactions=transactions,
+                         premium_stories=premium_stories,
+                         premium_volumes=premium_volumes,
+                         premium_novels=premium_novels)

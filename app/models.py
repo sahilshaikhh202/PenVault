@@ -27,6 +27,16 @@ story_likes = db.Table('story_likes',
 def load_user(id):
     return User.query.get(int(id))
 
+class PointsTransaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    action = db.Column(db.String(50), nullable=False)
+    points = db.Column(db.Integer, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    details = db.Column(db.String(200))  # Additional details about the transaction
+
+    user = db.relationship('User', backref='point_transactions')
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
@@ -39,15 +49,27 @@ class User(UserMixin, db.Model):
     is_premium = db.Column(db.Boolean, default=False)
     hide_saved_list = db.Column(db.Boolean, default=False)
     hide_recent_reads = db.Column(db.Boolean, default=False)
-    
-    # Relationships
+    points = db.Column(db.Integer, default=0, nullable=False)  # Modified to ensure non-null
+    last_daily_login = db.Column(db.Date)
+    last_post_points = db.Column(db.Date)
+    last_comment_points = db.Column(db.Date)
+    comment_points_count = db.Column(db.Integer, default=0)
+    share_points_count = db.Column(db.Integer, default=0)
+    referral_count = db.Column(db.Integer, default=0)
+    highest_pulse_tier = db.Column(db.String(20))
+
+    # Add relationships
     stories = db.relationship('Story', backref='author', lazy='dynamic')
-    followers = db.relationship('Follow', foreign_keys='Follow.followed_id', backref='followed', lazy='dynamic')
     following = db.relationship('Follow', foreign_keys='Follow.follower_id', backref='follower', lazy='dynamic')
-    comments = db.relationship('Comment', backref='author', lazy='dynamic')
-    saved_stories = db.relationship('Story', secondary='reading_list', backref=db.backref('saved_by', lazy='dynamic'))
-    reading_history = db.relationship('ReadingHistory', backref='reader', lazy='dynamic', cascade='all, delete-orphan')
-    
+    followers = db.relationship('Follow', foreign_keys='Follow.followed_id', backref='followed', lazy='dynamic')
+    reading_history = db.relationship('ReadingHistory', backref='user', lazy='dynamic')
+    saved_stories = db.relationship('Story', secondary='reading_list', backref='saved_by', lazy='dynamic')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.points is None:
+            self.points = 0
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -72,6 +94,73 @@ class User(UserMixin, db.Model):
         if follow:
             db.session.delete(follow)
 
+    def add_points(self, points, action, details=None):
+        """Add points to user and create transaction record"""
+        if self.points is None:
+            self.points = 0
+        self.points += points
+        transaction = PointsTransaction(
+            user_id=self.id,
+            action=action,
+            points=points,
+            details=details
+        )
+        db.session.add(transaction)
+        db.session.commit()
+
+    def can_earn_daily_login_points(self):
+        """Check if user can earn daily login points"""
+        today = datetime.utcnow().date()
+        return not self.last_daily_login or self.last_daily_login < today
+
+    def can_earn_post_points(self):
+        """Check if user can earn post points"""
+        today = datetime.utcnow().date()
+        return not self.last_post_points or self.last_post_points < today
+
+    def can_earn_comment_points(self):
+        """Check if user can earn comment points"""
+        today = datetime.utcnow().date()
+        if not self.last_comment_points or self.last_comment_points < today:
+            self.comment_points_count = 0
+            self.last_comment_points = today
+            return True
+        return self.comment_points_count < 10
+
+    def can_earn_share_points(self):
+        """Check if user can earn share points"""
+        today = datetime.utcnow().date()
+        if not self.last_share_points or self.last_share_points < today:
+            self.share_points_count = 0
+            self.last_share_points = today
+            return True
+        return self.share_points_count < 2
+
+    def can_earn_referral_points(self):
+        """Check if user can earn referral points"""
+        return self.referral_count < 5
+
+    def check_pulse_tier_bonus(self, current_tier):
+        """Check and award pulse tier bonus points"""
+        if not self.highest_pulse_tier or self.highest_pulse_tier < current_tier:
+            bonus_points = {
+                'spark': 25,
+                'flame': 50,
+                'glow': 75,
+                'shine': 100,
+                'pulse': 150,
+                'surge': 200,
+                'nova': 300
+            }
+            if current_tier in bonus_points:
+                self.add_points(bonus_points[current_tier], 'pulse_tier_bonus', f'Reached {current_tier} tier')
+                self.highest_pulse_tier = current_tier
+                db.session.commit()
+
+    def has_enough_points(self, required_points):
+        """Check if user has enough points for redemption"""
+        return self.points >= required_points
+
 class Story(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -85,7 +174,7 @@ class Story(db.Model):
     views = db.Column(db.Integer, default=0)
     likes = db.Column(db.Integer, default=0)
     writing_type = db.Column(db.String(50), nullable=False, server_default='story')
-    
+    is_featured = db.Column(db.Boolean, default=False, nullable=False)
     # Add likes relationship
     liked_by = db.relationship('User', secondary='story_likes',
                              backref=db.backref('liked_stories', lazy='dynamic'),
@@ -129,6 +218,7 @@ class Comment(db.Model):
     
     # Relationships
     replies = db.relationship('Comment', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')
+    author = db.relationship('User', backref='comments')
 
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)

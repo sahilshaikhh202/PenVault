@@ -347,6 +347,16 @@
                             </div>
                         </div>
                     </div>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Points</h5>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-warning me-2"></i>
+                                <h3 class="mb-0">{{ user.points }}</h3>
+                            </div>
+                            <a href="{{ url_for('main.redeem_points') }}" class="btn btn-primary btn-sm mt-2">Redeem Points</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

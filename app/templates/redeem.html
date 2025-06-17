@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Redeem Points</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>Your Points Balance: {{ current_user.points }}</h5>
+                    </div>
+
+                    <!-- Premium Posts -->
+                    <h5 class="mt-4">Premium Posts (50 points)</h5>
+                    <div class="row">
+                        {% for story in premium_stories %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ story.title }}</h6>
+                                    <p class="card-text small">
+                                        {% if story.summary %}
+                                            {{ story.summary[:100] }}...
+                                        {% else %}
+                                            No summary available
+                                        {% endif %}
+                                    </p>
+                                    <form action="{{ url_for('main.redeem_points') }}" method="POST">
+                                        <input type="hidden" name="action" value="premium_post">
+                                        <input type="hidden" name="item_id" value="{{ story.id }}">
+                                        <button type="submit" class="btn btn-primary btn-sm">Unlock</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Premium Volumes -->
+                    <h5 class="mt-4">Premium Volumes (100 points)</h5>
+                    <div class="row">
+                        {% for volume in premium_volumes %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ volume.title }}</h6>
+                                    <p class="card-text small">
+                                        {% if volume.summary %}
+                                            {{ volume.summary[:100] }}...
+                                        {% else %}
+                                            No summary available
+                                        {% endif %}
+                                    </p>
+                                    <form action="{{ url_for('main.redeem_points') }}" method="POST">
+                                        <input type="hidden" name="action" value="premium_volume">
+                                        <input type="hidden" name="item_id" value="{{ volume.id }}">
+                                        <button type="submit" class="btn btn-primary btn-sm">Unlock</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Premium Novels -->
+                    <h5 class="mt-4">Premium Novels (250 points)</h5>
+                    <div class="row">
+                        {% for novel in premium_novels %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ novel.title }}</h6>
+                                    <p class="card-text small">
+                                        {% if novel.summary %}
+                                            {{ novel.summary[:100] }}...
+                                        {% else %}
+                                            No summary available
+                                        {% endif %}
+                                    </p>
+                                    <form action="{{ url_for('main.redeem_points') }}" method="POST">
+                                        <input type="hidden" name="action" value="premium_novel">
+                                        <input type="hidden" name="item_id" value="{{ novel.id }}">
+                                        <button type="submit" class="btn btn-primary btn-sm">Unlock</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Feature Post -->
+                    <h5 class="mt-4">Feature Your Post (150 points)</h5>
+                    <div class="row">
+                        {% for story in current_user.stories %}
+                        {% if not story.is_featured %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ story.title }}</h6>
+                                    <p class="card-text small">
+                                        {% if story.summary %}
+                                            {{ story.summary[:100] }}...
+                                        {% else %}
+                                            No summary available
+                                        {% endif %}
+                                    </p>
+                                    <form action="{{ url_for('main.redeem_points') }}" method="POST">
+                                        <input type="hidden" name="action" value="feature_post">
+                                        <input type="hidden" name="item_id" value="{{ story.id }}">
+                                        <button type="submit" class="btn btn-primary btn-sm">Feature</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Point History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for transaction in transactions %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ transaction.action }}</h6>
+                                <small>{{ transaction.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <p class="mb-1">
+                                {% if transaction.points > 0 %}
+                                <span class="text-success">+{{ transaction.points }} points</span>
+                                {% else %}
+                                <span class="text-danger">{{ transaction.points }} points</span>
+                                {% endif %}
+                            </p>
+                            {% if transaction.details %}
+                            <small class="text-muted">{{ transaction.details }}</small>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

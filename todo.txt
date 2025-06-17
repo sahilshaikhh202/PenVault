@@ -54,3 +54,53 @@ Day 61–80	95	✅ Yes	10%
 make the following changes :, on statistics page add an i button beside pulse score display the tier list (not messages only list and range), if a logged out (or not signed in user) tries to like a writing(content), then redirect it to login page,
 a not signed in user can also view the profile (of other users) but cannot follow
 make all these changes without affecting the other working things.
+
+Your next task is to implement a complete point system for rewarding users with points based on specific actions and allowing them to spend those points to unlock premium content, understand the files and then do this. Do not modify or break any existing working functionality,templates(do not change the existing structures and designs of pages)
+
+✅ Implement the following **point system**, ensuring clean integration with existing user models and routes(routes in routes.py:
+
+1. **Create or extend the User model** to include a `points` field (integer) with a default of 0.
+
+2. **Add point-earning logic** for these user actions:
+   - Daily login → +5 pts (only once/day)
+   - Upload a new writing (post) → +25 pts (limit: 1/day)
+   - Gain a new follower → +5 pts
+   - Receive a comment (10+ words) → +3 pts (limit: 10/day)
+   - Make a meaningful comment (20+ words) → +4 pts (limit: 3/day)
+   - Share a post via platform share buttons → +5 pts (limit: 2/day)
+   - Refer a new user (referral code) → +50 pts (limit: 5 referrals)
+
+3. **Add a Pulse Tier Bonus System**:
+   - When a user reaches a new Pulse Tier for the first time, award them a one-time point bonus:
+     - Spark: +25 pts
+     - Flame: +50 pts
+     - Glow: +75 pts
+     - Shine: +100 pts
+     - Pulse: +150 pts
+     - Surge: +200 pts
+     - Nova: +300 pts
+   - Do **not** re-award points if they drop and re-enter the same tier.
+
+4. **Create a `points_transactions` table** to track all point activities (action, points, timestamp, user_id). This is for audit/history tracking.
+
+5. **Create a route `/redeem` or similar** to let users spend points for:
+   - Unlock premium post(or a premium chapter) → 50 pts
+   - Unlock premium volume(unlocks all chapters of that volume) → 100 pts
+   - Unlock entire novel → 250 pts
+   - Feature post on homepage(add a new section called featured stories(max10 at a time)on home page, which will display this post)  → 150 pts
+
+6. **Check before redemption** that user has enough points and log every redemption to `points_transactions`.
+
+7. Ensure you handle the following edge cases:
+   - Duplicate rewards (e.g., multiple logins in a day)
+   - Fake comments/short comments
+   - Repeated post uploads (only first counts per day)
+   - Reaching a Pulse Tier again after dropping out
+
+🔒 Make sure all changes are **modular, tested, and do not interfere with existing functionalities** like:
+- Pulse Score logic
+- Content uploading and visibility
+- Follower and comment system
+- Existing templates
+Make use of the best things
+At the end, show where and how each action triggers the point assignment (e.g., login route, post upload route, follow route, etc.) so I can test them easily.
