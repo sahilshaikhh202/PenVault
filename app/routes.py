@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 import os
-from app.models import User, Story, Comment, Tag, Follow, Novel, Volume, Chapter, ReadingHistory, PointsTransaction
+from app.models import User, Story, Comment, Tag, Follow, Novel, Volume, Chapter, ReadingHistory, PointsTransaction, UnlockedContent
 from app.forms import LoginForm, RegistrationForm, ProfileForm, StoryForm, CommentForm, SearchForm, PoetryForm, QuoteForm, EssayForm, NovelForm, VolumeForm, ChapterForm, OtherWritingForm, EditCommentForm
 from app import db
 from datetime import datetime, timedelta
@@ -221,6 +221,11 @@ def new_story():
 def story(story_id):
     story = Story.query.get_or_404(story_id)
     form = CommentForm()
+    
+    unlocked = False
+    if current_user.is_authenticated and story.is_premium and current_user != story.author:
+        unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, story_id=story_id).first() is not None
+
     # Increment view if not author (or always, if not logged in)
     if (not current_user.is_authenticated) or (current_user.is_authenticated and current_user.id != story.author_id):
         story.views = (story.views or 0) + 1
@@ -245,7 +250,8 @@ def story(story_id):
         Story=Story, 
         Comment=Comment, 
         Chapter=Chapter,
-        Volume=Volume)
+        Volume=Volume,
+        unlocked=unlocked)
 
 @main.route('/story/<int:story_id>/publish', methods=['POST'])
 @login_required
@@ -654,29 +660,14 @@ def new_novel():
 @main.route('/novel/<novel_slug>')
 def novel_detail_slug(novel_slug):
     novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
-    volumes = novel.volumes.order_by(Volume.order).all()
-    chapters = novel.chapters.order_by(Chapter.order).all()
-    form = CommentForm()
-    # Increment view for all users (not just logged in)
-    story = novel.story
-    if (not current_user.is_authenticated) or (current_user.is_authenticated and current_user.id != story.author_id):
-        story.views = (story.views or 0) + 1
-        db.session.commit()
-        # Add to reading history (FIFO, max 20) only if logged in
-        if current_user.is_authenticated:
-            existing = ReadingHistory.query.filter_by(user_id=current_user.id, story_id=story.id).first()
-            if existing:
-                existing.timestamp = datetime.utcnow()
-            else:
-                db.session.add(ReadingHistory(user_id=current_user.id, story_id=story.id))
-            db.session.commit()
-            # Keep only 20 most recent
-            history = ReadingHistory.query.filter_by(user_id=current_user.id).order_by(ReadingHistory.timestamp.desc()).all()
-            if len(history) > 20:
-                for h in history[20:]:
-                    db.session.delete(h)
-                db.session.commit()
-    return render_template('writings/novel_detail.html', novel=novel, volumes=volumes, chapters=chapters, Chapter=Chapter, form=form, Comment=Comment)
+    chapters = Chapter.query.filter_by(novel_id=novel.id).order_by(Chapter.order.asc()).all()
+    volumes = Volume.query.filter_by(novel_id=novel.id).order_by(Volume.order.asc()).all()
+
+    unlocked = False
+    if current_user.is_authenticated and novel.is_premium and novel.story.author != current_user:
+        unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, novel_id=novel.id).first() is not None
+    
+    return render_template('writings/novel_detail.html', novel=novel, chapters=chapters, volumes=volumes, unlocked=unlocked, form=CommentForm(), Comment=Comment)
 
 @main.route('/novel/<novel_slug>/volume/new', methods=['GET', 'POST'])
 @login_required
@@ -845,45 +836,43 @@ def delete_chapter(chapter_slug):
 @main.route('/novel/<novel_slug>/<volume_slug>')
 def volume_detail_slug(novel_slug, volume_slug):
     novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
-    volume = Volume.query.filter_by(novel_id=novel.id, slug=volume_slug).first_or_404()
+    volume = Volume.query.filter_by(slug=volume_slug, novel_id=novel.id).first_or_404()
     chapters = volume.chapters.order_by(Chapter.order).all()
-    return render_template('writings/volume_detail.html', novel=novel, volume=volume, chapters=chapters)
+    
+    unlocked = False
+    if current_user.is_authenticated and volume.is_premium and novel.story.author != current_user:
+        unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, volume_id=volume.id).first() is not None
+    
+    return render_template('writings/volume_detail.html', novel=novel, volume=volume, chapters=chapters, unlocked=unlocked)
 
 @main.route('/novel/<novel_slug>/<volume_slug>/<chapter_slug>')
 def chapter_view_slug(novel_slug, volume_slug, chapter_slug):
     novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
-    volume = Volume.query.filter_by(novel_id=novel.id, slug=volume_slug).first_or_404()
-    chapter = Chapter.query.filter_by(volume_id=volume.id, slug=chapter_slug).first_or_404()
-    
-    # Check if content is premium and user is not the author
-    if chapter.is_premium_content and (not current_user.is_authenticated or current_user != novel.story.author):
-        flash('This is premium content. Only the author can view it.', 'info')
-        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
-    
-    # Get all chapters in the novel, ordered by volume.order, chapter.order
-    all_chapters = Chapter.query.filter_by(novel_id=novel.id).join(Volume).order_by(Volume.order, Chapter.order).all()
-    idx = next((i for i, c in enumerate(all_chapters) if c.id == chapter.id), None)
-    prev_chapter = all_chapters[idx-1] if idx is not None and idx > 0 else None
-    next_chapter = all_chapters[idx+1] if idx is not None and idx < len(all_chapters)-1 else None
-    
-    # Increment view and add to reading history if not author
-    if current_user.is_authenticated and current_user.id != novel.story.author_id:
-        chapter.views = (getattr(chapter, 'views', 0) or 0) + 1
-        db.session.commit()
-        # Add to reading history (FIFO, max 20)
-        existing = ReadingHistory.query.filter_by(user_id=current_user.id, story_id=novel.story.id).first()
-        if existing:
-            existing.timestamp = datetime.utcnow()
-        else:
-            db.session.add(ReadingHistory(user_id=current_user.id, story_id=novel.story.id))
-        db.session.commit()
-        # Keep only 20 most recent
-        history = ReadingHistory.query.filter_by(user_id=current_user.id).order_by(ReadingHistory.timestamp.desc()).all()
-        if len(history) > 20:
-            for h in history[20:]:
-                db.session.delete(h)
-            db.session.commit()
-    return render_template('writings/chapter_view.html', chapter=chapter, novel=novel, volume=volume, prev_chapter=prev_chapter, next_chapter=next_chapter)
+    volume = Volume.query.filter_by(slug=volume_slug, novel_id=novel.id).first() # Volume can be null
+    chapter = Chapter.query.filter_by(slug=chapter_slug, novel_id=novel.id).first_or_404()
+
+    unlocked = False
+    if current_user.is_authenticated and chapter.is_premium_content and novel.story.author != current_user:
+        unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, chapter_id=chapter.id).first() is not None
+
+    # Get previous and next chapters for navigation
+    prev_chapter = Chapter.query.filter(
+        Chapter.novel_id == novel.id,
+        Chapter.order < chapter.order
+    ).order_by(Chapter.order.desc()).first()
+
+    next_chapter = Chapter.query.filter(
+        Chapter.novel_id == novel.id,
+        Chapter.order > chapter.order
+    ).order_by(Chapter.order.asc()).first()
+
+    return render_template('writings/chapter_view.html',
+                           novel=novel,
+                           volume=volume,
+                           chapter=chapter,
+                           prev_chapter=prev_chapter,
+                           next_chapter=next_chapter,
+                           unlocked=unlocked)
 
 @main.route('/feed')
 @login_required
@@ -1108,10 +1097,284 @@ def redeem_points():
     ).all()
     premium_volumes = Volume.query.filter_by(is_premium=True).all()
     premium_novels = Novel.query.filter_by(is_premium=True).all()
+
+    # Get data for premium content unlocked by others from the current user's content
+    unlocked_user_premium_content = []
+
+    # Unlocked Stories
+    user_premium_stories = Story.query.filter_by(author_id=current_user.id, is_premium=True).all()
+    for story in user_premium_stories:
+        unlocked = UnlockedContent.query.filter_by(story_id=story.id).all()
+        for entry in unlocked:
+            transaction = PointsTransaction.query.filter_by(
+                user_id=entry.user_id,
+                action='unlock_premium_story',
+                details=f'Unlocked story: {story.title}'
+            ).order_by(PointsTransaction.timestamp.desc()).first() # Get the most recent one if duplicates
+            if transaction:
+                unlocked_user_premium_content.append({
+                    'unlocked_by': entry.user,
+                    'content_type': 'Story',
+                    'title': story.title,
+                    'points_spent': -transaction.points, # Points are negative when spent
+                    'timestamp': transaction.timestamp
+                })
+
+    # Unlocked Novels
+    user_premium_novels = Novel.query.filter_by(story_id=Story.id, is_premium=True).join(Story).filter(Story.author_id==current_user.id).all()
+    for novel in user_premium_novels:
+        unlocked = UnlockedContent.query.filter_by(novel_id=novel.id).all()
+        for entry in unlocked:
+            transaction = PointsTransaction.query.filter_by(
+                user_id=entry.user_id,
+                action='unlock_premium_novel',
+                details=f'Unlocked novel: {novel.title}'
+            ).order_by(PointsTransaction.timestamp.desc()).first()
+            if transaction:
+                unlocked_user_premium_content.append({
+                    'unlocked_by': entry.user,
+                    'content_type': 'Novel',
+                    'title': novel.title,
+                    'points_spent': -transaction.points,
+                    'timestamp': transaction.timestamp
+                })
+
+    # Unlocked Volumes
+    user_premium_volumes = Volume.query.filter_by(novel_id=Novel.id, is_premium=True).join(Novel).join(Story).filter(Story.author_id==current_user.id).all()
+    for volume in user_premium_volumes:
+        unlocked = UnlockedContent.query.filter_by(volume_id=volume.id).all()
+        for entry in unlocked:
+            transaction = PointsTransaction.query.filter_by(
+                user_id=entry.user_id,
+                action='unlock_premium_volume',
+                details=f'Unlocked volume: {volume.title}'
+            ).order_by(PointsTransaction.timestamp.desc()).first()
+            if transaction:
+                unlocked_user_premium_content.append({
+                    'unlocked_by': entry.user,
+                    'content_type': 'Volume',
+                    'title': volume.title,
+                    'points_spent': -transaction.points,
+                    'timestamp': transaction.timestamp
+                })
+
+    # Unlocked Chapters
+    user_premium_chapters = Chapter.query.filter_by(novel_id=Novel.id, is_premium=True).join(Novel).join(Story).filter(Story.author_id==current_user.id).all()
+    for chapter in user_premium_chapters:
+        unlocked = UnlockedContent.query.filter_by(chapter_id=chapter.id).all()
+        for entry in unlocked:
+            transaction = PointsTransaction.query.filter_by(
+                user_id=entry.user_id,
+                action='unlock_premium_chapter',
+                details=f'Unlocked chapter: {chapter.title}'
+            ).order_by(PointsTransaction.timestamp.desc()).first()
+            if transaction:
+                unlocked_user_premium_content.append({
+                    'unlocked_by': entry.user,
+                    'content_type': 'Chapter',
+                    'title': chapter.title,
+                    'points_spent': -transaction.points,
+                    'timestamp': transaction.timestamp
+                })
     
+    # Sort by timestamp
+    unlocked_user_premium_content.sort(key=lambda x: x['timestamp'], reverse=True)
+
+    # Get content unlocked by current user
+    user_unlocked_content = []
+    
+    # Get unlocked stories
+    unlocked_stories = UnlockedContent.query.filter(
+        UnlockedContent.user_id == current_user.id,
+        UnlockedContent.story_id.isnot(None)
+    ).all()
+    for entry in unlocked_stories:
+        story = Story.query.get(entry.story_id)
+        if story and story.is_premium:
+            user_unlocked_content.append({
+                'content_type': 'Story',
+                'title': story.title,
+                'author': story.author.username,
+                'unlocked_at': entry.unlocked_at
+            })
+    
+    # Get unlocked novels
+    unlocked_novels = UnlockedContent.query.filter(
+        UnlockedContent.user_id == current_user.id,
+        UnlockedContent.novel_id.isnot(None)
+    ).all()
+    for entry in unlocked_novels:
+        novel = Novel.query.get(entry.novel_id)
+        if novel and novel.is_premium:
+            user_unlocked_content.append({
+                'content_type': 'Novel',
+                'title': novel.title,
+                'author': novel.story.author.username,
+                'unlocked_at': entry.unlocked_at
+            })
+    
+    # Get unlocked volumes
+    unlocked_volumes = UnlockedContent.query.filter(
+        UnlockedContent.user_id == current_user.id,
+        UnlockedContent.volume_id.isnot(None)
+    ).all()
+    for entry in unlocked_volumes:
+        volume = Volume.query.get(entry.volume_id)
+        if volume and volume.is_premium:
+            user_unlocked_content.append({
+                'content_type': 'Volume',
+                'title': volume.title,
+                'author': volume.novel.story.author.username,
+                'unlocked_at': entry.unlocked_at
+            })
+    
+    # Get unlocked chapters
+    unlocked_chapters = UnlockedContent.query.filter(
+        UnlockedContent.user_id == current_user.id,
+        UnlockedContent.chapter_id.isnot(None)
+    ).all()
+    for entry in unlocked_chapters:
+        chapter = Chapter.query.get(entry.chapter_id)
+        if chapter and chapter.is_premium_content:
+            user_unlocked_content.append({
+                'content_type': 'Chapter',
+                'title': chapter.title,
+                'author': chapter.novel.story.author.username,
+                'unlocked_at': entry.unlocked_at
+            })
+    
+    # Sort by unlock date
+    user_unlocked_content.sort(key=lambda x: x['unlocked_at'], reverse=True)
+
     return render_template('redeem.html',
                          title='Redeem Points',
                          transactions=transactions,
                          premium_stories=premium_stories,
                          premium_volumes=premium_volumes,
-                         premium_novels=premium_novels)
+                         premium_novels=premium_novels,
+                         unlocked_user_premium_content=unlocked_user_premium_content,
+                         user_unlocked_content=user_unlocked_content)
+
+@main.route('/story/<int:story_id>/unlock', methods=['POST'])
+@login_required
+def unlock_story(story_id):
+    story = Story.query.get_or_404(story_id)
+    required_points = 50  # Define points cost for story
+
+    if story.author == current_user:
+        flash('You own this story, no need to unlock!', 'info')
+        return redirect(url_for('main.story', story_id=story_id))
+    
+    already_unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, story_id=story_id).first()
+    if already_unlocked:
+        flash('You have already unlocked this story.', 'info')
+        return redirect(url_for('main.story', story_id=story_id))
+
+    if not current_user.has_enough_points(required_points):
+        flash('Not enough points to unlock this story.', 'error')
+        return redirect(url_for('main.story', story_id=story_id))
+
+    try:
+        current_user.add_points(-required_points, 'unlock_premium_story', f'Unlocked story: {story.title}')
+        unlock = UnlockedContent(user_id=current_user.id, story_id=story_id)
+        db.session.add(unlock)
+        db.session.commit()
+        flash('Story unlocked successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error unlocking story. Please try again.', 'error')
+    
+    return redirect(url_for('main.story', story_id=story_id))
+
+@main.route('/novel/<int:novel_id>/unlock', methods=['POST'])
+@login_required
+def unlock_novel(novel_id):
+    novel = Novel.query.get_or_404(novel_id)
+    required_points = 250  # Define points cost for novel
+
+    if novel.story.author == current_user:
+        flash('You own this novel, no need to unlock!', 'info')
+        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+
+    already_unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, novel_id=novel_id).first()
+    if already_unlocked:
+        flash('You have already unlocked this novel.', 'info')
+        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+
+    if not current_user.has_enough_points(required_points):
+        flash('Not enough points to unlock this novel.', 'error')
+        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+
+    try:
+        current_user.add_points(-required_points, 'unlock_premium_novel', f'Unlocked novel: {novel.title}')
+        unlock = UnlockedContent(user_id=current_user.id, novel_id=novel_id)
+        db.session.add(unlock)
+        db.session.commit()
+        flash('Novel unlocked successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error unlocking novel. Please try again.', 'error')
+    
+    return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+
+@main.route('/volume/<int:volume_id>/unlock', methods=['POST'])
+@login_required
+def unlock_volume(volume_id):
+    volume = Volume.query.get_or_404(volume_id)
+    required_points = 100  # Define points cost for volume
+
+    if volume.novel.story.author == current_user:
+        flash('You own this volume, no need to unlock!', 'info')
+        return redirect(url_for('main.volume_detail_slug', novel_slug=volume.novel.slug, volume_slug=volume.slug))
+    
+    already_unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, volume_id=volume_id).first()
+    if already_unlocked:
+        flash('You have already unlocked this volume.', 'info')
+        return redirect(url_for('main.volume_detail_slug', novel_slug=volume.novel.slug, volume_slug=volume.slug))
+
+    if not current_user.has_enough_points(required_points):
+        flash('Not enough points to unlock this volume.', 'error')
+        return redirect(url_for('main.volume_detail_slug', novel_slug=volume.novel.slug, volume_slug=volume.slug))
+
+    try:
+        current_user.add_points(-required_points, 'unlock_premium_volume', f'Unlocked volume: {volume.title}')
+        unlock = UnlockedContent(user_id=current_user.id, volume_id=volume_id)
+        db.session.add(unlock)
+        db.session.commit()
+        flash('Volume unlocked successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error unlocking volume. Please try again.', 'error')
+    
+    return redirect(url_for('main.volume_detail_slug', novel_slug=volume.novel.slug, volume_slug=volume.slug))
+
+@main.route('/chapter/<int:chapter_id>/unlock', methods=['POST'])
+@login_required
+def unlock_chapter(chapter_id):
+    chapter = Chapter.query.get_or_404(chapter_id)
+    required_points = 25  # Define points cost for chapter
+
+    if chapter.novel.story.author == current_user:
+        flash('You own this chapter, no need to unlock!', 'info')
+        return redirect(url_for('main.chapter_view_slug', novel_slug=chapter.novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug))
+
+    already_unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, chapter_id=chapter_id).first()
+    if already_unlocked:
+        flash('You have already unlocked this chapter.', 'info')
+        return redirect(url_for('main.chapter_view_slug', novel_slug=chapter.novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug))
+
+    if not current_user.has_enough_points(required_points):
+        flash('Not enough points to unlock this chapter.', 'error')
+        return redirect(url_for('main.chapter_view_slug', novel_slug=chapter.novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug))
+
+    try:
+        current_user.add_points(-required_points, 'unlock_premium_chapter', f'Unlocked chapter: {chapter.title}')
+        unlock = UnlockedContent(user_id=current_user.id, chapter_id=chapter_id)
+        db.session.add(unlock)
+        db.session.commit()
+        flash('Chapter unlocked successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error unlocking chapter. Please try again.', 'error')
+    
+    return redirect(url_for('main.chapter_view_slug', novel_slug=chapter.novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug))

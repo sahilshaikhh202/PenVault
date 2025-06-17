@@ -316,3 +316,26 @@ class ReadingHistory(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     
     story = db.relationship('Story')
+
+class UnlockedContent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    story_id = db.Column(db.Integer, db.ForeignKey('story.id'), nullable=True)
+    novel_id = db.Column(db.Integer, db.ForeignKey('novel.id'), nullable=True)
+    volume_id = db.Column(db.Integer, db.ForeignKey('volume.id'), nullable=True)
+    chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=True)
+    unlocked_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Add relationship to User
+    user = db.relationship('User', backref='unlocked_content')
+
+    __table_args__ = (
+        db.Index('uq_unlocked_story', 'user_id', 'story_id', unique=True, 
+                 postgresql_where=db.Column('story_id').isnot(None)),
+        db.Index('uq_unlocked_novel', 'user_id', 'novel_id', unique=True, 
+                 postgresql_where=db.Column('novel_id').isnot(None)),
+        db.Index('uq_unlocked_volume', 'user_id', 'volume_id', unique=True, 
+                 postgresql_where=db.Column('volume_id').isnot(None)),
+        db.Index('uq_unlocked_chapter', 'user_id', 'chapter_id', unique=True, 
+                 postgresql_where=db.Column('chapter_id').isnot(None)),
+    )

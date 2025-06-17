@@ -8,10 +8,10 @@
         </div>
         <div>
             {% if prev_chapter %}
-            <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=prev_chapter.volume.slug, chapter_slug=prev_chapter.slug) }}" class="btn btn-outline-secondary btn-sm me-2">&larr; Previous Chapter</a>
+            <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=prev_chapter.volume.slug if prev_chapter.volume else 'null', chapter_slug=prev_chapter.slug) }}" class="btn btn-outline-secondary btn-sm me-2">&larr; Previous Chapter</a>
             {% endif %}
             {% if next_chapter %}
-            <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=next_chapter.volume.slug, chapter_slug=next_chapter.slug) }}" class="btn btn-outline-secondary btn-sm">Next Chapter &rarr;</a>
+            <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=next_chapter.volume.slug if next_chapter.volume else 'null', chapter_slug=next_chapter.slug) }}" class="btn btn-outline-secondary btn-sm">Next Chapter &rarr;</a>
             {% endif %}
         </div>
     </div>
@@ -21,16 +21,56 @@
         {% if chapter.is_premium_content %}<span class="premium-badge ms-2"><i class="fas fa-crown"></i> Premium</span>{% endif %}
     </div>
 
-    {% if chapter.is_premium_content and current_user != novel.story.author %}
-    <div class="premium-content-lock">
-        <i class="fas fa-lock"></i>
-        <h3>Premium Content</h3>
-        <p>This content is only available to the author.</p>
-        {% if current_user.is_authenticated %}
-        <p class="text-muted">You can create your own premium content by writing a novel and marking it as premium.</p>
-        {% else %}
-        <p class="text-muted">Please log in to create your own premium content.</p>
+    {% if chapter.is_premium_content and current_user.is_authenticated and novel.story.author != current_user %}
+        {% if unlocked %}
+        <div class="position-relative">
+            <div class="chapter-toolbar position-absolute top-0 end-0 p-2" style="z-index:2;">
+                <div class="btn-group me-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="decreaseTextSize" title="Decrease text size">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="increaseTextSize" title="Increase text size">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <select class="form-select form-select-sm d-inline-block" style="width: auto;" id="bgColorSelect" title="Background color">
+                    <option value="#fff">White</option>
+                    <option value="#000">Dark</option>
+                    <option value="#f7f7d7">Sepia</option>
+                    <option value="#e3f0ff">Cool</option>
+                </select>
+            </div>
+            <div id="chapterContentContainer" class="mb-4 p-4 rounded shadow-sm" style="white-space: pre-line; font-size: 18px; background: #fff; color: #222; min-height: 200px; transition: background 0.2s, font-size 0.2s, color 0.2s;">
+            {{ chapter.content|safe }}
+            </div>
+        </div>
+        {% if chapter.author_notes %}
+        <div class="alert alert-secondary mt-3">
+            <strong>Author Notes:</strong> {{ chapter.author_notes }}
+        </div>
         {% endif %}
+        {% else %}
+        <div class="premium-content-lock mt-4">
+            <i class="fas fa-lock"></i>
+            <h3>Premium Chapter</h3>
+            <p>This chapter is locked. Unlock for 25 points.</p>
+            <p class="text-muted">Your current points: {{ current_user.points }}</p>
+            {% if current_user.points >= 25 %}
+            <form action="{{ url_for('main.unlock_chapter', chapter_id=chapter.id) }}" method="POST">
+                <button type="submit" class="btn btn-warning btn-lg">Unlock for 25 points</button>
+            </form>
+            {% else %}
+            <p class="text-danger">You do not have enough points to unlock this chapter.</p>
+            <a href="{{ url_for('main.redeem_points') }}" class="btn btn-secondary">Earn More Points</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% elif chapter.is_premium_content and not current_user.is_authenticated %}
+    <div class="premium-content-lock mt-4">
+        <i class="fas fa-lock"></i>
+        <h3>Premium Chapter</h3>
+        <p>This chapter is locked. Please log in to unlock or create your own premium content.</p>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Log In</a>
     </div>
     {% else %}
     <div class="position-relative">

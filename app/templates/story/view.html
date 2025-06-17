@@ -179,19 +179,70 @@
             </div>
 
             <!-- Story Content -->
-            <div class="story-content mb-4" id="storyContent">
-                {% if story.is_premium and current_user != story.author %}
-                <div class="premium-content-lock">
-                    <i class="fas fa-lock"></i>
-                    <h3>Premium Content</h3>
-                    <p>This content is only available to the author.</p>
-                    {% if current_user.is_authenticated %}
-                    <p class="text-muted">You can create your own premium content by writing a story and marking it as premium.</p>
+            {% if story.is_premium and current_user.is_authenticated and current_user != story.author %}
+                {% if unlocked %}
+                <div class="story-content mb-4" id="storyContent">
+                    {% if story.writing_type == 'poetry' %}
+                    <div class="poetry-content" style="white-space: pre-line; font-family: 'Georgia', serif; font-size: 1.2em;">
+                        {{ story.content|safe }}
+                        {% if story.notes %}
+                        <div class="alert alert-secondary mt-3"><strong>Author Notes:</strong> {{ story.notes }}</div>
+                        {% endif %}
+                    </div>
+                    {% elif story.writing_type == 'quote' %}
+                    <blockquote class="blockquote mb-4">
+                        <p class="mb-0">{{ story.content|safe }}</p>
+                        {% if story.quote_author %}<footer class="blockquote-footer">{{ story.quote_author }}</footer>{% endif %}
+                    </blockquote>
+                    {% if story.quote_source %}
+                    <p class="text-muted small">Source: {{ story.quote_source }}</p>
+                    {% endif %}
+                    {% elif story.writing_type == 'essay' %}
+                    <div class="essay-content">
+                        {{ story.content|safe }}
+                        {% if story.references %}
+                        <div class="mt-4">
+                            <h5 class="fw-bold">References:</h5>
+                            <p class="small text-muted">{{ story.references }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% elif story.writing_type == 'webnovel' %}
+                    <div class="alert alert-info">
+                        This is a webnovel. Please navigate to the novel's dedicated page for reading chapters.
+                        <a href="{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}" class="alert-link">Go to Novel Page</a>
+                    </div>
                     {% else %}
-                    <p class="text-muted">Please log in to create your own premium content.</p>
+                    <div class="regular-story-content">
+                        {{ story.content|safe }}
+                    </div>
                     {% endif %}
                 </div>
                 {% else %}
+                <div class="premium-content-lock">
+                    <i class="fas fa-lock"></i>
+                    <h3>Premium Content</h3>
+                    <p>This content is locked. Unlock for 50 points.</p>
+                    <p class="text-muted">Your current points: {{ current_user.points }}</p>
+                    {% if current_user.points >= 50 %}
+                    <form action="{{ url_for('main.unlock_story', story_id=story.id) }}" method="POST">
+                        <button type="submit" class="btn btn-warning btn-lg">Unlock for 50 points</button>
+                    </form>
+                    {% else %}
+                    <p class="text-danger">You do not have enough points to unlock this story.</p>
+                    <a href="{{ url_for('main.redeem_points') }}" class="btn btn-secondary">Earn More Points</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% elif story.is_premium and not current_user.is_authenticated %}
+            <div class="premium-content-lock">
+                <i class="fas fa-lock"></i>
+                <h3>Premium Content</h3>
+                <p>This content is locked. Please log in to unlock or create your own premium content.</p>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Log In</a>
+            </div>
+            {% else %}
+            <div class="story-content mb-4" id="storyContent">
                 {% if story.writing_type == 'poetry' %}
                 <div class="poetry-content" style="white-space: pre-line; font-family: 'Georgia', serif; font-size: 1.2em;">
                     {{ story.content|safe }}
@@ -200,26 +251,35 @@
                     {% endif %}
                 </div>
                 {% elif story.writing_type == 'quote' %}
-                <blockquote class="blockquote p-4 bg-light rounded">
-                    <p class="mb-0" style="font-size: 1.5em; font-style: italic;">{{ story.content }}</p>
+                <blockquote class="blockquote mb-4">
+                    <p class="mb-0">{{ story.content|safe }}</p>
+                    {% if story.quote_author %}<footer class="blockquote-footer">— {{ story.quote_author }}</footer>{% endif %}
                 </blockquote>
+                {% if story.quote_source %}
+                <p class="text-muted small">Source: {{ story.quote_source }}</p>
+                {% endif %}
                 {% elif story.writing_type == 'essay' %}
                 <div class="essay-content">
                     {{ story.content|safe }}
                     {% if story.references %}
                     <div class="mt-4">
-                        <h5>References</h5>
-                        <div class="references">{{ story.references|safe }}</div>
+                        <h5 class="fw-bold">References:</h5>
+                        <p class="small text-muted">{{ story.references }}</p>
                     </div>
                     {% endif %}
                 </div>
+                {% elif story.writing_type == 'webnovel' %}
+                <div class="alert alert-info">
+                    This is a webnovel. Please navigate to the novel's dedicated page for reading chapters.
+                    <a href="{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}" class="alert-link">Go to Novel Page</a>
+                </div>
                 {% else %}
-                <div class="story-body">
+                <div class="regular-story-content">
                     {{ story.content|safe }}
                 </div>
                 {% endif %}
-                {% endif %}
             </div>
+            {% endif %}
 
             <!-- Story Footer -->
             <div class="story-footer">

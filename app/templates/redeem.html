@@ -22,10 +22,12 @@
                                 <div class="card-body">
                                     <h6 class="card-title">{{ story.title }}</h6>
                                     <p class="card-text small">
-                                        {% if story.summary %}
-                                            {{ story.summary[:100] }}...
+                                        {% if story.writing_type %}
+                                            <span class="badge {% if story.writing_type == 'Poetry' %}bg-info{% elif story.writing_type == 'Short Story' %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {{ story.writing_type|title }}
+                                            </span>
                                         {% else %}
-                                            No summary available
+                                            <span class="badge bg-primary">Webnovel</span>
                                         {% endif %}
                                     </p>
                                     <form action="{{ url_for('main.redeem_points') }}" method="POST">
@@ -101,10 +103,12 @@
                                 <div class="card-body">
                                     <h6 class="card-title">{{ story.title }}</h6>
                                     <p class="card-text small">
-                                        {% if story.summary %}
-                                            {{ story.summary[:100] }}...
+                                        {% if story.writing_type %}
+                                            <span class="badge {% if story.writing_type == 'Poetry' %}bg-info{% elif story.writing_type == 'Short Story' %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {{ story.writing_type|title }}
+                                            </span>
                                         {% else %}
-                                            No summary available
+                                            <span class="badge bg-primary">Webnovel</span>
                                         {% endif %}
                                     </p>
                                     <form action="{{ url_for('main.redeem_points') }}" method="POST">
@@ -120,9 +124,59 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Premium Content Unlocked by Others -->
+            {% if unlocked_user_premium_content %}
+            <div class="card mb-4 mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Premium Content Unlocked by Others</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for item in unlocked_user_premium_content %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('main.profile', username=item.unlocked_by.username) }}">
+                                        {{ item.unlocked_by.username }}
+                                    </a> unlocked your {{ item.content_type }}: {{ item.title }}
+                                </h6>
+                                <small>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <p class="mb-1 text-info">Spent {{ item.points_spent }} points</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <div class="col-md-4">
+            <!-- Your Unlocked Premium Content -->
+            {% if user_unlocked_content %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Your Unlocked Premium Content</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for item in user_unlocked_content %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    {{ item.content_type }}: {{ item.title }}
+                                </h6>
+                                <small>{{ item.unlocked_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <p class="mb-1 text-muted">by {{ item.author }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">Point History</h5>
