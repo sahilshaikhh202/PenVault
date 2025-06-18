@@ -1,132 +1,476 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-5" style="background-color: #f9f9fb;">
-    <h1 class="mb-5 fw-bold text-dark">📊 Your Creator Dashboard</h1>
-
-    <!-- Pulse Score Card -->
-    <div class="card shadow-sm mb-5 border-0" style="border-radius: 16px;">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h2 class="card-title h4 text-dark mb-1">Pulse Score</h2>
-                    <p class="text-muted small">Last 20-day window</p>
-                </div>
-                <div class="d-flex align-items-center">
-                    <button type="button" class="btn btn-link text-muted p-0 me-3" data-bs-toggle="modal" data-bs-target="#tierInfoModal">
-                        <i class="fas fa-info-circle fs-4"></i>
-                    </button>
-                    <div class="fs-3">{{ tier_emoji }}</div>
-                </div>
-            </div>
-            <div class="display-3 fw-bold text-gradient mb-3" style="color: #6f42c1;">{{ pulse_score }}</div>
-            <h5 class="text-dark mb-2">You're in the <span class="badge bg-primary rounded-pill">{{ tier }}</span> tier</h5>
-            <p class="text-muted">{{ tier_message }}</p>
+<!-- Enhanced Statistics Dashboard with modern design and better accessibility -->
+<div class="container py-5">
+    <!-- Enhanced Dashboard Header -->
+    <div class="dashboard-header mb-5" role="banner" aria-labelledby="dashboard-title">
+        <div class="text-center mb-4">
+            <h1 id="dashboard-title" class="display-5 fw-bold mb-3">
+                <i class="fas fa-chart-line text-primary me-3" aria-hidden="true"></i>Your Creator Dashboard
+            </h1>
+            <p class="lead text-muted">Track your growth, engagement, and impact as a writer</p>
         </div>
     </div>
 
-    <!-- Tier Info Modal -->
+    <!-- Enhanced Pulse Score Card -->
+    <div class="pulse-score-section mb-5" role="region" aria-labelledby="pulse-score-title">
+        <div class="card shadow-lg border-0 pulse-score-card" style="border-radius: 20px; overflow: hidden;">
+            <div class="card-body p-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="pulse-score-info">
+                        <h2 id="pulse-score-title" class="card-title h3 fw-bold text-dark mb-2">
+                            <i class="fas fa-heartbeat text-primary me-2" aria-hidden="true"></i>Pulse Score
+                        </h2>
+                        <p class="text-muted mb-0">Last 20-day window • Your creative momentum</p>
+                    </div>
+                    <div class="pulse-score-actions d-flex align-items-center">
+                        <button type="button" class="btn btn-link text-muted p-0 me-3" 
+                                data-bs-toggle="modal" data-bs-target="#tierInfoModal"
+                                aria-label="Learn more about Pulse Score tiers">
+                            <i class="fas fa-info-circle fs-4" aria-hidden="true"></i>
+                        </button>
+                        <div class="tier-emoji fs-1">{{ tier_emoji }}</div>
+                    </div>
+                </div>
+                
+                <div class="pulse-score-display text-center mb-4">
+                    <div class="pulse-score-value display-2 fw-bold text-gradient mb-3" style="color: #6f42c1;">
+                        {{ pulse_score }}
+                    </div>
+                    <div class="pulse-score-tier mb-3">
+                        <h3 class="h5 text-dark mb-2">You're in the 
+                            <span class="badge bg-primary rounded-pill fs-6">{{ tier }}</span> tier
+                        </h3>
+                    </div>
+                    <div class="pulse-score-message">
+                        <p class="text-muted lead">{{ tier_message }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Tier Info Modal -->
     <div class="modal fade" id="tierInfoModal" tabindex="-1" aria-labelledby="tierInfoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="tierInfoModalLabel">Pulse Score Tiers</h5>
+                    <h5 class="modal-title" id="tierInfoModalLabel">
+                        <i class="fas fa-info-circle text-primary me-2" aria-hidden="true"></i>Pulse Score Tiers
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>✨🟡 Nova</span>
-                            <span class="badge bg-primary rounded-pill">250+</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>🟤 Surge</span>
-                            <span class="badge bg-primary rounded-pill">200-249</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>🟣 Pulse</span>
-                            <span class="badge bg-primary rounded-pill">170-199</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>🔵 Shine</span>
-                            <span class="badge bg-primary rounded-pill">140-169</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>🟢 Glow</span>
-                            <span class="badge bg-primary rounded-pill">110-139</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>🟡 Flame</span>
-                            <span class="badge bg-primary rounded-pill">80-109</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>🟠 Spark</span>
-                            <span class="badge bg-primary rounded-pill">50-79</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>🔴 Seed</span>
-                            <span class="badge bg-primary rounded-pill">0-49</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Overall Statistics -->
-    <h2 class="h5 fw-semibold text-dark mb-3">🔢 Lifetime Statistics</h2>
-    <div class="row g-3 mb-4">
-        {% for stat in ['views', 'likes', 'comments', 'followers'] %}
-        <div class="col-md-3">
-            <div class="card h-100 shadow-sm border-0">
-                <div class="card-body text-center">
-                    <div class="mb-2">
-                        {% if stat == 'views' %}
-                        <i class="bi bi-eye fs-2 text-secondary"></i>
-                        {% elif stat == 'likes' %}
-                        <i class="bi bi-heart-fill fs-2 text-danger"></i>
-                        {% elif stat == 'comments' %}
-                        <i class="bi bi-chat-dots fs-2 text-info"></i>
-                        {% elif stat == 'followers' %}
-                        <i class="bi bi-people-fill fs-2 text-success"></i>
-                        {% endif %}
+                    <div class="tier-explanation mb-4">
+                        <p class="text-muted">Your Pulse Score is calculated based on followers, views, likes, and comments from the last 20 days.</p>
                     </div>
-                    <h5 class="text-muted text-capitalize">{{ stat.replace('_', ' ') }}</h5>
-                    <div class="display-6 fw-semibold">{{ overall_stats[stat] }}</div>
+                    <div class="tier-list">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="tier-item card border-0 shadow-sm">
+                                    <div class="card-body text-center">
+                                        <div class="tier-emoji-large mb-2">✨🟡</div>
+                                        <h6 class="fw-bold">Nova</h6>
+                                        <span class="badge bg-warning text-dark">250+</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="tier-item card border-0 shadow-sm">
+                                    <div class="card-body text-center">
+                                        <div class="tier-emoji-large mb-2">🟤</div>
+                                        <h6 class="fw-bold">Surge</h6>
+                                        <span class="badge bg-warning text-dark">200-249</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="tier-item card border-0 shadow-sm">
+                                    <div class="card-body text-center">
+                                        <div class="tier-emoji-large mb-2">🟣</div>
+                                        <h6 class="fw-bold">Pulse</h6>
+                                        <span class="badge bg-warning text-dark">170-199</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="tier-item card border-0 shadow-sm">
+                                    <div class="card-body text-center">
+                                        <div class="tier-emoji-large mb-2">🔵</div>
+                                        <h6 class="fw-bold">Shine</h6>
+                                        <span class="badge bg-warning text-dark">140-169</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="tier-item card border-0 shadow-sm">
+                                    <div class="card-body text-center">
+                                        <div class="tier-emoji-large mb-2">🟢</div>
+                                        <h6 class="fw-bold">Glow</h6>
+                                        <span class="badge bg-warning text-dark">110-139</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="tier-item card border-0 shadow-sm">
+                                    <div class="card-body text-center">
+                                        <div class="tier-emoji-large mb-2">🟡</div>
+                                        <h6 class="fw-bold">Flame</h6>
+                                        <span class="badge bg-warning text-dark">80-109</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="tier-item card border-0 shadow-sm">
+                                    <div class="card-body text-center">
+                                        <div class="tier-emoji-large mb-2">🟠</div>
+                                        <h6 class="fw-bold">Spark</h6>
+                                        <span class="badge bg-warning text-dark">50-79</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="tier-item card border-0 shadow-sm">
+                                    <div class="card-body text-center">
+                                        <div class="tier-emoji-large mb-2">🔴</div>
+                                        <h6 class="fw-bold">Seed</h6>
+                                        <span class="badge bg-warning text-dark">0-49</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        {% endfor %}
     </div>
 
-    <!-- Monthly Statistics -->
-    <h2 class="h5 fw-semibold text-dark mb-3">📆 Monthly Statistics</h2>
-    <div class="row g-3 mb-4">
-        {% for stat in ['views', 'likes', 'comments', 'new_followers'] %}
-        <div class="col-md-3">
-            <div class="card h-100 shadow-sm border-0">
-                <div class="card-body text-center">
-                    <h6 class="text-muted text-capitalize">{{ stat.replace('_', ' ') }}</h6>
-                    <div class="display-6 fw-semibold">{{ monthly_stats[stat] }}</div>
-                </div>
+    <!-- Enhanced Statistics Sections -->
+    <div class="statistics-sections">
+        <!-- Enhanced Overall Statistics -->
+        <section class="stats-section mb-5" role="region" aria-labelledby="lifetime-stats-title">
+            <div class="section-header mb-4">
+                <h2 id="lifetime-stats-title" class="h4 fw-bold text-dark mb-2">
+                    <i class="fas fa-chart-bar text-primary me-2" aria-hidden="true"></i>Lifetime Statistics
+                </h2>
+                <p class="text-muted">Your complete journey as a writer</p>
             </div>
-        </div>
-        {% endfor %}
-    </div>
+            
+            <div class="row g-4">
+                {% for stat in ['views', 'likes', 'comments', 'followers'] %}
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card card h-100 border-0 shadow-sm" role="article">
+                        <div class="card-body text-center p-4">
+                            <div class="stat-icon mb-3">
+                                {% if stat == 'views' %}
+                                <i class="fas fa-eye fs-1 text-primary" aria-hidden="true"></i>
+                                {% elif stat == 'likes' %}
+                                <i class="fas fa-heart fs-1 text-danger" aria-hidden="true"></i>
+                                {% elif stat == 'comments' %}
+                                <i class="fas fa-comment-dots fs-1 text-info" aria-hidden="true"></i>
+                                {% elif stat == 'followers' %}
+                                <i class="fas fa-users fs-1 text-success" aria-hidden="true"></i>
+                                {% endif %}
+                            </div>
+                            <h3 class="stat-label h6 text-muted text-capitalize mb-2">{{ stat.replace('_', ' ') }}</h3>
+                            <div class="stat-value display-6 fw-bold text-dark">{{ overall_stats[stat] }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
 
-    <!-- Weekly Statistics -->
-    <h2 class="h5 fw-semibold text-dark mb-3">📅 Weekly Statistics</h2>
-    <div class="row g-3 mb-5">
-        {% for stat in ['views', 'likes', 'comments', 'new_followers'] %}
-        <div class="col-md-3">
-            <div class="card h-100 shadow-sm border-0">
-                <div class="card-body text-center">
-                    <h6 class="text-muted text-capitalize">{{ stat.replace('_', ' ') }}</h6>
-                    <div class="display-6 fw-semibold">{{ weekly_stats[stat] }}</div>
-                </div>
+        <!-- Enhanced Monthly Statistics -->
+        <section class="stats-section mb-5" role="region" aria-labelledby="monthly-stats-title">
+            <div class="section-header mb-4">
+                <h2 id="monthly-stats-title" class="h4 fw-bold text-dark mb-2">
+                    <i class="fas fa-calendar-alt text-primary me-2" aria-hidden="true"></i>Monthly Statistics
+                </h2>
+                <p class="text-muted">Your performance over the last 30 days</p>
             </div>
-        </div>
-        {% endfor %}
+            
+            <div class="row g-4">
+                {% for stat in ['views', 'likes', 'comments', 'new_followers'] %}
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card card h-100 border-0 shadow-sm" role="article">
+                        <div class="card-body text-center p-4">
+                            <div class="stat-icon mb-3">
+                                {% if stat == 'views' %}
+                                <i class="fas fa-eye fs-1 text-primary" aria-hidden="true"></i>
+                                {% elif stat == 'likes' %}
+                                <i class="fas fa-heart fs-1 text-danger" aria-hidden="true"></i>
+                                {% elif stat == 'comments' %}
+                                <i class="fas fa-comment-dots fs-1 text-info" aria-hidden="true"></i>
+                                {% elif stat == 'new_followers' %}
+                                <i class="fas fa-user-plus fs-1 text-success" aria-hidden="true"></i>
+                                {% endif %}
+                            </div>
+                            <h3 class="stat-label h6 text-muted text-capitalize mb-2">{{ stat.replace('_', ' ') }}</h3>
+                            <div class="stat-value display-6 fw-bold text-dark">{{ monthly_stats[stat] }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Enhanced Weekly Statistics -->
+        <section class="stats-section mb-5" role="region" aria-labelledby="weekly-stats-title">
+            <div class="section-header mb-4">
+                <h2 id="weekly-stats-title" class="h4 fw-bold text-dark mb-2">
+                    <i class="fas fa-calendar-week text-primary me-2" aria-hidden="true"></i>Weekly Statistics
+                </h2>
+                <p class="text-muted">Your performance over the last 7 days</p>
+            </div>
+            
+            <div class="row g-4">
+                {% for stat in ['views', 'likes', 'comments', 'new_followers'] %}
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card card h-100 border-0 shadow-sm" role="article">
+                        <div class="card-body text-center p-4">
+                            <div class="stat-icon mb-3">
+                                {% if stat == 'views' %}
+                                <i class="fas fa-eye fs-1 text-primary" aria-hidden="true"></i>
+                                {% elif stat == 'likes' %}
+                                <i class="fas fa-heart fs-1 text-danger" aria-hidden="true"></i>
+                                {% elif stat == 'comments' %}
+                                <i class="fas fa-comment-dots fs-1 text-info" aria-hidden="true"></i>
+                                {% elif stat == 'new_followers' %}
+                                <i class="fas fa-user-plus fs-1 text-success" aria-hidden="true"></i>
+                                {% endif %}
+                            </div>
+                            <h3 class="stat-label h6 text-muted text-capitalize mb-2">{{ stat.replace('_', ' ') }}</h3>
+                            <div class="stat-value display-6 fw-bold text-dark">{{ weekly_stats[stat] }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
     </div>
 </div>
+
+<!-- Enhanced Styles -->
+<style>
+    /* Enhanced dashboard styles */
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--primary-light) 0%, rgba(74, 144, 226, 0.05) 100%);
+        border-radius: var(--border-radius-xl);
+        padding: var(--spacing-xl);
+        margin-bottom: var(--spacing-xxl);
+    }
+    
+    /* Enhanced pulse score card */
+    .pulse-score-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all var(--transition-normal);
+    }
+    
+    .pulse-score-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-xl);
+    }
+    
+    .pulse-score-value {
+        background: linear-gradient(45deg, #6f42c1, #8e44ad);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 2px 4px rgba(111, 66, 193, 0.1);
+    }
+    
+    .tier-emoji {
+        font-size: 2.5rem;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
+    
+    /* Enhanced stat cards */
+    .stat-card {
+        transition: all var(--transition-normal);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(45deg, var(--primary-color), var(--primary-dark));
+        opacity: 0;
+        transition: opacity var(--transition-fast);
+    }
+    
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+    
+    .stat-icon {
+        transition: transform var(--transition-normal);
+    }
+    
+    .stat-card:hover .stat-icon {
+        transform: scale(1.1);
+    }
+    
+    .stat-value {
+        background: linear-gradient(45deg, var(--text-color), var(--secondary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* Enhanced section headers */
+    .section-header {
+        text-align: center;
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .section-header h2 {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .section-header h2::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(45deg, var(--primary-color), var(--primary-dark));
+        border-radius: 2px;
+    }
+    
+    /* Enhanced modal styles */
+    .tier-item {
+        transition: all var(--transition-fast);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .tier-item:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .tier-emoji-large {
+        font-size: 2rem;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
+    
+    /* Enhanced responsive design */
+    @media (max-width: 768px) {
+        .dashboard-header {
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .dashboard-header h1 {
+            font-size: 2rem;
+        }
+        
+        .pulse-score-card .card-body {
+            padding: var(--spacing-lg);
+        }
+        
+        .pulse-score-value {
+            font-size: 3rem;
+        }
+        
+        .stat-card {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+        }
+        
+        .section-header h2::after {
+            width: 40px;
+        }
+    }
+    
+    /* Enhanced accessibility */
+    .stat-card:focus-within {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+    
+    .tier-item:focus-within {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+    
+    /* Enhanced dark mode compatibility */
+    body.dark-mode .dashboard-header {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+    }
+    
+    body.dark-mode .pulse-score-card {
+        background: linear-gradient(135deg, var(--dark-surface) 0%, var(--dark-bg-tertiary) 100%);
+        border-color: var(--dark-border);
+    }
+    
+    body.dark-mode .stat-card {
+        background: var(--dark-surface);
+        border-color: var(--dark-border);
+    }
+    
+    body.dark-mode .stat-value {
+        background: linear-gradient(45deg, var(--dark-text-primary), var(--dark-text-secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    body.dark-mode .tier-item {
+        background: var(--dark-surface);
+        border-color: var(--dark-border);
+    }
+    
+    /* Enhanced animations */
+    @keyframes pulseGlow {
+        0%, 100% {
+            box-shadow: 0 0 20px rgba(111, 66, 193, 0.3);
+        }
+        50% {
+            box-shadow: 0 0 30px rgba(111, 66, 193, 0.5);
+        }
+    }
+    
+    .pulse-score-card:hover {
+        animation: pulseGlow 2s ease-in-out infinite;
+    }
+    
+    /* Enhanced loading states */
+    .stat-card.loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+    
+    .stat-card.loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid transparent;
+        border-top: 2px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+</style>
 {% endblock %}

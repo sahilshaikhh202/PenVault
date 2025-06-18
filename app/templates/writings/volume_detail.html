@@ -32,7 +32,7 @@
                 <button type="submit" class="btn btn-outline-danger btn-sm">
                     <i class="fas fa-trash"></i> Delete Volume
                 </button>
-            </form>
+    </form>
         </div>
     </div>
     {% endif %}
@@ -105,13 +105,13 @@
         <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Log In</a>
     </div>
     {% else %}
-        <h4 class="mt-4">Chapters</h4>
-        {% if chapters %}
+    <h4 class="mt-4">Chapters</h4>
+    {% if chapters %}
         <div class="list-group mb-4">
             {% for chapter in chapters %}
             <div class="list-group-item d-flex justify-content-between align-items-center">
                 <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}" class="text-decoration-none flex-grow-1">
-                    {{ chapter.title }}
+                {{ chapter.title }}
                     {% if chapter.is_premium %}
                     <span class="premium-badge-small"><i class="fas fa-crown"></i> Premium</span>
                     {% endif %}
@@ -132,7 +132,7 @@
                                 <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Are you sure you want to delete this chapter? This action cannot be undone.');">
                                     <i class="fas fa-trash"></i> Delete Chapter
                                 </button>
-                            </form>
+                    </form>
                         </li>
                     </ul>
                 </div>
@@ -140,7 +140,7 @@
             </div>
             {% endfor %}
         </div>
-        {% else %}
+    {% else %}
         <p class="text-muted">No chapters available in this volume yet.</p>
         {% endif %}
     {% endif %}

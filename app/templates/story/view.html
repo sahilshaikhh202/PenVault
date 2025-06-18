@@ -181,7 +181,7 @@
             <!-- Story Content -->
             {% if story.is_premium and current_user.is_authenticated and current_user != story.author %}
                 {% if unlocked %}
-                <div class="story-content mb-4" id="storyContent">
+            <div class="story-content mb-4" id="storyContent">
                     {% if story.writing_type == 'poetry' %}
                     <div class="poetry-content" style="white-space: pre-line; font-family: 'Georgia', serif; font-size: 1.2em;">
                         {{ story.content|safe }}
@@ -240,8 +240,8 @@
                 <h3>Premium Content</h3>
                 <p>This content is locked. Please log in to unlock or create your own premium content.</p>
                 <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Log In</a>
-            </div>
-            {% else %}
+                </div>
+                {% else %}
             <div class="story-content mb-4" id="storyContent">
                 {% if story.writing_type == 'poetry' %}
                 <div class="poetry-content" style="white-space: pre-line; font-family: 'Georgia', serif; font-size: 1.2em;">

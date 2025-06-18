@@ -1,161 +1,376 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Enhanced Feed Page with modern design and better accessibility -->
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8 mx-auto">
-            <h1 class="mb-4">
-                <i class="fas fa-rss text-primary"></i> Your Feed
+            <!-- Enhanced Feed Header -->
+            <div class="feed-header mb-5" role="banner" aria-labelledby="feed-title">
+                <div class="text-center mb-4">
+                    <h1 id="feed-title" class="display-6 fw-bold mb-3">
+                        <i class="fas fa-rss text-primary me-3" aria-hidden="true"></i>Your Feed
             </h1>
+                    <p class="lead text-muted">Stories from writers you follow, delivered fresh to your feed</p>
+                </div>
+            </div>
             
             {% if stories %}
+            <!-- Enhanced Stories Feed -->
+            <div class="stories-feed" role="main" aria-label="Stories from followed writers">
                 {% for story in stories %}
-                    <div class="card mb-4 shadow-sm">
-                        <!-- Story Header -->
-                        <div class="card-header bg-white d-flex align-items-center py-3">
-                            <a href="{{ url_for('main.profile', username=story.author.username) }}" class="text-decoration-none">
+                <article class="feed-story-card card mb-4 shadow-sm" role="article" aria-labelledby="feed-story-title-{{ story.id }}">
+                    <!-- Enhanced Story Header -->
+                    <header class="card-header bg-white d-flex align-items-center py-3">
+                        <a href="{{ url_for('main.profile', username=story.author.username) }}" 
+                           class="author-profile-link text-decoration-none d-flex align-items-center" 
+                           aria-label="View {{ story.author.username }}'s profile">
                                 <img src="{{ url_for('static', filename='profile_pics/' + story.author.profile_picture) }}" 
-                                     class="rounded-circle me-2" 
-                                     style="width: 40px; height: 40px; object-fit: cover;"
-                                     alt="{{ story.author.username }}">
-                            </a>
-                            <div>
+                                 class="author-avatar rounded-circle me-3" 
+                                 style="width: 48px; height: 48px; object-fit: cover;"
+                                 alt="Profile picture of {{ story.author.username }}">
+                        </a>
+                        <div class="author-info flex-grow-1">
                                 <a href="{{ url_for('main.profile', username=story.author.username) }}" 
-                                   class="text-decoration-none text-dark fw-bold">
+                               class="author-name text-decoration-none text-dark fw-bold d-block">
                                     {{ story.author.username }}
                                 </a>
-                                <div class="text-muted small">
+                            <div class="story-meta text-muted small">
+                                <i class="fas fa-clock me-1" aria-hidden="true"></i>
                                     {{ story.created_at.strftime('%B %d, %Y') }}
-                                </div>
                             </div>
                         </div>
+                    </header>
                         
-                        <!-- Story Content -->
+                    <!-- Enhanced Story Content -->
                         <div class="card-body">
-                            <!-- Story Type Badge -->
-                            <span class="badge bg-primary mb-2">
+                        <!-- Enhanced Story Type and Premium Badges -->
+                        <div class="story-badges mb-3">
+                            <span class="badge story-type-badge bg-primary me-2">
                                 {{ story.writing_type|title }}
                             </span>
                             {% if story.is_premium %}
-                            <span class="premium-badge ms-2">
-                                <i class="fas fa-crown"></i> Premium
+                            <span class="premium-badge" aria-label="Premium content">
+                                <i class="fas fa-crown" aria-hidden="true"></i> Premium
                             </span>
                             {% endif %}
+                        </div>
                             
-                            <!-- Story Title -->
-                            <h5 class="card-title">
+                        <!-- Enhanced Story Title -->
+                        <h2 id="feed-story-title-{{ story.id }}" class="story-title h4 fw-bold mb-3">
                                 <a href="{{ url_for('main.story', story_id=story.id) }}" 
-                                   class="text-decoration-none text-dark">
+                               class="text-decoration-none text-dark story-link">
                                     {{ story.title }}
                                 </a>
-                            </h5>
+                        </h2>
                             
-                            <!-- Cover Image -->
+                        <!-- Enhanced Cover Image -->
                             {% if story.cover_image %}
+                        <div class="story-cover mb-3">
                                 <img src="{{ url_for('static', filename='story_covers/' + story.cover_image) }}" 
-                                     class="img-fluid rounded mb-3" 
-                                     alt="{{ story.title }}"
+                                 class="img-fluid rounded story-cover-img" 
+                                 alt="Cover image for {{ story.title }}"
                                      style="max-height: 400px; width: 100%; object-fit: cover;">
+                        </div>
                             {% endif %}
                             
-                            <!-- Story Preview -->
-                            <p class="card-text">
+                        <!-- Enhanced Story Preview -->
+                        <div class="story-preview mb-4">
                                 {% if story.is_premium and current_user != story.author %}
                                 <div class="premium-content-lock">
-                                    <i class="fas fa-lock"></i>
-                                    <p>Premium content - Only available to the author</p>
+                                <i class="fas fa-lock" aria-hidden="true"></i>
+                                <h3 class="h5 mb-2">Premium Content</h3>
+                                <p class="mb-3">This content is only available to the author</p>
                                 </div>
                                 {% else %}
+                            <div class="story-excerpt">
+                                <p class="card-text text-muted">
                                 {{ story.summary or story.content[:200] + '...' }}
+                                </p>
+                            </div>
                                 {% endif %}
-                            </p>
-                            
-                            <!-- Story Footer -->
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <div class="btn-group">
+                        </div>
+                        
+                        <!-- Enhanced Story Actions -->
+                        <footer class="story-actions">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="action-buttons">
                                     <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-book-open me-1"></i> Read More
+                                       class="btn btn-primary btn-sm me-2" 
+                                       role="button" 
+                                       aria-label="Read {{ story.title }}">
+                                        <i class="fas fa-book-open me-1" aria-hidden="true"></i>Read More
                                     </a>
                                     {% if current_user.is_authenticated %}
                                         {% if story in current_user.saved_stories %}
                                             <form action="{{ url_for('main.unsave_story', story_id=story.id) }}" method="POST" class="d-inline">
-                                                <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                                    <i class="fas fa-bookmark"></i> Saved
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm" 
+                                                        aria-label="Remove {{ story.title }} from reading list">
+                                                    <i class="fas fa-bookmark me-1" aria-hidden="true"></i>Saved
                                                 </button>
                                             </form>
                                         {% else %}
                                             <a href="{{ url_for('main.save_story', story_id=story.id) }}" 
-                                               class="btn btn-sm btn-outline-secondary">
-                                                <i class="far fa-bookmark"></i> Save
+                                               class="btn btn-outline-secondary btn-sm" 
+                                               role="button" 
+                                               aria-label="Save {{ story.title }} to reading list">
+                                                <i class="far fa-bookmark me-1" aria-hidden="true"></i>Save
                                             </a>
                                         {% endif %}
                                     {% endif %}
                                 </div>
-                                <div class="text-muted">
-                                    <span class="me-3">
-                                        <i class="fas fa-eye"></i> {{ story.views }}
+                                <div class="story-stats">
+                                    <span class="stat-item me-3" aria-label="{{ story.views }} views">
+                                        <i class="fas fa-eye text-secondary me-1" aria-hidden="true"></i>
+                                        <span class="stat-value">{{ story.views }}</span>
                                     </span>
-                                    <span>
-                                        <i class="fas fa-heart"></i> {{ story.likes }}
+                                    <span class="stat-item" aria-label="{{ story.likes }} likes">
+                                        <i class="fas fa-heart text-danger me-1" aria-hidden="true"></i>
+                                        <span class="stat-value">{{ story.likes }}</span>
                                     </span>
                                 </div>
                             </div>
                             
-                            <!-- Tags -->
+                            <!-- Enhanced Tags -->
                             {% if story.tags %}
-                                <div class="mt-3">
+                            <div class="story-tags">
                                     {% for tag in story.tags %}
                                         <a href="{{ url_for('main.tag', tag_name=tag.name) }}" 
-                                           class="badge bg-light text-dark text-decoration-none me-1">
+                                       class="tag-badge badge bg-light text-dark text-decoration-none me-1" 
+                                       role="button" 
+                                       aria-label="View stories tagged with {{ tag.name }}">
                                             #{{ tag.name }}
                                         </a>
                                     {% endfor %}
                                 </div>
                             {% endif %}
-                        </div>
+                        </footer>
                     </div>
+                </article>
                 {% endfor %}
+            </div>
             {% else %}
-                <div class="text-center py-5">
-                    <i class="fas fa-rss fa-3x text-muted mb-3"></i>
-                    <h3 class="text-muted">Your feed is empty</h3>
-                    <p class="text-muted">Start following other writers to see their stories here!</p>
-                    <a href="{{ url_for('main.discover') }}" class="btn btn-primary mt-3">
-                        <i class="fas fa-compass me-2"></i>Explore Writers
+            <!-- Enhanced Empty Feed State -->
+            <div class="empty-feed-state text-center py-5" role="status" aria-live="polite">
+                <div class="empty-feed-icon mb-4">
+                    <i class="fas fa-rss fa-4x text-muted" aria-hidden="true"></i>
+                </div>
+                <h2 class="h4 fw-bold mb-3">Your feed is empty</h2>
+                <p class="text-muted mb-4">Start following other writers to see their stories here!</p>
+                <div class="empty-feed-actions">
+                    <a href="{{ url_for('main.discover') }}" class="btn btn-primary btn-lg" role="button">
+                        <i class="fas fa-compass me-2" aria-hidden="true"></i>Explore Writers
                     </a>
+                </div>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
 
+<!-- Enhanced Styles -->
 <style>
-    .card {
+    /* Enhanced feed page styles */
+    .feed-header {
+        background: linear-gradient(135deg, var(--primary-light) 0%, rgba(74, 144, 226, 0.05) 100%);
+        border-radius: var(--border-radius-xl);
+        padding: var(--spacing-xl);
+        margin-bottom: var(--spacing-xxl);
+    }
+    
+    /* Enhanced feed story cards */
+    .feed-story-card {
         border: none;
-        transition: transform 0.2s;
+        border-radius: var(--border-radius-lg);
+        transition: all var(--transition-normal);
+        overflow: hidden;
+        border: 1px solid rgba(0, 0, 0, 0.05);
     }
     
-    .card:hover {
+    .feed-story-card:hover {
         transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
     }
     
-    .badge {
-        font-weight: 500;
-        padding: 0.5em 0.8em;
+    .feed-story-card .card-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     }
     
-    .btn-group .btn {
-        border-radius: 20px;
-        padding: 0.375rem 1rem;
+    .author-avatar {
+        transition: transform var(--transition-fast);
+        border: 2px solid transparent;
     }
     
-    .card-header {
-        border-bottom: 1px solid rgba(0,0,0,0.1);
+    .author-profile-link:hover .author-avatar {
+        transform: scale(1.05);
+        border-color: var(--primary-color);
     }
     
-    .text-muted i {
-        margin-right: 0.25rem;
+    .author-name {
+        transition: color var(--transition-fast);
+        font-size: 1.1rem;
+    }
+    
+    .author-profile-link:hover .author-name {
+        color: var(--primary-color) !important;
+    }
+    
+    .story-type-badge {
+        font-weight: var(--font-weight-medium);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border-radius: var(--border-radius-sm);
+    }
+    
+    .story-title a {
+        transition: color var(--transition-fast);
+        line-height: var(--line-height-tight);
+    }
+    
+    .feed-story-card:hover .story-title a {
+        color: var(--primary-color) !important;
+    }
+    
+    .story-cover-img {
+        transition: transform var(--transition-normal);
+    }
+    
+    .feed-story-card:hover .story-cover-img {
+        transform: scale(1.02);
+    }
+    
+    .story-excerpt {
+        line-height: var(--line-height-base);
+    }
+    
+    .action-buttons .btn {
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-weight: var(--font-weight-medium);
+        transition: all var(--transition-fast);
+    }
+    
+    .action-buttons .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .stat-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.875rem;
+        color: var(--text-light);
+    }
+    
+    .stat-value {
+        font-weight: var(--font-weight-medium);
+    }
+    
+    .tag-badge {
+        transition: all var(--transition-fast);
+        font-size: 0.875rem;
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+    
+    .tag-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+        background-color: var(--primary-color) !important;
+        color: white !important;
+    }
+    
+    /* Enhanced empty feed state */
+    .empty-feed-state {
+        background: linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(74, 144, 226, 0.02) 100%);
+        border-radius: var(--border-radius-xl);
+        padding: var(--spacing-xxl);
+    }
+    
+    .empty-feed-icon {
+        opacity: 0.6;
+    }
+    
+    /* Enhanced responsive design */
+    @media (max-width: 768px) {
+        .feed-header {
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .feed-header h1 {
+            font-size: 2rem;
+        }
+        
+        .feed-story-card {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .feed-story-card .card-header {
+            flex-direction: column;
+            text-align: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .author-avatar {
+            width: 64px !important;
+            height: 64px !important;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .action-buttons .btn {
+            width: 100%;
+        }
+        
+        .story-stats {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--spacing-xs);
+        }
+    }
+    
+    /* Enhanced accessibility */
+    .feed-story-card:focus-within {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+    
+    .tag-badge:focus,
+    .action-buttons .btn:focus {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+    
+    /* Enhanced dark mode compatibility */
+    body.dark-mode .feed-header {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+    }
+    
+    body.dark-mode .feed-story-card {
+        background: var(--dark-surface);
+        border-color: var(--dark-border);
+    }
+    
+    body.dark-mode .feed-story-card .card-header {
+        background: linear-gradient(135deg, var(--dark-bg-tertiary) 0%, var(--dark-surface) 100%);
+        border-color: var(--dark-border);
+    }
+    
+    body.dark-mode .empty-feed-state {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+    }
+    
+    body.dark-mode .tag-badge {
+        background-color: var(--dark-bg-tertiary) !important;
+        color: var(--dark-text-primary) !important;
+    }
+    
+    body.dark-mode .tag-badge:hover {
+        background-color: var(--dark-primary) !important;
+        color: var(--dark-text-primary) !important;
     }
 </style>
 {% endblock %} 

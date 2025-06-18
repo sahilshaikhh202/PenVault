@@ -1,360 +1,496 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Profile Header Section -->
+<!-- Enhanced Profile Page with modern design and better accessibility -->
 <div class="container py-4">
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
-                <div class="d-flex align-items-center mb-4">
-                    <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" 
-                         class="rounded-circle me-4" style="width: 100px; height: 100px; object-fit: cover;" 
-                         alt="{{ user.username }}">
-                    <div>
-                        <div class="d-flex align-items-center mb-2">
-                            <h1 class="h3 mb-0">{{ user.username }}</h1>
-                        </div>
-                        {% if user.bio %}
-                        <p class="mb-2">{{ user.bio }}</p>
-                        {% endif %}
-                        <div class="d-flex align-items-center text-muted">
-                            <span><i class="far fa-envelope me-1"></i> {{ user.email }}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="d-flex justify-content-between border-top border-bottom py-3 mb-4">
-                    <div class="text-center px-3">
-                        <div class="fw-bold">{{ user.stories.count() }}</div>
-                        <div class="text-muted small">Stories</div>
-                    </div>
-                    <div class="text-center px-3">
-                        <div class="fw-bold">{{ user.followers.count() }}</div>
-                        <div class="text-muted small">Followers</div>
-                    </div>
-                    <div class="text-center px-3">
-                        <div class="fw-bold">{{ user.following.count() }}</div>
-                        <div class="text-muted small">Following</div>
-                    </div>
-                </div>
-                
-                <div class="d-flex">
-                    {% if current_user.is_authenticated %}
-                        {% if current_user != user %}
-                            {% if current_user.is_following(user) %}
-                            <a href="{{ url_for('main.unfollow', username=user.username) }}" class="btn btn-outline-primary me-2">
-                                <i class="fas fa-user-minus me-1"></i> Unfollow
-                            </a>
-                            {% else %}
-                            <a href="{{ url_for('main.follow', username=user.username) }}" class="btn btn-primary me-2">
-                                <i class="fas fa-user-plus me-1"></i> Follow
-                            </a>
-                            {% endif %}
-                        {% else %}
-                            <a href="{{ url_for('main.edit_profile') }}" class="btn btn-outline-primary me-2">
-                                <i class="fas fa-edit me-1"></i> Edit Profile
-                            </a>
-                            <div class="dropdown">
-                                <a class="btn btn-primary dropdown-toggle" href="#" id="writeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-plus me-1"></i> Write
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="writeDropdown">
-                                    <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='story') }}">Story</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='poetry') }}">Poetry</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='quote') }}">Quote</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='essay') }}">Essay</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='other') }}">Other</a></li>
-                                </ul>
+    <!-- Enhanced Profile Header Section -->
+    <div class="profile-header-section mb-5" role="banner" aria-labelledby="profile-title">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="profile-header-card card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                    <div class="card-body p-5">
+                        <div class="profile-info d-flex align-items-center mb-4">
+                            <div class="profile-avatar-wrapper me-4">
+                                <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) if user.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
+                                     class="profile-avatar rounded-circle" 
+                                     style="width: 120px; height: 120px; object-fit: cover; border: 4px solid white; box-shadow: var(--shadow-md);" 
+                                     alt="Profile picture of {{ user.username }}">
                             </div>
-                        {% endif %}
-                    {% else %}
-                        {% if current_user != user %}
-                            <a href="{{ url_for('auth.login', next=url_for('main.profile', username=user.username)) }}" class="btn btn-outline-primary me-2">
-                                <i class="fas fa-sign-in-alt me-1"></i> Log in to Follow
-                            </a>
-                        {% endif %}
-                    {% endif %}
+                            <div class="profile-details flex-grow-1">
+                                <div class="profile-name-section mb-3">
+                                    <h1 id="profile-title" class="h2 fw-bold mb-2">{{ user.username }}</h1>
+                                    {% if user.bio %}
+                                    <p class="profile-bio text-muted mb-2">{{ user.bio }}</p>
+                                    {% endif %}
+                                    <div class="profile-contact text-muted">
+                                        <i class="fas fa-envelope me-2" aria-hidden="true"></i>
+                                        <span>{{ user.email }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Enhanced Profile Stats -->
+                        <div class="profile-stats d-flex justify-content-between border-top border-bottom py-4 mb-4">
+                            <div class="stat-item text-center px-3">
+                                <div class="stat-value fw-bold fs-4">{{ user.stories.count() }}</div>
+                                <div class="stat-label text-muted small">Stories</div>
+                            </div>
+                            <div class="stat-item text-center px-3">
+                                <div class="stat-value fw-bold fs-4">{{ user.followers.count() }}</div>
+                                <div class="stat-label text-muted small">Followers</div>
+                            </div>
+                            <div class="stat-item text-center px-3">
+                                <div class="stat-value fw-bold fs-4">{{ user.following.count() }}</div>
+                                <div class="stat-label text-muted small">Following</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Enhanced Profile Actions -->
+                        <div class="profile-actions d-flex flex-wrap gap-3">
+                            {% if current_user.is_authenticated %}
+                                {% if current_user != user %}
+                                    {% if current_user.is_following(user) %}
+                                    <a href="{{ url_for('main.unfollow', username=user.username) }}" 
+                                       class="btn btn-outline-primary btn-lg" 
+                                       role="button" 
+                                       aria-label="Unfollow {{ user.username }}">
+                                        <i class="fas fa-user-minus me-2" aria-hidden="true"></i>Unfollow
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ url_for('main.follow', username=user.username) }}" 
+                                       class="btn btn-primary btn-lg" 
+                                       role="button" 
+                                       aria-label="Follow {{ user.username }}">
+                                        <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Follow
+                                    </a>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{{ url_for('main.edit_profile') }}" 
+                                       class="btn btn-outline-primary btn-lg" 
+                                       role="button" 
+                                       aria-label="Edit your profile">
+                                        <i class="fas fa-edit me-2" aria-hidden="true"></i>Edit Profile
+                                    </a>
+                                    <div class="dropdown">
+                                        <a class="btn btn-primary btn-lg dropdown-toggle" 
+                                           href="#" 
+                                           id="writeDropdown" 
+                                           data-bs-toggle="dropdown" 
+                                           aria-expanded="false" 
+                                           aria-haspopup="true"
+                                           aria-label="Start writing">
+                                            <i class="fas fa-plus me-2" aria-hidden="true"></i>Write
+                                        </a>
+                                        <ul class="dropdown-menu" aria-labelledby="writeDropdown">
+                                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='story') }}">
+                                                <i class="fas fa-book me-2" aria-hidden="true"></i>Story</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='poetry') }}">
+                                                <i class="fas fa-feather me-2" aria-hidden="true"></i>Poetry</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='quote') }}">
+                                                <i class="fas fa-quote-left me-2" aria-hidden="true"></i>Quote</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='essay') }}">
+                                                <i class="fas fa-file-alt me-2" aria-hidden="true"></i>Essay</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='other') }}">
+                                                <i class="fas fa-magic me-2" aria-hidden="true"></i>Other</a></li>
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                {% if current_user != user %}
+                                    <a href="{{ url_for('auth.login', next=url_for('main.profile', username=user.username)) }}" 
+                                       class="btn btn-outline-primary btn-lg" 
+                                       role="button" 
+                                       aria-label="Log in to follow {{ user.username }}">
+                                        <i class="fas fa-sign-in-alt me-2" aria-hidden="true"></i>Log in to Follow
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Profile Tabs and Content -->
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <!-- Tabs Navigation -->
-            <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="stories-tab" data-bs-toggle="tab" data-bs-target="#stories" type="button" role="tab" aria-controls="stories" aria-selected="true">
-                        <i class="fas fa-book-open me-1"></i> Stories
-                    </button>
-                </li>
-                {% if not user.hide_saved_list or current_user == user %}
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved" type="button" role="tab" aria-controls="saved" aria-selected="false">
-                        <i class="fas fa-bookmark me-1"></i> Saved
-                    </button>
-                </li>
-                {% endif %}
-                {% if not user.hide_recent_reads or current_user == user %}
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false">
-                        <i class="fas fa-history me-1"></i> Recent Reads
-                    </button>
-                </li>
-                {% endif %}
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="about-tab" data-bs-toggle="tab" data-bs-target="#about" type="button" role="tab" aria-controls="about" aria-selected="false">
-                        <i class="fas fa-user me-1"></i> About
-                    </button>
-                </li>
-            </ul>
-            
-            <!-- Tabs Content -->
-            <div class="tab-content" id="profileTabsContent">
-                <!-- Stories Tab -->
-                <div class="tab-pane fade show active" id="stories" role="tabpanel" aria-labelledby="stories-tab">
-                    {% if stories %}
-                        <div class="row g-4">
-                            {% for story in stories %}
-                            <div class="col-md-6 mb-4">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    {% if story.cover_image %}
-                                    <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
-                                         class="card-img-top" style="height: 180px; object-fit: cover;" alt="{{ story.title }}">
-                                    {% endif %}
-                                    <div class="card-body position-relative">
-                                        {% if current_user == user %}
-                                        <div class="dropdown position-absolute top-0 end-0" style="margin-top: 0.25rem; margin-right: 0.25rem;">
-                                            <button class="btn btn-link text-dark p-0" type="button" id="dropdownMenuButton{{ story.id }}" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.5rem;">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton{{ story.id }}">
-                                                <li><a class="dropdown-item" href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}">Read More</a></li>
-                                                {% if story.writing_type == 'webnovel' %}
-                                                <li><a class="dropdown-item" href="{{ url_for('main.edit_novel', novel_slug=story.novel.slug) }}">Edit</a></li>
-                                                {% else %}
-                                                <li><a class="dropdown-item" href="{{ url_for('main.edit_story', story_id=story.id) }}">Edit</a></li>
+    <!-- Enhanced Profile Tabs and Content -->
+    <div class="profile-content-section">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <!-- Enhanced Tabs Navigation -->
+                <ul class="nav nav-tabs profile-tabs mb-4" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="stories-tab" data-bs-toggle="tab" data-bs-target="#stories" type="button" role="tab" aria-controls="stories" aria-selected="true">
+                            <i class="fas fa-book-open me-2" aria-hidden="true"></i>Stories
+                        </button>
+                    </li>
+                    {% if not user.hide_saved_list or current_user == user %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved" type="button" role="tab" aria-controls="saved" aria-selected="false">
+                            <i class="fas fa-bookmark me-2" aria-hidden="true"></i>Saved
+                        </button>
+                    </li>
+                    {% endif %}
+                    {% if not user.hide_recent_reads or current_user == user %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false">
+                            <i class="fas fa-history me-2" aria-hidden="true"></i>Recent Reads
+                        </button>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="about-tab" data-bs-toggle="tab" data-bs-target="#about" type="button" role="tab" aria-controls="about" aria-selected="false">
+                            <i class="fas fa-user me-2" aria-hidden="true"></i>About
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Enhanced Tabs Content -->
+                <div class="tab-content" id="profileTabsContent">
+                    <!-- Enhanced Stories Tab -->
+                    <div class="tab-pane fade show active" id="stories" role="tabpanel" aria-labelledby="stories-tab">
+                        {% if stories %}
+                            <div class="stories-grid">
+                                <div class="row g-4">
+                                    {% for story in stories %}
+                                    <div class="col-md-6 col-lg-4">
+                                        <article class="story-card card h-100 border-0 shadow-sm" role="article" aria-labelledby="story-title-{{ story.id }}">
+                                            {% if story.cover_image %}
+                                            <div class="story-cover">
+                                                <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
+                                                     class="card-img-top story-cover-img" 
+                                                     style="height: 200px; object-fit: cover;" 
+                                                     alt="Cover image for {{ story.title }}">
+                                            </div>
+                                            {% endif %}
+                                            <div class="card-body position-relative">
+                                                {% if current_user == user %}
+                                                <div class="story-actions-dropdown dropdown position-absolute top-0 end-0" style="margin-top: 0.25rem; margin-right: 0.25rem;">
+                                                    <button class="btn btn-link text-dark p-0" 
+                                                            type="button" 
+                                                            id="dropdownMenuButton{{ story.id }}" 
+                                                            data-bs-toggle="dropdown" 
+                                                            aria-expanded="false" 
+                                                            aria-label="Story actions menu"
+                                                            style="font-size: 1.5rem;">
+                                                        <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton{{ story.id }}">
+                                                        <li><a class="dropdown-item" href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}">
+                                                            <i class="fas fa-book-open me-2" aria-hidden="true"></i>Read More</a></li>
+                                                        {% if story.writing_type == 'webnovel' %}
+                                                        <li><a class="dropdown-item" href="{{ url_for('main.edit_novel', novel_slug=story.novel.slug) }}">
+                                                            <i class="fas fa-edit me-2" aria-hidden="true"></i>Edit</a></li>
+                                                        {% else %}
+                                                        <li><a class="dropdown-item" href="{{ url_for('main.edit_story', story_id=story.id) }}">
+                                                            <i class="fas fa-edit me-2" aria-hidden="true"></i>Edit</a></li>
+                                                        {% endif %}
+                                                        <li>
+                                                            <form method="POST" action="{{ url_for('main.delete_story', story_id=story.id) }}" onsubmit="return confirm('Are you sure you want to delete this story?');">
+                                                                <button type="submit" class="dropdown-item text-danger">
+                                                                    <i class="fas fa-trash me-2" aria-hidden="true"></i>Delete
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        {% if not story.is_published %}
+                                                        <li>
+                                                            <form method="POST" action="{{ url_for('main.publish_story', story_id=story.id) }}">
+                                                                <button type="submit" class="dropdown-item text-success">
+                                                                    <i class="fas fa-globe me-2" aria-hidden="true"></i>Publish
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        {% endif %}
+                                                    </ul>
+                                                </div>
                                                 {% endif %}
-                                                <li>
-                                                    <form method="POST" action="{{ url_for('main.delete_story', story_id=story.id) }}" onsubmit="return confirm('Are you sure you want to delete this story?');">
-                                                        <button type="submit" class="dropdown-item text-danger">Delete</button>
-                                                    </form>
-                                                </li>
-                                                {% if not story.is_published %}
-                                                <li>
-                                                    <form method="POST" action="{{ url_for('main.publish_story', story_id=story.id) }}">
-                                                        <button type="submit" class="dropdown-item text-success">Publish</button>
-                                                    </form>
-                                                </li>
+                                                <h3 id="story-title-{{ story.id }}" class="story-title h5 fw-bold mb-2">
+                                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                                                       class="text-decoration-none text-dark story-link">
+                                                        {{ story.title }}
+                                                    </a>
+                                                </h3>
+                                                {% if story.summary %}
+                                                <p class="story-summary text-muted small mb-2">{{ story.summary[:100] }}{% if story.summary|length > 100 %}...{% endif %}</p>
+                                                {% elif story.writing_type == 'quote' %}
+                                                <p class="story-summary text-muted small mb-2">{{ story.content[:100] }}{% if story.content and story.content|length > 100 %}...{% endif %}</p>
+                                                {% elif story.writing_type == 'essay' and story.subtitle %}
+                                                <p class="story-summary text-muted small mb-2">{{ story.subtitle[:100] }}{% if story.subtitle|length > 100 %}...{% endif %}</p>
                                                 {% endif %}
-                                            </ul>
+                                                <div class="story-tags mb-3">
+                                                    {% for tag in story.tags %}
+                                                    <a href="{{ url_for('main.tag', tag_name=tag.name) }}" 
+                                                       class="tag-badge badge bg-primary text-white text-decoration-none me-1" 
+                                                       role="button" 
+                                                       aria-label="View stories tagged with {{ tag.name }}">
+                                                        #{{ tag.name }}
+                                                    </a>
+                                                    {% endfor %}
+                                                </div>
+                                                <div class="story-meta d-flex justify-content-between align-items-center">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-calendar me-1" aria-hidden="true"></i>
+                                                        {{ story.created_at.strftime('%b %d, %Y') }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="empty-stories-state text-center py-5" role="status" aria-live="polite">
+                                <div class="empty-stories-icon mb-4">
+                                    <i class="fas fa-edit fa-4x text-muted" aria-hidden="true"></i>
+                                </div>
+                                <h2 class="h4 fw-bold mb-3">No stories yet</h2>
+                                <p class="text-muted mb-4">You haven't published any stories yet. Start writing your first story!</p>
+                                {% if current_user == user %}
+                                <div class="empty-stories-actions">
+                                    <div class="dropdown d-inline-block">
+                                        <a class="btn btn-primary btn-lg dropdown-toggle" 
+                                           href="#" 
+                                           id="writeDropdown" 
+                                           data-bs-toggle="dropdown" 
+                                           aria-expanded="false" 
+                                           aria-haspopup="true">
+                                            <i class="fas fa-plus me-2" aria-hidden="true"></i>Start Writing
+                                        </a>
+                                        <ul class="dropdown-menu" aria-labelledby="writeDropdown">
+                                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='story') }}">
+                                                <i class="fas fa-book me-2" aria-hidden="true"></i>Story</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='poetry') }}">
+                                                <i class="fas fa-feather me-2" aria-hidden="true"></i>Poetry</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='quote') }}">
+                                                <i class="fas fa-quote-left me-2" aria-hidden="true"></i>Quote</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='essay') }}">
+                                                <i class="fas fa-file-alt me-2" aria-hidden="true"></i>Essay</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='other') }}">
+                                                <i class="fas fa-magic me-2" aria-hidden="true"></i>Other</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Enhanced Saved Tab -->
+                    {% if not user.hide_saved_list or current_user == user %}
+                    <div class="tab-pane fade" id="saved" role="tabpanel" aria-labelledby="saved-tab">
+                        {% if current_user == user and current_user.saved_stories %}
+                            <div class="saved-stories-header mb-4">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                    <h3 class="h5 fw-bold mb-0">Saved Stories</h3>
+                                    <div class="saved-stories-filters d-flex align-items-center gap-3">
+                                        <div class="filter-group">
+                                            <label for="sortType" class="form-label small mb-1">Sort by:</label>
+                                            <select class="form-select form-select-sm" id="sortType" aria-label="Sort saved stories">
+                                                <option value="date_desc">Newest First</option>
+                                                <option value="date_asc">Oldest First</option>
+                                                <option value="type">Writing Type</option>
+                                                <option value="author">Author</option>
+                                            </select>
                                         </div>
-                                        {% endif %}
-                                        <h5 class="card-title">
-                                            <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" class="text-decoration-none text-dark">{{ story.title }}</a>
-                                        </h5>
-                                        {% if story.summary %}
-                                        <p class="card-text text-muted">{{ story.summary[:100] }}{% if story.summary|length > 100 %}...{% endif %}</p>
-                                        {% elif story.writing_type == 'quote' %}
-                                        <p class="card-text text-muted">{{ story.content[:100] }}{% if story.content and story.content|length > 100 %}...{% endif %}</p>
-                                        {% elif story.writing_type == 'essay' and story.subtitle %}
-                                        <p class="card-text text-muted">{{ story.subtitle[:100] }}{% if story.subtitle|length > 100 %}...{% endif %}</p>
-                                        {% endif %}
-                                        <div class="mb-2">
-                                            {% for tag in story.tags %}
-                                            <a href="{{ url_for('main.tag', tag_name=tag.name) }}" class="badge bg-primary text-white text-decoration-none me-1">{{ tag.name }}</a>
-                                            {% endfor %}
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <small class="text-muted">
-                                                {{ story.created_at.strftime('%b %d, %Y') }}
-                                            </small>
+                                        <div class="filter-group">
+                                            <label for="typeFilter" class="form-label small mb-1">Type:</label>
+                                            <select class="form-select form-select-sm" id="typeFilter" aria-label="Filter by writing type">
+                                                <option value="all">All Types</option>
+                                                <option value="story">Story</option>
+                                                <option value="poetry">Poetry</option>
+                                                <option value="quote">Quote</option>
+                                                <option value="essay">Essay</option>
+                                                <option value="webnovel">Webnovel</option>
+                                                <option value="other">Other</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-5">
-                            <div class="mb-3">
-                                <i class="fas fa-edit fa-4x text-muted"></i>
-                            </div>
-                            <h3>No stories yet</h3>
-                            <p class="text-muted">You haven't published any stories yet. Start writing your first story!</p>
-                            {% if current_user == user %}
-                            <div class="dropdown mt-3">
-                                <a class="btn btn-primary dropdown-toggle" href="#" id="writeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-plus me-1"></i> Write
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="writeDropdown">
-                                    <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='story') }}">Story</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='poetry') }}">Poetry</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='quote') }}">Quote</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='essay') }}">Essay</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='other') }}">Other</a></li>
-                                </ul>
-                            </div>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <!-- Saved Tab -->
-                {% if not user.hide_saved_list or current_user == user %}
-                <div class="tab-pane fade" id="saved" role="tabpanel" aria-labelledby="saved-tab">
-                    {% if current_user == user and current_user.saved_stories %}
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h4 class="mb-0">Saved Stories</h4>
-                                <div class="d-flex align-items-center">
-                                    <label for="sortType" class="me-2">Sort by:</label>
-                                    <select class="form-select me-3" id="sortType" style="width: auto;">
-                                        <option value="date_desc">Newest First</option>
-                                        <option value="date_asc">Oldest First</option>
-                                        <option value="type">Writing Type</option>
-                                        <option value="author">Author</option>
-                                    </select>
-                                    <label for="typeFilter" class="me-2">Type:</label>
-                                    <select class="form-select" id="typeFilter" style="width: auto;">
-                                        <option value="all">All Types</option>
-                                        <option value="story">Story</option>
-                                        <option value="poetry">Poetry</option>
-                                        <option value="quote">Quote</option>
-                                        <option value="essay">Essay</option>
-                                        <option value="webnovel">Webnovel</option>
-                                        <option value="other">Other</option>
-                                    </select>
+                            <div class="saved-stories-grid">
+                                <div class="row g-4" id="savedStoriesContainer">
+                                    {% for story in current_user.saved_stories %}
+                                    <div class="col-md-6 col-lg-4 saved-story" 
+                                         data-date="{{ story.created_at.timestamp() }}"
+                                         data-type="{{ story.writing_type }}"
+                                         data-author="{{ story.author.username }}">
+                                        <article class="saved-story-card card h-100 border-0 shadow-sm" role="article">
+                                            {% if story.cover_image %}
+                                            <div class="story-cover">
+                                                <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
+                                                     class="card-img-top story-cover-img" 
+                                                     style="height: 200px; object-fit: cover;" 
+                                                     alt="Cover image for {{ story.title }}">
+                                            </div>
+                                            {% endif %}
+                                            <div class="card-body position-relative">
+                                                <div class="story-actions-dropdown dropdown position-absolute top-0 end-0" style="margin-top: 0.25rem; margin-right: 0.25rem;">
+                                                    <button class="btn btn-link text-dark p-0" 
+                                                            type="button" 
+                                                            id="dropdownMenuButtonSaved{{ story.id }}" 
+                                                            data-bs-toggle="dropdown" 
+                                                            aria-expanded="false" 
+                                                            aria-label="Saved story actions"
+                                                            style="font-size: 1.5rem;">
+                                                        <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonSaved{{ story.id }}">
+                                                        <li><a class="dropdown-item" href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}">
+                                                            <i class="fas fa-book-open me-2" aria-hidden="true"></i>Read More</a></li>
+                                                        <li>
+                                                            <form method="POST" action="{{ url_for('main.unsave_story', story_id=story.id) }}" class="unsave-form">
+                                                                <button type="submit" class="dropdown-item text-danger">
+                                                                    <i class="fas fa-trash-alt me-2" aria-hidden="true"></i>Remove
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                                <h4 class="story-title h6 fw-bold mb-2">
+                                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                                                       class="text-decoration-none text-dark story-link">
+                                                        {{ story.title }}
+                                                    </a>
+                                                </h4>
+                                                <p class="story-author text-muted small mb-2">
+                                                    By <a href="{{ url_for('main.profile', username=story.author.username) }}" 
+                                                         class="text-decoration-none author-link">{{ story.author.username }}</a>
+                                                </p>
+                                                <div class="story-meta d-flex justify-content-between align-items-center">
+                                                    <span class="badge bg-primary">{{ story.writing_type|title }}</span>
+                                                    <small class="text-muted">
+                                                        {{ story.created_at.strftime('%b %d, %Y') }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    </div>
+                                    {% endfor %}
                                 </div>
                             </div>
-                        </div>
-                        <div class="row g-4" id="savedStoriesContainer">
-                            {% for story in current_user.saved_stories %}
-                            <div class="col-md-6 mb-4 saved-story" 
-                                 data-date="{{ story.created_at.timestamp() }}"
-                                 data-type="{{ story.writing_type }}"
-                                 data-author="{{ story.author.username }}">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    {% if story.cover_image %}
-                                    <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
-                                         class="card-img-top" style="height: 180px; object-fit: cover;" alt="{{ story.title }}">
-                                    {% endif %}
-                                    <div class="card-body position-relative">
-                                        <div class="dropdown position-absolute top-0 end-0" style="margin-top: 0.25rem; margin-right: 0.25rem;">
-                                            <button class="btn btn-link text-dark p-0" type="button" id="dropdownMenuButtonSaved{{ story.id }}" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.5rem;">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonSaved{{ story.id }}">
-                                                <li><a class="dropdown-item" href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}">Read More</a></li>
-                                                <li>
-                                                    <form method="POST" action="{{ url_for('main.unsave_story', story_id=story.id) }}" class="unsave-form">
-                                                        <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="fas fa-trash-alt me-2"></i>Remove
+                        {% elif current_user != user %}
+                            <div class="empty-saved-state text-center py-5" role="status" aria-live="polite">
+                                <div class="empty-saved-icon mb-4">
+                                    <i class="fas fa-bookmark fa-4x text-muted" aria-hidden="true"></i>
+                                </div>
+                                <h2 class="h4 fw-bold mb-3">No saved stories to show</h2>
+                                <p class="text-muted">This user has chosen to keep their saved list private.</p>
+                            </div>
+                        {% else %}
+                            <div class="empty-saved-state text-center py-5" role="status" aria-live="polite">
+                                <div class="empty-saved-icon mb-4">
+                                    <i class="fas fa-bookmark fa-4x text-muted" aria-hidden="true"></i>
+                                </div>
+                                <h2 class="h4 fw-bold mb-3">No saved stories</h2>
+                                <p class="text-muted mb-4">You haven't saved any stories yet. Browse stories and save them for later reading.</p>
+                                <a href="{{ url_for('main.index') }}" class="btn btn-primary" role="button">
+                                    <i class="fas fa-search me-2" aria-hidden="true"></i>Explore Stories
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Enhanced History Tab -->
+                    {% if not user.hide_recent_reads or current_user == user %}
+                    <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+                        <div class="reading-history-section">
+                            <div class="row">
+                                <div class="col-12">
+                                    <h3 class="h5 fw-bold mb-4">Recent Reading History</h3>
+                                    {% set history = user.reading_history.order_by(ReadingHistory.timestamp.desc()).limit(20).all() %}
+                                    {% if history %}
+                                    <div class="reading-history-list">
+                                        <ul class="list-group">
+                                            {% for entry in history %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center reading-history-item">
+                                                <a href="{% if entry.story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=entry.story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=entry.story.id) }}{% endif %}" 
+                                                   class="text-decoration-none story-link flex-grow-1">
+                                                    {{ entry.story.title }}
+                                                </a>
+                                                <div class="reading-history-meta d-flex align-items-center gap-3">
+                                                    <span class="text-muted small">
+                                                        <i class="fas fa-clock me-1" aria-hidden="true"></i>
+                                                        {{ entry.timestamp.strftime('%b %d, %Y %H:%M') }}
+                                                    </span>
+                                                    {% if current_user == user %}
+                                                    <form method="POST" action="{{ url_for('main.delete_history_item', history_id=entry.id) }}" style="display:inline;">
+                                                        <button type="submit" 
+                                                                class="btn btn-sm btn-outline-danger" 
+                                                                title="Delete from history"
+                                                                aria-label="Delete {{ entry.story.title }} from reading history">
+                                                            <i class="fas fa-trash" aria-hidden="true"></i>
                                                         </button>
                                                     </form>
-                                                </li>
-                                            </ul>
+                                                    {% endif %}
+                                                </div>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% else %}
+                                    <div class="empty-history-state text-center py-5">
+                                        <p class="text-muted">No recent reading history.</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Enhanced About Tab -->
+                    <div class="tab-pane fade" id="about" role="tabpanel" aria-labelledby="about-tab">
+                        <div class="about-section">
+                            <div class="row g-4">
+                                <div class="col-md-8">
+                                    <div class="about-card card border-0 shadow-sm">
+                                        <div class="card-body p-4">
+                                            <h3 class="card-title h4 fw-bold mb-4">About {{ user.username }}</h3>
+                                            
+                                            {% if user.bio %}
+                                            <div class="bio-section mb-4">
+                                                <h4 class="h6 text-muted mb-3">Bio</h4>
+                                                <p class="bio-text">{{ user.bio }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <div class="contact-section mb-4">
+                                                <h4 class="h6 text-muted mb-3">Contact</h4>
+                                                <p class="contact-info">
+                                                    <i class="fas fa-envelope me-2 text-primary" aria-hidden="true"></i>
+                                                    {{ user.email }}
+                                                </p>
+                                            </div>
+                                            
+                                            <div class="member-since-section">
+                                                <h4 class="h6 text-muted mb-3">Member Since</h4>
+                                                <p class="member-since">
+                                                    <i class="fas fa-calendar-alt me-2 text-primary" aria-hidden="true"></i>
+                                                    {{ user.created_at.strftime('%B %d, %Y') }}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <h5 class="card-title">{{ story.title }}</h5>
-                                        <p class="card-text text-muted">
-                                            By <a href="{{ url_for('main.profile', username=story.author.username) }}" class="text-decoration-none">{{ story.author.username }}</a>
-                                        </p>
-                                        <span class="badge bg-primary mb-2">{{ story.writing_type|title }}</span>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">
-                                                {{ story.created_at.strftime('%b %d, %Y') }}
-                                            </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="points-card card border-0 shadow-sm">
+                                        <div class="card-body p-4 text-center">
+                                            <h4 class="card-title h5 fw-bold mb-3">Points</h4>
+                                            <div class="points-display d-flex align-items-center justify-content-center mb-3">
+                                                <i class="fas fa-star text-warning me-2 fs-4" aria-hidden="true"></i>
+                                                <h3 class="mb-0 fw-bold">{{ user.points }}</h3>
+                                            </div>
+                                            <a href="{{ url_for('main.redeem_points') }}" 
+                                               class="btn btn-primary" 
+                                               role="button">
+                                                <i class="fas fa-gift me-2" aria-hidden="true"></i>Redeem Points
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            {% endfor %}
-                        </div>
-                    {% elif current_user != user %}
-                        <div class="text-center py-5">
-                            <div class="mb-3">
-                                <i class="fas fa-bookmark fa-4x text-muted"></i>
-                            </div>
-                            <h3>No saved stories to show</h3>
-                            <p class="text-muted">This user has chosen to keep their saved list private.</p>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-5">
-                            <div class="mb-3">
-                                <i class="fas fa-bookmark fa-4x text-muted"></i>
-                            </div>
-                            <h3>No saved stories</h3>
-                            <p class="text-muted">You haven't saved any stories yet. Browse stories and save them for later reading.</p>
-                            <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-3">
-                                <i class="fas fa-search me-1"></i> Explore Stories
-                            </a>
-                        </div>
-                    {% endif %}
-                </div>
-                {% endif %}
-                
-                <!-- History Tab -->
-                {% if not user.hide_recent_reads or current_user == user %}
-                <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
-                    <div class="row">
-                        <div class="col-12">
-                            <h5 class="mb-3">Recent Reading History</h5>
-                            {% set history = user.reading_history.order_by(ReadingHistory.timestamp.desc()).limit(20).all() %}
-                            {% if history %}
-                            <ul class="list-group">
-                                {% for entry in history %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <a href="{% if entry.story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=entry.story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=entry.story.id) }}{% endif %}" class="text-decoration-none">{{ entry.story.title }}</a>
-                                    <span class="text-muted small">{{ entry.timestamp.strftime('%b %d, %Y %H:%M') }}</span>
-                                    {% if current_user == user %}
-                                    <form method="POST" action="{{ url_for('main.delete_history_item', history_id=entry.id) }}" style="display:inline;">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger ms-2" title="Delete"><i class="fas fa-trash"></i></button>
-                                    </form>
-                                    {% endif %}
-                                </li>
-                                {% endfor %}
-                            </ul>
-                            {% else %}
-                            <p class="text-muted">No recent reading history.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                <!-- About Tab -->
-                <div class="tab-pane fade" id="about" role="tabpanel" aria-labelledby="about-tab">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <h4 class="card-title mb-4">About {{ user.username }}</h4>
-                            
-                            {% if user.bio %}
-                            <div class="mb-4">
-                                <h5 class="text-muted mb-3">Bio</h5>
-                                <p>{{ user.bio }}</p>
-                            </div>
-                            {% endif %}
-                            
-                            <div class="mb-4">
-                                <h5 class="text-muted mb-3">Contact</h5>
-                                <p><i class="far fa-envelope me-2"></i>{{ user.email }}</p>
-                            </div>
-                            
-                            <div>
-                                <h5 class="text-muted mb-3">Member Since</h5>
-                                <p><i class="far fa-calendar-alt me-2"></i>{{ user.created_at.strftime('%B %d, %Y') }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Points</h5>
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-star text-warning me-2"></i>
-                                <h3 class="mb-0">{{ user.points }}</h3>
-                            </div>
-                            <a href="{{ url_for('main.redeem_points') }}" class="btn btn-primary btn-sm mt-2">Redeem Points</a>
                         </div>
                     </div>
                 </div>
@@ -362,6 +498,289 @@
         </div>
     </div>
 </div>
+
+<!-- Enhanced Styles -->
+<style>
+    /* Enhanced profile page styles */
+    .profile-header-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all var(--transition-normal);
+    }
+    
+    .profile-header-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-xl);
+    }
+    
+    .profile-avatar {
+        transition: transform var(--transition-normal);
+    }
+    
+    .profile-avatar:hover {
+        transform: scale(1.05);
+    }
+    
+    .profile-bio {
+        line-height: var(--line-height-base);
+        max-width: 500px;
+    }
+    
+    .stat-item {
+        transition: all var(--transition-fast);
+        border-radius: var(--border-radius-md);
+        padding: var(--spacing-sm);
+    }
+    
+    .stat-item:hover {
+        background-color: var(--primary-light);
+        transform: translateY(-1px);
+    }
+    
+    .stat-value {
+        color: var(--primary-color);
+    }
+    
+    /* Enhanced tabs */
+    .profile-tabs {
+        border-bottom: 2px solid var(--primary-light);
+    }
+    
+    .profile-tabs .nav-link {
+        border: none;
+        border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+        padding: var(--spacing-md) var(--spacing-lg);
+        font-weight: var(--font-weight-medium);
+        transition: all var(--transition-fast);
+        color: var(--text-light);
+    }
+    
+    .profile-tabs .nav-link:hover {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+    }
+    
+    .profile-tabs .nav-link.active {
+        background-color: var(--primary-color);
+        color: white;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Enhanced story cards */
+    .story-card {
+        transition: all var(--transition-normal);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    
+    .story-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .story-cover-img {
+        transition: transform var(--transition-normal);
+    }
+    
+    .story-card:hover .story-cover-img {
+        transform: scale(1.05);
+    }
+    
+    .story-title a {
+        transition: color var(--transition-fast);
+        line-height: var(--line-height-tight);
+    }
+    
+    .story-card:hover .story-title a {
+        color: var(--primary-color) !important;
+    }
+    
+    .tag-badge {
+        transition: all var(--transition-fast);
+        font-size: 0.875rem;
+    }
+    
+    .tag-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Enhanced saved stories */
+    .saved-stories-filters {
+        flex-wrap: wrap;
+    }
+    
+    .filter-group {
+        min-width: 150px;
+    }
+    
+    .saved-story-card {
+        transition: all var(--transition-normal);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .saved-story-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .author-link {
+        transition: color var(--transition-fast);
+    }
+    
+    .author-link:hover {
+        color: var(--primary-color) !important;
+    }
+    
+    /* Enhanced reading history */
+    .reading-history-item {
+        transition: all var(--transition-fast);
+        border-radius: var(--border-radius-md);
+    }
+    
+    .reading-history-item:hover {
+        background-color: var(--primary-light);
+        transform: translateX(4px);
+    }
+    
+    .reading-history-meta {
+        flex-shrink: 0;
+    }
+    
+    /* Enhanced about section */
+    .about-card,
+    .points-card {
+        transition: all var(--transition-normal);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .about-card:hover,
+    .points-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .points-display {
+        background: linear-gradient(135deg, var(--primary-light) 0%, rgba(74, 144, 226, 0.05) 100%);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+    }
+    
+    /* Enhanced empty states */
+    .empty-stories-state,
+    .empty-saved-state,
+    .empty-history-state {
+        background: linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(74, 144, 226, 0.02) 100%);
+        border-radius: var(--border-radius-xl);
+        padding: var(--spacing-xxl);
+    }
+    
+    .empty-stories-icon,
+    .empty-saved-icon {
+        opacity: 0.6;
+    }
+    
+    /* Enhanced responsive design */
+    @media (max-width: 768px) {
+        .profile-header-card .card-body {
+            padding: var(--spacing-lg);
+        }
+        
+        .profile-info {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .profile-avatar-wrapper {
+            margin-right: 0 !important;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .profile-stats {
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        
+        .stat-item {
+            width: 100%;
+        }
+        
+        .profile-actions {
+            justify-content: center;
+        }
+        
+        .saved-stories-filters {
+            flex-direction: column;
+            align-items: stretch;
+            gap: var(--spacing-sm);
+        }
+        
+        .filter-group {
+            min-width: auto;
+        }
+        
+        .reading-history-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--spacing-sm);
+        }
+        
+        .reading-history-meta {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+    
+    /* Enhanced accessibility */
+    .story-card:focus-within,
+    .saved-story-card:focus-within {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+    
+    .tag-badge:focus,
+    .story-link:focus {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+    
+    /* Enhanced dark mode compatibility */
+    body.dark-mode .profile-header-card {
+        background: linear-gradient(135deg, var(--dark-surface) 0%, var(--dark-bg-tertiary) 100%);
+        border-color: var(--dark-border);
+    }
+    
+    body.dark-mode .profile-tabs {
+        border-bottom-color: var(--dark-border);
+    }
+    
+    body.dark-mode .profile-tabs .nav-link {
+        color: var(--dark-text-secondary);
+    }
+    
+    body.dark-mode .profile-tabs .nav-link:hover {
+        background-color: var(--dark-primary-light);
+        color: var(--dark-primary);
+    }
+    
+    body.dark-mode .story-card,
+    body.dark-mode .saved-story-card {
+        background: var(--dark-surface);
+        border-color: var(--dark-border);
+    }
+    
+    body.dark-mode .about-card,
+    body.dark-mode .points-card {
+        background: var(--dark-surface);
+        border-color: var(--dark-border);
+    }
+    
+    body.dark-mode .empty-stories-state,
+    body.dark-mode .empty-saved-state,
+    body.dark-mode .empty-history-state {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -372,11 +791,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('savedStoriesContainer');
     
     function filterAndSortStories() {
+        if (!container) return;
+        
         const stories = Array.from(container.getElementsByClassName('saved-story'));
         let filtered = stories;
+        
         if (typeFilter && typeFilter.value !== 'all') {
             filtered = stories.filter(story => story.dataset.type === typeFilter.value);
         }
+        
         filtered.sort((a, b) => {
             switch(sortSelect.value) {
                 case 'date_desc':
@@ -391,18 +814,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     return 0;
             }
         });
+        
         // Hide all, then show filtered in order
         stories.forEach(story => story.style.display = 'none');
         filtered.forEach(story => container.appendChild(story));
         filtered.forEach(story => story.style.display = '');
     }
+    
     if (sortSelect && container) {
         sortSelect.addEventListener('change', filterAndSortStories);
     }
     if (typeFilter && container) {
         typeFilter.addEventListener('change', filterAndSortStories);
     }
-    filterAndSortStories();
+    
+    // Initialize sorting
+    if (container) {
+        filterAndSortStories();
+    }
+    
     // Handle unsave forms
     const unsaveForms = document.querySelectorAll('.unsave-form');
     unsaveForms.forEach(form => {

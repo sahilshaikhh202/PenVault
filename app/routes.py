@@ -850,7 +850,7 @@ def chapter_view_slug(novel_slug, volume_slug, chapter_slug):
     novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
     volume = Volume.query.filter_by(slug=volume_slug, novel_id=novel.id).first() # Volume can be null
     chapter = Chapter.query.filter_by(slug=chapter_slug, novel_id=novel.id).first_or_404()
-
+    
     unlocked = False
     if current_user.is_authenticated and chapter.is_premium_content and novel.story.author != current_user:
         unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, chapter_id=chapter.id).first() is not None

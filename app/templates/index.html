@@ -1,71 +1,85 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="hero-section py-5 mb-5">
+<!-- Enhanced Hero Section with better accessibility and modern design -->
+<section class="hero-section py-5 mb-5" role="banner" aria-labelledby="hero-title">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6">
-                <h1 class="display-4 fw-bold mb-3">Where Words <span style="color: #0d6efd;">Come to</span> Life</h1>
-                <p class="lead mb-4">Join a community of creative writers sharing stories, poetry, and literary works. Find inspiration, connect with readers, and showcase your writing talent.</p>
-                <div class="d-flex gap-3">
+                <h1 id="hero-title" class="display-4 fw-bold mb-3">
+                    Where Words <span class="text-gradient-primary">Come to</span> Life
+                </h1>
+                <p class="lead mb-4 text-muted">
+                    Join a community of creative writers sharing stories, poetry, and literary works. 
+                    Find inspiration, connect with readers, and showcase your writing talent.
+                </p>
+                <div class="d-flex gap-3 flex-wrap">
                     {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('main.new_story') }}" class="btn btn-primary">Start Writing</a>
+                    <a href="{{ url_for('main.new_story') }}" class="btn btn-primary btn-lg" role="button">
+                        <i class="fas fa-pen me-2" aria-hidden="true"></i>Start Writing
+                    </a>
                     {% else %}
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Sign Up</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg" role="button">
+                        <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Sign Up
+                    </a>
                     {% endif %}
-                    <a href="{{ url_for('main.discover') }}" class="btn btn-outline-secondary">Discover Stories</a>
+                    <a href="{{ url_for('main.discover') }}" class="btn btn-outline-secondary btn-lg" role="button">
+                        <i class="fas fa-compass me-2" aria-hidden="true"></i>Discover Stories
+                    </a>
                 </div>
             </div>
             <div class="col-lg-6 d-none d-lg-block">
-                <img src="{{ url_for('static', filename='images/writers-desk.png') }}" alt="Writer's desk with laptop, coffee, and notebook" class="img-fluid rounded shadow-sm">
+                <img src="{{ url_for('static', filename='images/writers-desk.png') }}" 
+                     alt="Writer's desk with laptop, coffee, and notebook" 
+                     class="img-fluid rounded shadow-lg" 
+                     loading="lazy">
             </div>
         </div>
     </div>
 </section>
 
-<!-- Why Join Section -->
-<section class="why-join-section py-5 mb-5 bg-white">
+<!-- Enhanced Why Join Section with better visual hierarchy -->
+<section class="why-join-section py-5 mb-5 bg-white" role="region" aria-labelledby="why-join-title">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="h2 fw-bold">Why Join PenVault?</h2>
-            <p class="text-muted">A platform designed by writers, for writers, with everything you need to create, share, and connect.</p>
+            <h2 id="why-join-title" class="h2 fw-bold mb-3">Why Join PenVault?</h2>
+            <p class="text-muted lead">A platform designed by writers, for writers, with everything you need to create, share, and connect.</p>
         </div>
         
         <div class="row g-4">
             <div class="col-md-3">
-                <div class="feature-card p-4 text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-edit text-primary" style="font-size: 2rem;"></i>
+                <div class="feature-card p-4 text-center h-100" role="article">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-edit text-primary" style="font-size: 2.5rem;" aria-hidden="true"></i>
                     </div>
-                    <h5 class="fw-bold">Powerful Editor</h5>
+                    <h3 class="h5 fw-bold mb-3">Powerful Editor</h3>
                     <p class="text-muted small">Write beautiful stories with our intuitive, feature-rich text editor designed for creative writing.</p>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="feature-card p-4 text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-book text-primary" style="font-size: 2rem;"></i>
+                <div class="feature-card p-4 text-center h-100" role="article">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-book text-primary" style="font-size: 2.5rem;" aria-hidden="true"></i>
                     </div>
-                    <h5 class="fw-bold">Showcase Your Work</h5>
+                    <h3 class="h5 fw-bold mb-3">Showcase Your Work</h3>
                     <p class="text-muted small">Create a beautiful portfolio of your writing and build a following of dedicated readers.</p>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="feature-card p-4 text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-users text-primary" style="font-size: 2rem;"></i>
+                <div class="feature-card p-4 text-center h-100" role="article">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-users text-primary" style="font-size: 2.5rem;" aria-hidden="true"></i>
                     </div>
-                    <h5 class="fw-bold">Connect & Collaborate</h5>
+                    <h3 class="h5 fw-bold mb-3">Connect & Collaborate</h3>
                     <p class="text-muted small">Meet fellow writers, exchange feedback, and collaborate on creative projects.</p>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="feature-card p-4 text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-chart-line text-primary" style="font-size: 2rem;"></i>
+                <div class="feature-card p-4 text-center h-100" role="article">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-chart-line text-primary" style="font-size: 2.5rem;" aria-hidden="true"></i>
                     </div>
-                    <h5 class="fw-bold">Grow Your Audience</h5>
+                    <h3 class="h5 fw-bold mb-3">Grow Your Audience</h3>
                     <p class="text-muted small">Get discovered with intelligent recommendations that connect your work with interested readers.</p>
                 </div>
             </div>
@@ -74,34 +88,53 @@
 </section>
 
 {% if featured_stories %}
-<!-- Featured Stories Section -->
-<section id="featured-stories" class="featured-stories-section py-5 mb-5 bg-white">
+<!-- Enhanced Featured Stories Section with better accessibility -->
+<section id="featured-stories" class="featured-stories-section py-5 mb-5 bg-white" role="region" aria-labelledby="featured-stories-title">
     <div class="container">
         <div class="text-center mb-4">
-            <h2 class="h2 fw-bold">🌟 Featured Stories</h2>
+            <h2 id="featured-stories-title" class="h2 fw-bold mb-3">
+                <i class="fas fa-star text-warning me-2" aria-hidden="true"></i>Featured Stories
+            </h2>
             <p class="text-muted">Stories handpicked by our community and featured using points!</p>
         </div>
-        <div class="row">
+        <div class="row g-4">
             {% for story in featured_stories %}
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card h-100 border-0 shadow-sm">
+            <div class="col-md-6 col-lg-4">
+                <article class="card h-100 border-0 shadow-sm story-card" role="article">
                     <div class="card-body d-flex flex-column">
-                        <h5 class="card-title fw-bold">{{ story.title }}</h5>
-                        <p class="card-text small text-muted">
-                            {% if story.writing_type %}
-                                <span class="badge {% if story.writing_type == 'Poetry' %}bg-info{% elif story.writing_type == 'Short Story' %}bg-success{% else %}bg-secondary{% endif %}">
-                                    {{ story.writing_type|title }}
+                        <header class="mb-3">
+                            <h3 class="card-title fw-bold h6 mb-2">
+                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                                   class="text-decoration-none text-dark">
+                                    {{ story.title }}
+                                </a>
+                            </h3>
+                            <div class="story-meta">
+                                {% if story.writing_type %}
+                                    <span class="badge {% if story.writing_type == 'Poetry' %}bg-info{% elif story.writing_type == 'Short Story' %}bg-success{% else %}bg-secondary{% endif %} me-2">
+                                        {{ story.writing_type|title }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-primary me-2">Webnovel</span>
+                                {% endif %}
+                                {% if story.is_premium %}
+                                <span class="premium-badge">
+                                    <i class="fas fa-crown" aria-hidden="true"></i>
                                 </span>
-                            {% else %}
-                                <span class="badge bg-primary">Webnovel</span>
-                            {% endif %}
-                        </p>
+                                {% endif %}
+                            </div>
+                        </header>
                         <div class="mt-auto">
-                            <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" class="btn btn-outline-primary btn-sm">Read Story</a>
-                            <span class="d-block mt-2 text-secondary small">by {{ story.author.username }}</span>
+                            <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                               class="btn btn-outline-primary btn-sm" role="button">
+                                <i class="fas fa-book-open me-1" aria-hidden="true"></i>Read Story
+                            </a>
+                            <p class="text-secondary small mt-2 mb-0">
+                                <i class="fas fa-user me-1" aria-hidden="true"></i>by {{ story.author.username }}
+                            </p>
                         </div>
                     </div>
-                </div>
+                </article>
             </div>
             {% endfor %}
         </div>
@@ -109,36 +142,46 @@
 </section>
 {% endif %}
 
-<!-- Hero CTA Section -->
-<section class="hero-cta-section py-5 mb-5 bg-light text-center">
+<!-- Enhanced Hero CTA Section with better visual impact -->
+<section class="hero-cta-section py-5 mb-5 bg-gradient-primary text-white text-center" role="region" aria-labelledby="cta-title">
     <div class="container">
         <div class="py-5">
-            <h2 class="h1 fw-bold mb-4">Start Your Writing Journey Today</h2>
+            <h2 id="cta-title" class="h1 fw-bold mb-4">Start Your Writing Journey Today</h2>
             <p class="lead mb-4">Join our community of writers and readers to share your stories with the world.</p>
-            <div class="d-flex justify-content-center gap-3">
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
                 {% if current_user.is_authenticated %}
-                <a href="{{ url_for('main.new_story') }}" class="btn btn-primary btn-lg">Write a Story</a>
+                <a href="{{ url_for('main.new_story') }}" class="btn btn-light btn-lg" role="button">
+                    <i class="fas fa-pen me-2" aria-hidden="true"></i>Write a Story
+                </a>
                 {% else %}
-                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Join PenVault</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg" role="button">
+                    <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Join PenVault
+                </a>
                 {% endif %}
-                <a href="{{ url_for('main.discover') }}" class="btn btn-outline-primary btn-lg">Discover Stories</a>
+                <a href="{{ url_for('main.discover') }}" class="btn btn-outline-light btn-lg" role="button">
+                    <i class="fas fa-compass me-2" aria-hidden="true"></i>Discover Stories
+                </a>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Popular Tags and User Content Section -->
-<section class="user-content-section py-5 mb-5">
+<!-- Enhanced Popular Tags and User Content Section -->
+<section class="user-content-section py-5 mb-5" role="region" aria-labelledby="user-content-title">
     <div class="container">
-        <div class="row">
+        <div class="row g-4">
             <div class="col-lg-4">
-                <div class="card border-0 shadow-sm mb-4">
+                <div class="card border-0 shadow-sm mb-4 h-100">
                     <div class="card-body">
-                        <h5 class="card-title fw-bold">Popular Tags</h5>
-                        <div class="d-flex flex-wrap gap-2 mt-3">
+                        <h3 id="user-content-title" class="card-title fw-bold h5 mb-3">
+                            <i class="fas fa-tags me-2 text-primary" aria-hidden="true"></i>Popular Tags
+                        </h3>
+                        <div class="d-flex flex-wrap gap-2">
                             {% for tag in tags %}
-                            <a href="{{ url_for('main.tag', tag_name=tag.name) }}" class="badge bg-primary text-white text-decoration-none">
-                                {{ tag.name }}
+                            <a href="{{ url_for('main.tag', tag_name=tag.name) }}" 
+                               class="badge bg-primary text-white text-decoration-none tag-badge" 
+                               role="button">
+                                #{{ tag.name }}
                             </a>
                             {% endfor %}
                         </div>
@@ -148,49 +191,92 @@
             
             <div class="col-lg-8">
                 {% if current_user.is_authenticated %}
+                <!-- Enhanced Your Stories Section -->
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body">
-                        <h5 class="card-title fw-bold">Your Stories</h5>
+                        <h3 class="card-title fw-bold h5 mb-3">
+                            <i class="fas fa-book me-2 text-primary" aria-hidden="true"></i>Your Stories
+                        </h3>
                         {% set user_stories = current_user.stories.limit(5).all() %}
                         {% if user_stories %}
-                        <ul class="list-group list-group-flush">
+                        <ul class="list-group list-group-flush" role="list">
                             {% for story in user_stories %}
-                            <li class="list-group-item border-0 px-0">
-                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" class="text-decoration-none text-primary">
-                                    {{ story.title }}
+                            <li class="list-group-item border-0 px-0" role="listitem">
+                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                                   class="text-decoration-none text-primary d-flex align-items-center">
+                                    <i class="fas fa-file-alt me-2" aria-hidden="true"></i>
+                                    <span>{{ story.title }}</span>
                                 </a>
                             </li>
                             {% endfor %}
                         </ul>
                         {% if current_user.stories.count() > 5 %}
                         <div class="mt-3 text-center">
-                            <a href="{{ url_for('main.profile', username=current_user.username) }}" class="btn btn-sm btn-outline-primary">View All</a>
+                            <a href="{{ url_for('main.profile', username=current_user.username) }}" 
+                               class="btn btn-sm btn-outline-primary" role="button">
+                                <i class="fas fa-eye me-1" aria-hidden="true"></i>View All
+                            </a>
                         </div>
                         {% endif %}
                         {% else %}
-                        <p class="text-muted mt-3">You haven't written any stories yet.</p>
-                        <a href="{{ url_for('main.new_story') }}" class="btn btn-sm btn-primary">Write a Story</a>
+                        <div class="text-center py-4">
+                            <i class="fas fa-edit fa-3x text-muted mb-3" aria-hidden="true"></i>
+                            <p class="text-muted mb-3">You haven't written any stories yet.</p>
+                            <a href="{{ url_for('main.new_story') }}" class="btn btn-sm btn-primary" role="button">
+                                <i class="fas fa-pen me-1" aria-hidden="true"></i>Write a Story
+                            </a>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
                 
+                <!-- Enhanced Your Reading List Section -->
                 <div class="card border-0 shadow-sm">
                     <div class="card-body">
-                        <h5 class="card-title fw-bold">Your Reading List</h5>
+                        <h3 class="card-title fw-bold h5 mb-3">
+                            <i class="fas fa-bookmark me-2 text-primary" aria-hidden="true"></i>Your Reading List
+                        </h3>
                         {% if current_user.saved_stories %}
-                        <ul class="list-group list-group-flush">
+                        <ul class="list-group list-group-flush" role="list">
                             {% for story in current_user.saved_stories %}
-                            <li class="list-group-item border-0 px-0">
-                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" class="text-decoration-none text-primary">
-                                    {{ story.title }}
+                            <li class="list-group-item border-0 px-0" role="listitem">
+                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                                   class="text-decoration-none text-primary d-flex align-items-center">
+                                    <i class="fas fa-book me-2" aria-hidden="true"></i>
+                                    <div>
+                                        <div>{{ story.title }}</div>
+                                        <small class="text-muted">by {{ story.author.username }}</small>
+                                    </div>
                                 </a>
-                                <small class="text-muted d-block">by {{ story.author.username }}</small>
                             </li>
                             {% endfor %}
                         </ul>
                         {% else %}
-                        <p class="text-muted mt-3">Your reading list is empty. Save stories to read later!</p>
+                        <div class="text-center py-4">
+                            <i class="fas fa-bookmark fa-3x text-muted mb-3" aria-hidden="true"></i>
+                            <p class="text-muted mb-3">Your reading list is empty. Save stories to read later!</p>
+                            <a href="{{ url_for('main.discover') }}" class="btn btn-sm btn-primary" role="button">
+                                <i class="fas fa-compass me-1" aria-hidden="true"></i>Explore Stories
+                            </a>
+                        </div>
                         {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <!-- Enhanced Call to Action for non-authenticated users -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-user-plus fa-3x text-primary mb-3" aria-hidden="true"></i>
+                        <h3 class="h5 fw-bold mb-3">Join the Community</h3>
+                        <p class="text-muted mb-4">Create an account to start writing, save stories, and connect with other writers.</p>
+                        <div class="d-flex justify-content-center gap-3 flex-wrap">
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-primary" role="button">
+                                <i class="fas fa-user-plus me-1" aria-hidden="true"></i>Sign Up
+                            </a>
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary" role="button">
+                                <i class="fas fa-sign-in-alt me-1" aria-hidden="true"></i>Log In
+                            </a>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
@@ -199,16 +285,161 @@
     </div>
 </section>
 
-<!-- Call to Action Section -->
-<section class="cta-section py-5 mb-5 bg-primary text-white text-center">
+<!-- Enhanced Call to Action Section with better visual hierarchy -->
+<section class="cta-section py-5 mb-5 bg-primary text-white text-center" role="region" aria-labelledby="final-cta-title">
     <div class="container">
-        <h2 class="display-6 fw-bold mb-3">Ready to Share Your Story?</h2>
+        <h2 id="final-cta-title" class="display-6 fw-bold mb-3">Ready to Share Your Story?</h2>
         <p class="lead mb-4">Join thousands of writers who have found their voice and their audience on PenVault.</p>
         {% if current_user.is_authenticated %}
-        <a href="{{ url_for('main.new_story') }}" class="btn btn-light btn-lg">Start Writing Today</a>
+        <a href="{{ url_for('main.new_story') }}" class="btn btn-light btn-lg" role="button">
+            <i class="fas fa-pen me-2" aria-hidden="true"></i>Start Writing Today
+        </a>
         {% else %}
-        <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg">Sign Up Now</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg" role="button">
+            <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Sign Up Now
+        </a>
         {% endif %}
     </div>
 </section>
+
+<!-- Enhanced inline styles for better visual design -->
+<style>
+    /* Enhanced hero section */
+    .hero-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 0 0 2rem 2rem;
+        margin-top: -1rem;
+    }
+    
+    .text-gradient-primary {
+        background: linear-gradient(45deg, var(--primary-color), var(--primary-dark));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* Enhanced feature cards */
+    .feature-card {
+        background: white;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-sm);
+        transition: all var(--transition-normal);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .feature-icon {
+        transition: transform var(--transition-normal);
+    }
+    
+    .feature-card:hover .feature-icon {
+        transform: scale(1.1);
+    }
+    
+    /* Enhanced story cards */
+    .story-card {
+        transition: all var(--transition-normal);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .story-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .story-card .card-title a {
+        transition: color var(--transition-fast);
+    }
+    
+    .story-card:hover .card-title a {
+        color: var(--primary-color) !important;
+    }
+    
+    /* Enhanced tag badges */
+    .tag-badge {
+        transition: all var(--transition-fast);
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .tag-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Enhanced gradient backgrounds */
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    }
+    
+    /* Enhanced list items */
+    .list-group-item a {
+        transition: all var(--transition-fast);
+        padding: 0.5rem 0;
+        border-radius: var(--border-radius-sm);
+    }
+    
+    .list-group-item a:hover {
+        background-color: var(--primary-light);
+        padding-left: 0.5rem;
+    }
+    
+    /* Enhanced responsive design */
+    @media (max-width: 768px) {
+        .hero-section {
+            text-align: center;
+            padding: 3rem 0;
+        }
+        
+        .hero-section h1 {
+            font-size: 2rem;
+        }
+        
+        .feature-card {
+            margin-bottom: 1rem;
+        }
+        
+        .d-flex.gap-3 {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .d-flex.gap-3 .btn {
+            width: 100%;
+            max-width: 300px;
+        }
+    }
+    
+    /* Enhanced accessibility */
+    .card-title a:focus,
+    .tag-badge:focus,
+    .list-group-item a:focus {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+    
+    /* Enhanced loading states */
+    .btn:active {
+        transform: translateY(1px);
+    }
+    
+    /* Enhanced dark mode compatibility */
+    body.dark-mode .hero-section {
+        background: linear-gradient(135deg, #23272b 0%, #1a1a1a 100%);
+    }
+    
+    body.dark-mode .feature-card {
+        background: #23272b;
+        border-color: #333;
+    }
+    
+    body.dark-mode .story-card {
+        background: #23272b;
+        border-color: #333;
+    }
+</style>
 {% endblock %}

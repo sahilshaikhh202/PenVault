@@ -57,7 +57,7 @@ class User(UserMixin, db.Model):
     share_points_count = db.Column(db.Integer, default=0)
     referral_count = db.Column(db.Integer, default=0)
     highest_pulse_tier = db.Column(db.String(20))
-
+    
     # Add relationships
     stories = db.relationship('Story', backref='author', lazy='dynamic')
     following = db.relationship('Follow', foreign_keys='Follow.follower_id', backref='follower', lazy='dynamic')
@@ -69,7 +69,7 @@ class User(UserMixin, db.Model):
         super().__init__(*args, **kwargs)
         if self.points is None:
             self.points = 0
-
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 

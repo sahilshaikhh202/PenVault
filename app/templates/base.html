@@ -3,13 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PenVault - A community platform for creative writers to share stories, poetry, and literary works">
+    <meta name="keywords" content="writing, stories, poetry, literature, community, authors">
+    <meta name="author" content="PenVault">
+    
+    <!-- Open Graph Meta Tags for better social sharing -->
+    <meta property="og:title" content="{{ title }} - PenVault">
+    <meta property="og:description" content="Join a community of creative writers sharing stories, poetry, and literary works">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    
     <title>{{ title }} - PenVault</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    
+    <!-- External CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-mode.css') }}">
+    
+    <!-- Theme application script - load early for better UX -->
     <script>
-    // Apply theme as early as possible
+    // Apply theme as early as possible to prevent flash of unstyled content
     (function() {
         try {
             const savedTheme = localStorage.getItem('theme');
@@ -26,100 +46,281 @@
         }
     })();
     </script>
+    
+    <!-- Enhanced inline styles with modern design system -->
     <style>
         :root {
+            /* Enhanced color palette */
             --primary-color: #0d6efd;
             --primary-dark: #0a58ca;
+            --primary-light: #e7f3ff;
             --secondary-color: #6c757d;
             --light-color: #f8f9fa;
             --dark-color: #212529;
+            --success-color: #198754;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #0dcaf0;
+            
+            /* Typography */
+            --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            --font-weight-normal: 400;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            --font-weight-bold: 700;
+            
+            /* Spacing */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-xxl: 3rem;
+            
+            /* Border radius */
+            --border-radius-sm: 0.375rem;
+            --border-radius-md: 0.5rem;
+            --border-radius-lg: 0.75rem;
+            --border-radius-xl: 1rem;
+            
+            /* Shadows */
+            --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+            
+            /* Transitions */
+            --transition-fast: 0.15s ease-in-out;
+            --transition-normal: 0.3s ease-in-out;
+            --transition-slow: 0.5s ease-in-out;
         }
+        
+        /* Enhanced base styles */
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
+            font-family: var(--font-family-base);
+            font-weight: var(--font-weight-normal);
+            line-height: 1.6;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            transition: background-color var(--transition-normal), color var(--transition-normal);
         }
+        
+        /* Enhanced navbar styles */
         .navbar {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            box-shadow: var(--shadow-sm);
             background-color: #fff !important;
-            padding: 0.25rem 1rem;
+            padding: var(--spacing-sm) var(--spacing-md);
             line-height: 1.5;
-        }        
+            transition: all var(--transition-normal);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        
         .navbar-brand {
-            font-weight: 700;
+            font-weight: var(--font-weight-bold);
             color: var(--primary-color) !important;
             display: flex;
             align-items: center;
+            font-size: 1.5rem;
+            text-decoration: none;
+            transition: color var(--transition-fast);
         }
+        
+        .navbar-brand:hover {
+            color: var(--primary-dark) !important;
+        }
+        
         .navbar-brand i {
             color: var(--primary-color);
-            margin-right: 0.5rem;
+            margin-right: var(--spacing-sm);
             font-size: 1.5rem;
         }
+        
         .nav-link {
             color: #495057 !important;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
+            font-weight: var(--font-weight-medium);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius-md);
+            transition: all var(--transition-fast);
+            position: relative;
         }
+        
         .nav-link:hover {
             color: var(--primary-color) !important;
+            background-color: var(--primary-light);
+            transform: translateY(-1px);
         }
+        
         .nav-link.active {
             color: var(--primary-color) !important;
+            background-color: var(--primary-light);
         }
+        
+        /* Enhanced button styles */
+        .btn {
+            font-weight: var(--font-weight-medium);
+            border-radius: var(--border-radius-md);
+            transition: all var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left var(--transition-slow);
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
+            box-shadow: var(--shadow-sm);
         }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
         .btn-outline-primary {
             color: var(--primary-color);
             border-color: var(--primary-color);
         }
+        
         .btn-outline-primary:hover {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
+        
+        /* Enhanced search form */
         .search-form {
             width: 280px;
+            transition: width var(--transition-normal);
         }
+        
+        .search-form:focus-within {
+            width: 320px;
+        }
+        
+        .search-form .form-control {
+            border-radius: var(--border-radius-lg);
+            border: 2px solid transparent;
+            transition: all var(--transition-fast);
+        }
+        
+        .search-form .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+        }
+        
+        /* Enhanced avatar styles */
         .avatar-sm {
             width: 32px;
             height: 32px;
             border-radius: 50%;
             object-fit: cover;
-    }
-        /* Premium content styles */
+            border: 2px solid transparent;
+            transition: all var(--transition-fast);
+        }
+        
+        .avatar-sm:hover {
+            border-color: var(--primary-color);
+            transform: scale(1.1);
+        }
+        
+        /* Enhanced dropdown styles */
+        .dropdown-menu {
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: none;
+            padding: var(--spacing-sm);
+            animation: dropdownFadeIn 0.2s ease-out;
+        }
+        
+        @keyframes dropdownFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .dropdown-item {
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            transition: all var(--transition-fast);
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            transform: translateX(4px);
+        }
+        
+        /* Enhanced premium content styles */
         .premium-content-lock {
             position: relative;
             min-height: 200px;
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.02) 100%);
+            border-radius: var(--border-radius-xl);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
+            padding: var(--spacing-xxl);
             text-align: center;
+            border: 2px dashed rgba(255, 193, 7, 0.3);
+            transition: all var(--transition-normal);
+        }
+        
+        .premium-content-lock:hover {
+            border-color: rgba(255, 193, 7, 0.6);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .premium-content-lock i {
             font-size: 3rem;
             color: #ffd700;
-            margin-bottom: 1rem;
+            margin-bottom: var(--spacing-md);
+            animation: premiumGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes premiumGlow {
+            from { filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); }
+            to { filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8)); }
         }
 
         .premium-content-lock h3 {
-            color: #333;
-            margin-bottom: 1rem;
+            color: var(--dark-color);
+            margin-bottom: var(--spacing-md);
+            font-weight: var(--font-weight-semibold);
         }
 
         .premium-content-lock p {
-            color: #666;
-            margin-bottom: 1.5rem;
+            color: var(--secondary-color);
+            margin-bottom: var(--spacing-lg);
+            font-size: 0.95rem;
         }
 
         body.dark-mode .premium-content-lock {
-            background: rgba(255, 255, 255, 0.05);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border-color: rgba(255, 193, 7, 0.4);
         }
 
         body.dark-mode .premium-content-lock h3 {
@@ -133,132 +334,281 @@
         .premium-badge {
             background: linear-gradient(45deg, #ffd700, #ffa500);
             color: #000;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
+            font-weight: var(--font-weight-semibold);
+            padding: var(--spacing-sm) var(--spacing-md);
             border-radius: 20px;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: var(--spacing-sm);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-fast);
+        }
+        
+        .premium-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* Enhanced alert styles */
+        .alert {
+            border-radius: var(--border-radius-lg);
+            border: none;
+            padding: var(--spacing-md) var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            animation: alertSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes alertSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Enhanced main content area */
+        main {
+            min-height: calc(100vh - 200px);
+            padding-top: var(--spacing-lg);
+        }
+        
+        /* Enhanced footer */
+        .footer {
+            background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            padding: var(--spacing-xl) 0;
+            margin-top: auto;
+        }
+        
+        /* Responsive enhancements */
+        @media (max-width: 768px) {
+            .search-form {
+                width: 100%;
+                margin: var(--spacing-sm) 0;
+            }
+            
+            .search-form:focus-within {
+                width: 100%;
+            }
+            
+            .navbar-brand {
+                font-size: 1.25rem;
+            }
+            
+            .nav-link {
+                padding: var(--spacing-sm);
+                margin: var(--spacing-xs) 0;
+            }
+        }
+        
+        /* Accessibility enhancements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        
+        /* Focus indicators for better accessibility */
+        .btn:focus,
+        .nav-link:focus,
+        .dropdown-item:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        
+        /* Loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid transparent;
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+    <!-- Enhanced navigation with better accessibility -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top" role="navigation" aria-label="Main navigation">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+            <!-- Enhanced brand with better accessibility -->
+            <a class="navbar-brand" href="{{ url_for('main.index') }}" aria-label="PenVault - Home">
                 PenVault
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            
+            <!-- Enhanced mobile toggle button -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <!-- Remove this Home link
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.index') }}">Home</a>
-                    </li> -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.index') }}#featured-stories">
-                            <i class="fas fa-star"></i> Featured
+                <ul class="navbar-nav me-auto" role="menubar">
+                    <li class="nav-item" role="none">
+                        <a class="nav-link" href="{{ url_for('main.index') }}#featured-stories" role="menuitem">
+                            <i class="fas fa-star" aria-hidden="true"></i> 
+                            <span>Featured</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.discover') }}">Discover</a>
+                    <li class="nav-item" role="none">
+                        <a class="nav-link" href="{{ url_for('main.discover') }}" role="menuitem">
+                            <i class="fas fa-compass" aria-hidden="true"></i> 
+                            <span>Discover</span>
+                        </a>
                     </li>
                     {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.feed') }}">
-                            <i class="fas fa-rss"></i> Feed
+                    <li class="nav-item" role="none">
+                        <a class="nav-link" href="{{ url_for('main.feed') }}" role="menuitem">
+                            <i class="fas fa-rss" aria-hidden="true"></i> 
+                            <span>Feed</span>
                         </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="newWritingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            New Writing
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="newWritingDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='story') }}">Story</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='poetry') }}">Poetry</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='quote') }}">Quote</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='essay') }}">Essay</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='other') }}">Other</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_novel') }}">Novel</a></li>
-                        </ul>
                     </li>
                     {% endif %}
                 </ul>
                 
-                <!-- Search form -->
-                <form class="search-form d-none d-md-flex me-3" action="{{ url_for('main.search') }}" method="GET">
+                <!-- Enhanced search form with better accessibility -->
+                <form class="search-form d-none d-md-flex me-3" action="{{ url_for('main.search') }}" method="GET" role="search">
                     <div class="input-group">
-                        <input type="text" class="form-control" name="query" placeholder="Search users..." aria-label="Search">
-                        <button class="btn btn-outline-secondary" type="submit">
-                            <i class="fas fa-search"></i>
+                        <input type="text" class="form-control" name="query" placeholder="Search users..." 
+                               aria-label="Search users" aria-describedby="searchButton">
+                        <button class="btn btn-outline-secondary" type="submit" id="searchButton" aria-label="Search">
+                            <i class="fas fa-search" aria-hidden="true"></i>
                         </button>
                     </div>
                 </form>
                 
                 <div class="d-flex align-items-center">
                     {% if current_user.is_authenticated %}
-                    <div class="dropdown me-3">
-                        <a class="btn btn-primary btn-sm dropdown-toggle" href="#" id="writeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-pen me-1"></i> Write
+                    <!-- Enhanced write dropdown -->
+                    <div class="dropdown me-3" role="none">
+                        <a class="btn btn-primary btn-sm dropdown-toggle" href="#" id="writeDropdown" 
+                           data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                            <i class="fas fa-pen me-1" aria-hidden="true"></i> 
+                            <span>Write</span>
                         </a>
-                        <ul class="dropdown-menu" aria-labelledby="writeDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='story') }}">Story</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='poetry') }}">Poetry</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='quote') }}">Quote</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='essay') }}">Essay</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_story', type='other') }}">Other</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.new_novel') }}">Novel</a></li>
+                        <ul class="dropdown-menu" aria-labelledby="writeDropdown" role="menu">
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('main.new_story', type='story') }}" role="menuitem">Story</a></li>
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('main.new_story', type='poetry') }}" role="menuitem">Poetry</a></li>
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('main.new_story', type='quote') }}" role="menuitem">Quote</a></li>
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('main.new_story', type='essay') }}" role="menuitem">Essay</a></li>
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('main.new_story', type='other') }}" role="menuitem">Other</a></li>
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('main.new_novel') }}" role="menuitem">Novel</a></li>
                         </ul>
                     </div>
-                    <div class="dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    
+                    <!-- Enhanced profile dropdown -->
+                    <div class="dropdown" role="none">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown" 
+                           data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
                             <img src="{{ url_for('static', filename='uploads/' + current_user.profile_picture) if current_user.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
-                                 class="rounded-circle me-1" width="24" height="24" alt="{{ current_user.username }}">
-                            {{ current_user.username }}
+                                 class="avatar-sm me-2" alt="Profile picture of {{ current_user.username }}">
+                            <span>{{ current_user.username }}</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('main.profile', username=current_user.username) }}">Profile</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.drafts') }}">My Drafts</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.statistics') }}">Statistics</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.redeem_points') }}">Redeem Points</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.settings') }}">Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown" role="menu">
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('main.profile', username=current_user.username) }}" role="menuitem">
+                                <i class="fas fa-user me-2" aria-hidden="true"></i>Profile</a></li>
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('main.drafts') }}" role="menuitem">
+                                <i class="fas fa-edit me-2" aria-hidden="true"></i>My Drafts</a></li>
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('main.statistics') }}" role="menuitem">
+                                <i class="fas fa-chart-bar me-2" aria-hidden="true"></i>Statistics</a></li>
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('main.redeem_points') }}" role="menuitem">
+                                <i class="fas fa-star me-2" aria-hidden="true"></i>Redeem Points</a></li>
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('main.settings') }}" role="menuitem">
+                                <i class="fas fa-cog me-2" aria-hidden="true"></i>Settings</a></li>
+                            <li role="none"><hr class="dropdown-divider"></li>
+                            <li role="none"><a class="dropdown-item" href="{{ url_for('auth.logout') }}" role="menuitem">
+                                <i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i>Logout</a></li>
                         </ul>
                     </div>
                     {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-sm me-2">Log in</a>
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Sign up</a>
+                    <!-- Enhanced auth buttons -->
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-sm me-2" role="button">
+                        <i class="fas fa-sign-in-alt me-1" aria-hidden="true"></i>Log in</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm" role="button">
+                        <i class="fas fa-user-plus me-1" aria-hidden="true"></i>Sign up</a>
                     {% endif %}
                 </div>
             </div>
         </div>
     </nav>
 
-    <main class="container mt-4">
+    <!-- Enhanced main content area -->
+    <main class="container mt-4" role="main">
+        <!-- Enhanced flash messages with better accessibility -->
         {% with messages = get_flashed_messages() %}
         {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-info">{{ message }}</div>
-        {% endfor %}
+        <div class="flash-messages" role="alert" aria-live="polite">
+            {% for message in messages %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
         {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer mt-5 py-3 bg-light">
+    <!-- Enhanced footer with better accessibility -->
+    <footer class="footer mt-5 py-3 bg-light" role="contentinfo">
         <div class="container text-center">
-            <span class="text-muted">© PenVault 2025. All rights reserved.</span>
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span class="text-muted">© PenVault 2025. All rights reserved.</span>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-center justify-content-md-end gap-3">
+                        <a href="#" class="text-muted text-decoration-none" aria-label="Privacy Policy">
+                            <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                            <span class="ms-1">Privacy</span>
+                        </a>
+                        <a href="#" class="text-muted text-decoration-none" aria-label="Terms of Service">
+                            <i class="fas fa-file-contract" aria-hidden="true"></i>
+                            <span class="ms-1">Terms</span>
+                        </a>
+                        <a href="#" class="text-muted text-decoration-none" aria-label="Contact Support">
+                            <i class="fas fa-envelope" aria-hidden="true"></i>
+                            <span class="ms-1">Contact</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </footer>
 
+    <!-- Enhanced scripts with better error handling -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
-    // Theme management
+    // Enhanced theme management with better error handling and accessibility
     function setTheme(theme) {
         try {
             document.documentElement.setAttribute('data-theme', theme);
@@ -268,6 +618,15 @@
                 document.documentElement.classList.remove('dark');
             }
             localStorage.setItem('theme', theme);
+            
+            // Announce theme change for screen readers
+            const announcement = document.createElement('div');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.setAttribute('aria-label', 'Theme changed');
+            announcement.className = 'sr-only';
+            announcement.textContent = `Theme changed to ${theme} mode`;
+            document.body.appendChild(announcement);
+            setTimeout(() => announcement.remove(), 1000);
             
             // If user is logged in, save preference to server
             if (typeof currentUser !== 'undefined') {
@@ -284,7 +643,7 @@
         }
     }
 
-    // Check for system preference
+    // Enhanced system preference detection
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         const savedTheme = localStorage.getItem('theme');
         if (!savedTheme) {
@@ -292,7 +651,7 @@
         }
     }
 
-    // Listen for system theme changes
+    // Enhanced system theme change listener
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         const savedTheme = localStorage.getItem('theme');
         if (!savedTheme) {
@@ -302,6 +661,33 @@
 
     // Initialize currentUser variable for theme management
     const currentUser = {% if current_user.is_authenticated %}true{% else %}false{% endif %};
+    
+    // Enhanced page load performance
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add loading states to interactive elements
+        const interactiveElements = document.querySelectorAll('.btn, .nav-link, .dropdown-item');
+        interactiveElements.forEach(element => {
+            element.addEventListener('click', function() {
+                if (!this.classList.contains('disabled')) {
+                    this.classList.add('loading');
+                    setTimeout(() => this.classList.remove('loading'), 1000);
+                }
+            });
+        });
+        
+        // Enhanced keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const dropdowns = document.querySelectorAll('.dropdown-menu.show');
+                dropdowns.forEach(dropdown => {
+                    const dropdownToggle = dropdown.previousElementSibling;
+                    if (dropdownToggle && dropdownToggle.classList.contains('dropdown-toggle')) {
+                        dropdownToggle.click();
+                    }
+                });
+            }
+        });
+    });
     </script>
     {% block scripts %}{% endblock %}
 </body>
