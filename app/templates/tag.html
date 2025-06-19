@@ -19,7 +19,7 @@
     </form>
 
     {% if tag %}
-        <h1 class="mb-4">Stories tagged with "#{{ tag.name }}"</h1>
+        <h1 class="mb-4">Content tagged with "#{{ tag.name }}"</h1>
         {% if stories and stories.items|length > 0 %}
         <div class="row row-cols-1 row-cols-md-3 g-4">
             {% for story in stories.items %}
@@ -30,7 +30,6 @@
                     {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ story.title }}</h5>
-                        <p class="card-text">{{ story.summary }}</p>
                     </div>
                     <div class="card-footer">
                         <div class="d-flex justify-content-between align-items-center">

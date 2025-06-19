@@ -19,7 +19,7 @@
                     <div class="col-md-4 col-lg-3">
                         <label for="type-filter" class="form-label visually-hidden">Filter by writing type</label>
                         <select name="type" id="type-filter" class="form-select form-select-lg" onchange="this.form.submit()" aria-label="Select writing type to filter">
-                            <option value="">All Writing Types</option>
+                            <option value="">All</option>
                             <option value="story" {% if request.args.get('type') == 'story' %}selected{% endif %}>📖 Stories</option>
                             <option value="poetry" {% if request.args.get('type') == 'poetry' %}selected{% endif %}>📝 Poetry</option>
                             <option value="quote" {% if request.args.get('type') == 'quote' %}selected{% endif %}>💭 Quotes</option>
@@ -84,7 +84,7 @@
                                     {% if story.is_premium and current_user != story.author %}
                                     <div class="premium-content-lock">
                                         <i class="fas fa-lock" aria-hidden="true"></i>
-                                        <p class="mb-0">Premium content - Only available to the author</p>
+                                        <p class="mb-0">Premium content</p>
                                     </div>
                                     {% else %}
                                     <blockquote class="quote-preview">

@@ -347,6 +347,10 @@ def unfollow(username):
     flash(f'You are no longer following {username}.', 'info')
     return redirect(url_for('main.profile', username=username))
 
+@main.route('/tags')
+def tags():
+    return render_template('tag.html')
+
 @main.route('/tag', methods=['GET'])
 def tag_search():
     search = request.args.get('search', '').strip()

@@ -238,7 +238,7 @@
             <div class="premium-content-lock">
                 <i class="fas fa-lock"></i>
                 <h3>Premium Content</h3>
-                <p>This content is locked. Please log in to unlock or create your own premium content.</p>
+                <p>This content is locked. Please log in to unlock using points.</p>
                 <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Log In</a>
                 </div>
                 {% else %}
@@ -315,7 +315,7 @@
                 {% if story.tags %}
                 <div class="mb-4">
                     {% for tag in story.tags %}
-                    <a href="{{ url_for('main.discover', tag=tag.name) }}" class="badge bg-light text-dark text-decoration-none me-1">
+                    <a href="{{ url_for('main.tag', tag_name=tag.name) }}" class="badge bg-light text-dark text-decoration-none me-1">
                         #{{ tag.name }}
                     </a>
                     {% endfor %}
