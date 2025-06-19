@@ -1,37 +1,76 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-4">
-    <h2>Add a New Chapter</h2>
-    <form method="POST">
-        {{ form.hidden_tag() }}
-        <div class="mb-3">
-            {{ form.title.label(class="form-label") }}
-            {{ form.title(class="form-control") }}
+<!-- Enhanced container and card for modern, consistent UI -->
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0" style="border-radius: 1.25rem;">
+                <div class="card-body p-5">
+                    <h2 class="fw-bold mb-4 display-6 text-center">Add a New Chapter</h2>
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-4">
+                            {{ form.title.label(class="form-label fw-semibold") }}
+                            {{ form.title(class="form-control form-control-lg") }}
+                        </div>
+                        <div class="mb-4">
+                            {{ form.content.label(class="form-label fw-semibold") }}
+                            {{ form.content(class="form-control", rows=15) }}
+                        </div>
+                        <div class="mb-4">
+                            {{ form.order.label(class="form-label fw-semibold") }}
+                            {{ form.order(class="form-control") }}
+                        </div>
+                        <div class="mb-4">
+                            {{ form.author_notes.label(class="form-label fw-semibold") }}
+                            {{ form.author_notes(class="form-control", rows=3) }}
+                        </div>
+                        <div class="mb-3 form-check">
+                            {{ form.is_draft(class="form-check-input") }}
+                            {{ form.is_draft.label(class="form-check-label") }}
+                        </div>
+                        <div class="mb-3 form-check">
+                            {{ form.is_premium(class="form-check-input") }}
+                            {{ form.is_premium.label(class="form-check-label") }}
+                            <small class="form-text text-muted">If checked, only this chapter will be premium content.</small>
+                        </div>
+                        <div class="d-grid gap-2 mt-4">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            {{ form.content.label(class="form-label") }}
-            {{ form.content(class="form-control", rows=15) }}
-        </div>
-        <div class="mb-3">
-            {{ form.order.label(class="form-label") }}
-            {{ form.order(class="form-control") }}
-        </div>
-        <div class="mb-3">
-            {{ form.author_notes.label(class="form-label") }}
-            {{ form.author_notes(class="form-control", rows=3) }}
-        </div>
-        <div class="mb-3 form-check">
-            {{ form.is_draft(class="form-check-input") }}
-            {{ form.is_draft.label(class="form-check-label") }}
-        </div>
-        <div class="mb-3 form-check">
-            {{ form.is_premium(class="form-check-input") }}
-            {{ form.is_premium.label(class="form-check-label") }}
-            <small class="form-text text-muted">If checked, only this chapter will be premium content.</small>
-        </div>
-        <div class="d-grid gap-2">
-            {{ form.submit(class="btn btn-primary") }}
-        </div>
-    </form>
+    </div>
 </div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!-- Enhanced styles for form and card -->
+<style>
+.card {
+    border-radius: 1.25rem;
+}
+.form-label {
+    font-size: 1.1rem;
+    color: #343a40;
+}
+.form-control-lg {
+    font-size: 1.15rem;
+    padding: 0.75rem 1rem;
+}
+.btn-primary {
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+@media (max-width: 768px) {
+    .card-body {
+        padding: 2rem 1rem;
+    }
+    .display-6 {
+        font-size: 1.5rem;
+    }
+}
+</style>
 {% endblock %} 

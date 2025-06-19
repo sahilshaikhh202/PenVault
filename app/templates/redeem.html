@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
+<!-- Enhanced container and card layout for modern, consistent UI -->
+<div class="container py-5">
+    <div class="row g-5">
         <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Redeem Points</h4>
+            <div class="card mb-4 shadow-lg border-0" style="border-radius: 1.25rem;">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h4 class="mb-0 fw-bold display-6 text-center">Redeem Points</h4>
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-info">
-                        <h5>Your Points Balance: {{ current_user.points }}</h5>
+                <div class="card-body p-5">
+                    <div class="alert alert-info mb-4 rounded-3">
+                        <h5 class="fw-bold">Your Points Balance: {{ current_user.points }}</h5>
                     </div>
-
                     <!-- Premium Posts -->
-                    <h5 class="mt-4">Premium Posts (50 points)</h5>
-                    <div class="row">
+                    <h5 class="mt-4 fw-semibold">Premium Posts <span class="badge bg-warning text-dark">50 points</span></h5>
+                    <div class="row g-3">
                         {% for story in premium_stories %}
-                        <div class="col-md-6 mb-3">
-                            <div class="card">
+                        <div class="col-md-6">
+                            <div class="card h-100 shadow-sm border-0 rounded-3">
                                 <div class="card-body">
-                                    <h6 class="card-title">{{ story.title }}</h6>
-                                    <p class="card-text small">
+                                    <h6 class="card-title fw-bold">{{ story.title }}</h6>
+                                    <p class="card-text small mb-2">
                                         {% if story.writing_type %}
                                             <span class="badge {% if story.writing_type == 'Poetry' %}bg-info{% elif story.writing_type == 'Short Story' %}bg-success{% else %}bg-secondary{% endif %}">
                                                 {{ story.writing_type|title }}
@@ -40,16 +40,15 @@
                         </div>
                         {% endfor %}
                     </div>
-
                     <!-- Premium Volumes -->
-                    <h5 class="mt-4">Premium Volumes (100 points)</h5>
-                    <div class="row">
+                    <h5 class="mt-4 fw-semibold">Premium Volumes <span class="badge bg-warning text-dark">100 points</span></h5>
+                    <div class="row g-3">
                         {% for volume in premium_volumes %}
-                        <div class="col-md-6 mb-3">
-                            <div class="card">
+                        <div class="col-md-6">
+                            <div class="card h-100 shadow-sm border-0 rounded-3">
                                 <div class="card-body">
-                                    <h6 class="card-title">{{ volume.title }}</h6>
-                                    <p class="card-text small">
+                                    <h6 class="card-title fw-bold">{{ volume.title }}</h6>
+                                    <p class="card-text small mb-2">
                                         {% if volume.summary %}
                                             {{ volume.summary[:100] }}...
                                         {% else %}
@@ -66,16 +65,15 @@
                         </div>
                         {% endfor %}
                     </div>
-
                     <!-- Premium Novels -->
-                    <h5 class="mt-4">Premium Novels (250 points)</h5>
-                    <div class="row">
+                    <h5 class="mt-4 fw-semibold">Premium Novels <span class="badge bg-warning text-dark">250 points</span></h5>
+                    <div class="row g-3">
                         {% for novel in premium_novels %}
-                        <div class="col-md-6 mb-3">
-                            <div class="card">
+                        <div class="col-md-6">
+                            <div class="card h-100 shadow-sm border-0 rounded-3">
                                 <div class="card-body">
-                                    <h6 class="card-title">{{ novel.title }}</h6>
-                                    <p class="card-text small">
+                                    <h6 class="card-title fw-bold">{{ novel.title }}</h6>
+                                    <p class="card-text small mb-2">
                                         {% if novel.summary %}
                                             {{ novel.summary[:100] }}...
                                         {% else %}
@@ -92,17 +90,16 @@
                         </div>
                         {% endfor %}
                     </div>
-
                     <!-- Feature Post -->
-                    <h5 class="mt-4">Feature Your Post (150 points)</h5>
-                    <div class="row">
+                    <h5 class="mt-4 fw-semibold">Feature Your Post <span class="badge bg-warning text-dark">150 points</span></h5>
+                    <div class="row g-3">
                         {% for story in current_user.stories %}
                         {% if not story.is_featured %}
-                        <div class="col-md-6 mb-3">
-                            <div class="card">
+                        <div class="col-md-6">
+                            <div class="card h-100 shadow-sm border-0 rounded-3">
                                 <div class="card-body">
-                                    <h6 class="card-title">{{ story.title }}</h6>
-                                    <p class="card-text small">
+                                    <h6 class="card-title fw-bold">{{ story.title }}</h6>
+                                    <p class="card-text small mb-2">
                                         {% if story.writing_type %}
                                             <span class="badge {% if story.writing_type == 'Poetry' %}bg-info{% elif story.writing_type == 'Short Story' %}bg-success{% else %}bg-secondary{% endif %}">
                                                 {{ story.writing_type|title }}
@@ -124,24 +121,23 @@
                     </div>
                 </div>
             </div>
-
             <!-- Premium Content Unlocked by Others -->
             {% if unlocked_user_premium_content %}
-            <div class="card mb-4 mt-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Premium Content Unlocked by Others</h4>
+            <div class="card mb-4 mt-4 shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h4 class="mb-0 fw-bold">Premium Content Unlocked by Others</h4>
                 </div>
                 <div class="card-body">
                     <div class="list-group">
                         {% for item in unlocked_user_premium_content %}
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">
-                                    <a href="{{ url_for('main.profile', username=item.unlocked_by.username) }}">
+                        <div class="list-group-item rounded-3 mb-2">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <h6 class="mb-1 fw-semibold">
+                                    <a href="{{ url_for('main.profile', username=item.unlocked_by.username) }}" class="text-decoration-none text-primary">
                                         {{ item.unlocked_by.username }}
                                     </a> unlocked your {{ item.content_type }}: {{ item.title }}
                                 </h6>
-                                <small>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                                <small class="text-muted">{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
                             </div>
                             <p class="mb-1 text-info">Spent {{ item.points_spent }} points</p>
                         </div>
@@ -151,23 +147,22 @@
             </div>
             {% endif %}
         </div>
-
         <div class="col-md-4">
             <!-- Your Unlocked Premium Content -->
             {% if user_unlocked_content %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Your Unlocked Premium Content</h5>
+            <div class="card mb-4 shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="mb-0 fw-bold">Your Unlocked Premium Content</h5>
                 </div>
                 <div class="card-body">
                     <div class="list-group">
                         {% for item in user_unlocked_content %}
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">
+                        <div class="list-group-item rounded-3 mb-2">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <h6 class="mb-1 fw-semibold">
                                     {{ item.content_type }}: {{ item.title }}
                                 </h6>
-                                <small>{{ item.unlocked_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                <small class="text-muted">{{ item.unlocked_at.strftime('%Y-%m-%d %H:%M') }}</small>
                             </div>
                             <p class="mb-1 text-muted">by {{ item.author }}</p>
                         </div>
@@ -176,18 +171,17 @@
                 </div>
             </div>
             {% endif %}
-
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Point History</h5>
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="mb-0 fw-bold">Point History</h5>
                 </div>
                 <div class="card-body">
                     <div class="list-group">
                         {% for transaction in transactions %}
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">{{ transaction.action }}</h6>
-                                <small>{{ transaction.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                        <div class="list-group-item rounded-3 mb-2">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <h6 class="mb-1 fw-semibold">{{ transaction.action }}</h6>
+                                <small class="text-muted">{{ transaction.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
                             </div>
                             <p class="mb-1">
                                 {% if transaction.points > 0 %}
@@ -207,4 +201,38 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!-- Enhanced styles for cards, badges, and lists -->
+<style>
+.card {
+    border-radius: 1.25rem;
+}
+.card-header {
+    background: transparent;
+    border-bottom: none;
+}
+.badge.bg-warning {
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.4em 0.8em;
+    border-radius: 1rem;
+}
+.list-group-item {
+    border-radius: 0.75rem !important;
+    margin-bottom: 0.5rem;
+    background: #f8f9fa;
+    border: none;
+}
+@media (max-width: 768px) {
+    .card-body, .p-5 {
+        padding: 2rem 1rem !important;
+    }
+    .display-6 {
+        font-size: 1.5rem;
+    }
+}
+</style>
 {% endblock %} 

@@ -1,51 +1,37 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-4">
-    <div class="mb-2">
-        <a href="{{ url_for('main.novel_detail_slug', novel_slug=novel.slug) }}">&larr; Back to Novel</a>
-    </div>
-    <h2>{{ volume.title }}</h2>
+<!-- Enhanced container and layout for modern, consistent UI -->
+<div class="container py-5">
     <div class="mb-3">
+        <a href="{{ url_for('main.novel_detail_slug', novel_slug=novel.slug) }}" class="text-decoration-none text-primary fw-semibold">&larr; Back to Novel</a>
+    </div>
+    <h2 class="fw-bold display-6 mb-2">{{ volume.title }}</h2>
+    <div class="mb-3 d-flex align-items-center gap-3">
         <span class="text-muted">Novel: {{ novel.title }}</span>
         {% if volume.is_premium %}
-        <span class="premium-badge ms-2">
-            <i class="fas fa-crown"></i> Premium Volume
-        </span>
+        <span class="premium-badge ms-2"><i class="fas fa-crown"></i> Premium Volume</span>
         {% endif %}
     </div>
-    
-    <!-- Add author controls -->
+    <!-- Enhanced author controls -->
     {% if current_user.is_authenticated and novel.story.author == current_user %}
     <div class="mb-4">
-        <div class="d-flex gap-2">
-            <a href="{{ url_for('main.new_chapter', novel_slug=novel.slug, volume_slug=volume.slug) }}" 
-               class="btn btn-primary btn-sm">
-                <i class="fas fa-plus"></i> Add Chapter
-            </a>
-            <a href="{{ url_for('main.edit_volume', volume_slug=volume.slug) }}" 
-               class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-edit"></i> Edit Volume
-            </a>
-            <form action="{{ url_for('main.delete_volume', volume_slug=volume.slug) }}" 
-                  method="POST" class="d-inline" 
-                  onsubmit="return confirm('Are you sure you want to delete this volume? This action cannot be undone.');">
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                    <i class="fas fa-trash"></i> Delete Volume
-                </button>
-    </form>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('main.new_chapter', novel_slug=novel.slug, volume_slug=volume.slug) }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Chapter</a>
+            <a href="{{ url_for('main.edit_volume', volume_slug=volume.slug) }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-edit"></i> Edit Volume</a>
+            <form action="{{ url_for('main.delete_volume', volume_slug=volume.slug) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this volume? This action cannot be undone.');">
+                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i> Delete Volume</button>
+            </form>
         </div>
     </div>
     {% endif %}
-
     {% if volume.summary %}
     <p class="text-muted">{{ volume.summary }}</p>
     {% endif %}
-
     {% if volume.is_premium and current_user.is_authenticated and novel.story.author != current_user %}
         {% if unlocked %}
-            <h4 class="mt-4">Chapters</h4>
+            <h4 class="mt-4 fw-semibold">Chapters</h4>
             {% if chapters %}
-            <div class="list-group mb-4">
+            <div class="list-group mb-4 shadow-sm rounded">
                 {% for chapter in chapters %}
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                     <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}" class="text-decoration-none flex-grow-1">
@@ -82,9 +68,10 @@
             <p class="text-muted">No chapters available in this volume yet.</p>
             {% endif %}
         {% else %}
-            <div class="premium-content-lock mt-4">
+            <!-- Enhanced premium lock card -->
+            <div class="premium-content-lock mt-4 shadow-sm">
                 <i class="fas fa-lock"></i>
-                <h3>Premium Volume</h3>
+                <h3 class="fw-bold">Premium Volume</h3>
                 <p>This volume is locked. Unlock all chapters for 100 points.</p>
                 <p class="text-muted">Your current points: {{ current_user.points }}</p>
                 {% if current_user.points >= 100 %}
@@ -98,16 +85,16 @@
             </div>
         {% endif %}
     {% elif volume.is_premium and not current_user.is_authenticated %}
-    <div class="premium-content-lock mt-4">
+    <div class="premium-content-lock mt-4 shadow-sm">
         <i class="fas fa-lock"></i>
-        <h3>Premium Volume</h3>
+        <h3 class="fw-bold">Premium Volume</h3>
         <p>This volume is locked. Please log in to unlock or create your own premium content.</p>
         <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Log In</a>
     </div>
     {% else %}
-    <h4 class="mt-4">Chapters</h4>
+    <h4 class="mt-4 fw-semibold">Chapters</h4>
     {% if chapters %}
-        <div class="list-group mb-4">
+        <div class="list-group mb-4 shadow-sm rounded">
             {% for chapter in chapters %}
             <div class="list-group-item d-flex justify-content-between align-items-center">
                 <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}" class="text-decoration-none flex-grow-1">
@@ -132,7 +119,7 @@
                                 <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Are you sure you want to delete this chapter? This action cannot be undone.');">
                                     <i class="fas fa-trash"></i> Delete Chapter
                                 </button>
-                    </form>
+                        </form>
                         </li>
                     </ul>
                 </div>
@@ -144,10 +131,9 @@
         <p class="text-muted">No chapters available in this volume yet.</p>
         {% endif %}
     {% endif %}
-
     <div class="row mt-4">
         <div class="col-md-6">
-            <div class="card">
+            <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <h5 class="card-title">More from PenVault</h5>
                     <p class="card-text">Discover more great stories and writers!</p>
@@ -161,58 +147,72 @@
 
 {% block styles %}
 {{ super() }}
+<!-- Enhanced styles for modern look and accessibility -->
 <style>
-    .premium-badge-small {
-        background: linear-gradient(45deg, #ffd700, #ffa500);
-        color: #000;
-        font-weight: 500;
-        padding: 0.2rem 0.6rem;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
+.premium-badge-small {
+    background: linear-gradient(45deg, #ffd700, #ffa500);
+    color: #000;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.premium-badge {
+    background: linear-gradient(45deg, #ffd700, #ffa500);
+    color: #000;
+    font-weight: 500;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+}
+.premium-content-lock {
+    position: relative;
+    min-height: 200px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.premium-content-lock i {
+    font-size: 3rem;
+    color: #ffd700;
+    margin-bottom: 1rem;
+}
+.premium-content-lock h3 {
+    color: #333;
+    margin-bottom: 1rem;
+}
+.premium-content-lock p {
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+body.dark-mode .premium-content-lock {
+    background: linear-gradient(135deg, #23272b 0%, #1a1a1a 100%);
+}
+body.dark-mode .premium-content-lock h3 {
+    color: #e0e0e0;
+}
+body.dark-mode .premium-content-lock p {
+    color: #b0b0b0;
+}
+@media (max-width: 768px) {
+    .card-body, .p-5 {
+        padding: 2rem 1rem !important;
     }
-
-    .premium-content-lock {
-        position: relative;
-        min-height: 200px;
-        background: rgba(0, 0, 0, 0.05);
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-        text-align: center;
+    .display-6 {
+        font-size: 1.5rem;
     }
-
-    .premium-content-lock i {
-        font-size: 3rem;
-        color: #ffd700;
-        margin-bottom: 1rem;
-    }
-
-    .premium-content-lock h3 {
-        color: #333;
-        margin-bottom: 1rem;
-    }
-
-    .premium-content-lock p {
-        color: #666;
-        margin-bottom: 1.5rem;
-    }
-
-    body.dark-mode .premium-content-lock {
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    body.dark-mode .premium-content-lock h3 {
-        color: #e0e0e0;
-    }
-
-    body.dark-mode .premium-content-lock p {
-        color: #b0b0b0;
-    }
+}
 </style>
 {% endblock %}

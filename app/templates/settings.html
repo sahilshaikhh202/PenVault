@@ -1,21 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
+<!-- Enhanced container and card for modern, consistent UI -->
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h3 class="card-title mb-4">Settings</h3>
-                    
+            <div class="card mb-4 shadow-lg border-0" style="border-radius: 1.25rem;">
+                <div class="card-body p-5">
+                    <h3 class="card-title mb-4 fw-bold display-6 text-center">Settings</h3>
                     <form method="POST" action="{{ url_for('main.settings') }}" id="settingsForm">
                         <div class="mb-4">
-                            <h5>Edit Profile</h5>
+                            <h5 class="fw-semibold">Edit Profile</h5>
                             <a href="{{ url_for('main.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a>
                         </div>
                         <hr>
-                        
                         <div class="mb-4">
-                            <h5>Theme</h5>
+                            <h5 class="fw-semibold">Theme</h5>
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="themeSwitch" name="theme" value="dark" {% if current_user.theme == 'dark' %}checked{% endif %}>
                                 <label class="form-check-label" for="themeSwitch">Dark Mode</label>
@@ -23,9 +22,8 @@
                             <small class="text-muted d-block mt-2">Choose between light and dark theme. Your preference will be saved across devices.</small>
                         </div>
                         <hr>
-                        
                         <div class="mb-4">
-                            <h5>Saved List Privacy</h5>
+                            <h5 class="fw-semibold">Saved List Privacy</h5>
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="hideSavedListSwitch" name="hide_saved_list" {% if current_user.hide_saved_list %}checked{% endif %}>
                                 <label class="form-check-label" for="hideSavedListSwitch">
@@ -34,9 +32,8 @@
                             </div>
                         </div>
                         <hr>
-                        
                         <div class="mb-4">
-                            <h5>Recent Reads Privacy</h5>
+                            <h5 class="fw-semibold">Recent Reads Privacy</h5>
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="hideRecentReadsSwitch" name="hide_recent_reads" {% if current_user.hide_recent_reads %}checked{% endif %}>
                                 <label class="form-check-label" for="hideRecentReadsSwitch">
@@ -44,9 +41,8 @@
                                 </label>
                             </div>
                         </div>
-                        
                         <div class="mt-4">
-                            <button type="submit" class="btn btn-primary">Save All Settings</button>
+                            <button type="submit" class="btn btn-primary btn-lg w-100">Save All Settings</button>
                         </div>
                     </form>
                 </div>
@@ -54,6 +50,40 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!-- Enhanced styles for settings card and form -->
+<style>
+.card {
+    border-radius: 1.25rem;
+}
+.card-title {
+    font-size: 2rem;
+}
+.btn-primary {
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+.form-check-label {
+    font-size: 1.08rem;
+}
+hr {
+    border-top: 1.5px solid #e9ecef;
+}
+@media (max-width: 768px) {
+    .card-body, .p-5 {
+        padding: 2rem 1rem !important;
+    }
+    .display-6 {
+        font-size: 1.5rem;
+    }
+    .card-title {
+        font-size: 1.3rem;
+    }
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -68,7 +98,6 @@ document.addEventListener('DOMContentLoaded', function() {
     themeSwitch.checked = document.documentElement.getAttribute('data-theme') === 'dark';
     themeSwitch.addEventListener('change', function() {
         const theme = this.checked ? 'dark' : 'light';
-        console.log('Theme toggled, new theme:', theme);
         setTheme(theme);
     });
 });

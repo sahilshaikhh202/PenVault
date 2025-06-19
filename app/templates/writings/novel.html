@@ -1,41 +1,80 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-4">
-    <h2>Start a New Novel</h2>
-    <form method="POST" enctype="multipart/form-data">
-        {{ form.hidden_tag() }}
-        <div class="mb-3">
-            {{ form.title.label(class="form-label") }}
-            {{ form.title(class="form-control") }}
+<!-- Enhanced container and card for modern, consistent UI -->
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0" style="border-radius: 1.25rem;">
+                <div class="card-body p-5">
+                    <h2 class="fw-bold mb-4 display-6 text-center">Start a New Novel</h2>
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-4">
+                            {{ form.title.label(class="form-label fw-semibold") }}
+                            {{ form.title(class="form-control form-control-lg") }}
+                        </div>
+                        <div class="mb-4">
+                            {{ form.summary.label(class="form-label fw-semibold") }}
+                            {{ form.summary(class="form-control") }}
+                        </div>
+                        <div class="mb-4">
+                            {{ form.genre.label(class="form-label fw-semibold") }}
+                            {{ form.genre(class="form-select") }}
+                        </div>
+                        <div class="mb-4">
+                            {{ form.status.label(class="form-label fw-semibold") }}
+                            {{ form.status(class="form-select") }}
+                        </div>
+                        <div class="mb-3 form-check">
+                            {{ form.is_mature(class="form-check-input") }}
+                            {{ form.is_mature.label(class="form-check-label") }}
+                        </div>
+                        <div class="mb-3 form-check">
+                            {{ form.is_premium(class="form-check-input") }}
+                            {{ form.is_premium.label(class="form-check-label") }}
+                            <small class="form-text text-muted">If checked, all volumes and chapters in this novel will be premium content.</small>
+                        </div>
+                        <div class="mb-4">
+                            {{ form.cover_image.label(class="form-label fw-semibold") }}
+                            {{ form.cover_image(class="form-control") }}
+                        </div>
+                        <div class="d-grid gap-2 mt-4">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            {{ form.summary.label(class="form-label") }}
-            {{ form.summary(class="form-control") }}
-        </div>
-        <div class="mb-3">
-            {{ form.genre.label(class="form-label") }}
-            {{ form.genre(class="form-select") }}
-        </div>
-        <div class="mb-3">
-            {{ form.status.label(class="form-label") }}
-            {{ form.status(class="form-select") }}
-        </div>
-        <div class="mb-3 form-check">
-            {{ form.is_mature(class="form-check-input") }}
-            {{ form.is_mature.label(class="form-check-label") }}
-        </div>
-        <div class="mb-3 form-check">
-            {{ form.is_premium(class="form-check-input") }}
-            {{ form.is_premium.label(class="form-check-label") }}
-            <small class="form-text text-muted">If checked, all volumes and chapters in this novel will be premium content.</small>
-        </div>
-        <div class="mb-3">
-            {{ form.cover_image.label(class="form-label") }}
-            {{ form.cover_image(class="form-control") }}
-        </div>
-        <div class="d-grid gap-2">
-            {{ form.submit(class="btn btn-primary") }}
-        </div>
-    </form>
+    </div>
 </div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!-- Enhanced styles for form and card -->
+<style>
+.card {
+    border-radius: 1.25rem;
+}
+.form-label {
+    font-size: 1.1rem;
+    color: #343a40;
+}
+.form-control-lg {
+    font-size: 1.15rem;
+    padding: 0.75rem 1rem;
+}
+.btn-primary {
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+@media (max-width: 768px) {
+    .card-body {
+        padding: 2rem 1rem;
+    }
+    .display-6 {
+        font-size: 1.5rem;
+    }
+}
+</style>
 {% endblock %} 

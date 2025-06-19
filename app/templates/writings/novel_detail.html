@@ -1,24 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-4">
+<!-- Enhanced container and layout for modern, consistent UI -->
+<div class="container py-5">
     <div class="mb-3">
-        <a href="{{ url_for('main.discover') }}">&larr; Back to Discover</a>
+        <a href="{{ url_for('main.discover') }}" class="text-decoration-none text-primary fw-semibold">&larr; Back to Discover</a>
     </div>
-    <div class="row">
+    <div class="row g-5">
         <div class="col-md-8">
-            <h2>{{ novel.title }}</h2>
-            <div class="mb-3">
+            <h2 class="fw-bold display-6 mb-2">{{ novel.title }}</h2>
+            <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
                 <span class="badge bg-secondary">{{ novel.status|capitalize }}</span>
                 {% if novel.genre %}
                     <span class="badge bg-info">{{ novel.genre|capitalize }}</span>
                 {% endif %}
                 {% if novel.is_mature %}<span class="badge bg-danger">Mature</span>{% endif %}
-                {% if novel.is_premium %}<span class="premium-badge"><i class="fas fa-crown"></i> Premium</span>{% endif %}
+                {% if novel.is_premium %}<span class="premium-badge ms-2"><i class="fas fa-crown"></i> Premium</span>{% endif %}
             </div>
-            
-            <!-- Add stats section -->
+            <!-- Enhanced stats section -->
             <div class="mb-3">
-                <div class="d-flex gap-3">
+                <div class="d-flex gap-4 flex-wrap">
                     <div class="stats-item">
                         <i class="fas fa-book-open text-muted"></i>
                         <span>{{ volumes|length }} Volume{{ 's' if volumes|length != 1 }}</span>
@@ -38,17 +38,16 @@
                     {% endif %}
                 </div>
             </div>
-            
-            <p>{{ novel.summary }}</p>
+            <p class="lead text-muted">{{ novel.summary }}</p>
             {% if novel.cover_image %}
-            <img src="{{ url_for('static', filename='uploads/' + novel.cover_image) }}" alt="Cover" class="img-fluid mb-3" style="max-width:200px;">
+            <img src="{{ url_for('static', filename='uploads/' + novel.cover_image) }}" alt="Cover" class="img-fluid mb-3 rounded shadow-sm" style="max-width:200px;">
             {% endif %}
-            <div class="mb-4">
+            <div class="mb-4 d-flex gap-2 flex-wrap">
                 {% if current_user.is_authenticated and current_user == novel.story.author %}
-                <a href="{{ url_for('main.new_volume', novel_slug=novel.slug) }}" class="btn btn-outline-primary btn-sm">+ Add Volume</a>
-                <a href="{{ url_for('main.edit_novel', novel_slug=novel.slug) }}" class="btn btn-outline-secondary btn-sm">Edit Novel</a>
+                <a href="{{ url_for('main.new_volume', novel_slug=novel.slug) }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-plus"></i> Add Volume</a>
+                <a href="{{ url_for('main.edit_novel', novel_slug=novel.slug) }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-edit"></i> Edit Novel</a>
                 <form method="POST" action="{{ url_for('main.delete_novel', novel_slug=novel.slug) }}" style="display:inline;" onsubmit="return confirm('Delete this novel and all its volumes and chapters?');">
-                    <button type="submit" class="btn btn-outline-danger btn-sm">Delete Novel</button>
+                    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i> Delete Novel</button>
                 </form>
                 {% endif %}
             </div>
@@ -56,8 +55,8 @@
                 {% if unlocked %}
                     <!-- Display Volumes -->
                     {% if volumes %}
-                    <h4 class="mt-4">Volumes</h4>
-                    <div class="list-group mb-4">
+                    <h4 class="mt-4 fw-semibold">Volumes</h4>
+                    <div class="list-group mb-4 shadow-sm rounded">
                         {% for volume in volumes %}
                         <a href="{{ url_for('main.volume_detail_slug', novel_slug=novel.slug, volume_slug=volume.slug) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                             {{ volume.title }}
@@ -70,11 +69,10 @@
                     {% else %}
                     <p class="text-muted">No volumes available yet.</p>
                     {% endif %}
-
                     <!-- Display Chapters (if no volumes) -->
                     {% if not volumes and chapters %}
-                    <h4 class="mt-4">Chapters</h4>
-                    <div class="list-group mb-4">
+                    <h4 class="mt-4 fw-semibold">Chapters</h4>
+                    <div class="list-group mb-4 shadow-sm rounded">
                         {% for chapter in chapters %}
                         <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug='null', chapter_slug=chapter.slug) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                             {{ chapter.title }}
@@ -88,9 +86,10 @@
                     <p class="text-muted">No chapters available yet.</p>
                     {% endif %}
                 {% else %}
-                    <div class="premium-content-lock mt-4">
+                    <!-- Enhanced premium lock card -->
+                    <div class="premium-content-lock mt-4 shadow-sm">
                         <i class="fas fa-lock"></i>
-                        <h3>Premium Novel</h3>
+                        <h3 class="fw-bold">Premium Novel</h3>
                         <p>This novel is locked. Unlock all volumes and chapters for 250 points.</p>
                         <p class="text-muted">Your current points: {{ current_user.points }}</p>
                         {% if current_user.points >= 250 %}
@@ -104,17 +103,17 @@
                     </div>
                 {% endif %}
             {% elif novel.is_premium and not current_user.is_authenticated %}
-            <div class="premium-content-lock mt-4">
+            <div class="premium-content-lock mt-4 shadow-sm">
                 <i class="fas fa-lock"></i>
-                <h3>Premium Novel</h3>
+                <h3 class="fw-bold">Premium Novel</h3>
                 <p>This novel is locked. Please log in to unlock or create your own premium content.</p>
                 <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Log In</a>
             </div>
             {% else %}
                 <!-- Display Volumes -->
                 {% if volumes %}
-                <h4 class="mt-4">Volumes</h4>
-                <div class="list-group mb-4">
+                <h4 class="mt-4 fw-semibold">Volumes</h4>
+                <div class="list-group mb-4 shadow-sm rounded">
                     {% for volume in volumes %}
                     <a href="{{ url_for('main.volume_detail_slug', novel_slug=novel.slug, volume_slug=volume.slug) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         {{ volume.title }}
@@ -127,11 +126,10 @@
                 {% else %}
                 <p class="text-muted">No volumes available yet.</p>
                 {% endif %}
-
                 <!-- Display Chapters (if no volumes) -->
                 {% if not volumes and chapters %}
-                <h4 class="mt-4">Chapters</h4>
-                <div class="list-group mb-4">
+                <h4 class="mt-4 fw-semibold">Chapters</h4>
+                <div class="list-group mb-4 shadow-sm rounded">
                     {% for chapter in chapters %}
                     <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug='null', chapter_slug=chapter.slug) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         {{ chapter.title }}
@@ -145,26 +143,20 @@
                 <p class="text-muted">No chapters available yet.</p>
                 {% endif %}
             {% endif %}
-
         </div>
         <div class="col-md-4">
             <!-- Author Info -->
-            <div class="card mb-4">
+            <div class="card mb-4 shadow-sm border-0">
                 <div class="card-body text-center">
                     <img src="{{ url_for('static', filename='uploads/' + novel.story.author.profile_picture) if novel.story.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
-                         class="rounded-circle mb-3" width="80" height="80" alt="{{ novel.story.author.username }}">
-                    <h5 class="card-title">{{ novel.story.author.username }}</h5>
+                         class="rounded-circle mb-3 shadow-sm" width="80" height="80" alt="{{ novel.story.author.username }}">
+                    <h5 class="card-title fw-bold">{{ novel.story.author.username }}</h5>
                     <p class="text-muted small">{{ novel.story.author.bio if novel.story.author.bio else 'No bio yet.' }}</p>
-                    {% if current_user.is_authenticated and current_user != novel.story.author %}
-                    <a href="{{ url_for('main.profile', username=novel.story.author.username) }}" class="btn btn-sm btn-outline-primary">View Profile</a>
-                    {% else %}
-                    <a href="{{ url_for('main.profile', username=novel.story.author.username) }}" class="btn btn-sm btn-outline-secondary">View Profile</a>
-                    {% endif %}
+                    <a href="{{ url_for('main.profile', username=novel.story.author.username) }}" class="btn btn-sm btn-outline-primary mt-2">View Profile</a>
                 </div>
             </div>
-
             <!-- Related Content / Ads -->
-            <div class="card">
+            <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <h5 class="card-title">More from PenVault</h5>
                     <p class="card-text">Discover more great stories and writers!</p>
@@ -173,10 +165,9 @@
             </div>
         </div>
     </div>
-
     <!-- Comments Section -->
     <div class="comments-section mt-5">
-        <h4 class="mb-3">Comments</h4>
+        <h4 class="mb-3 fw-semibold">Comments</h4>
         {% if current_user.is_authenticated %}
         <form method="POST" action="{{ url_for('main.comment', story_id=novel.story.id) }}" class="mb-4">
             {{ form.hidden_tag() }}
@@ -186,10 +177,9 @@
             {{ form.submit(class="btn btn-primary") }}
         </form>
         {% endif %}
-
         {% for comment in novel.story.comments.filter_by(parent_id=None).order_by(Comment.created_at.desc()).all() %}
-        <div class="comment mb-3 position-relative">
-            <div class="d-flex">
+        <div class="comment mb-3 position-relative p-3 rounded shadow-sm bg-white">
+            <div class="d-flex align-items-start gap-2">
                 <img src="{{ url_for('static', filename='uploads/' + comment.author.profile_picture) if comment.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
                      class="rounded-circle me-2" width="32" height="32" alt="{{ comment.author.username }}">
                 <div class="flex-grow-1">
@@ -225,73 +215,87 @@
 
 {% block head %}
 {{ super() }}
+<!-- Enhanced styles for modern look and accessibility -->
 <style>
+.stats-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6c757d;
+    font-size: 1rem;
+}
+.premium-badge-small {
+    background: linear-gradient(45deg, #ffd700, #ffa500);
+    color: #000;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.premium-badge {
+    background: linear-gradient(45deg, #ffd700, #ffa500);
+    color: #000;
+    font-weight: 500;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+}
+.premium-content-lock {
+    position: relative;
+    min-height: 200px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.premium-content-lock i {
+    font-size: 3rem;
+    color: #ffd700;
+    margin-bottom: 1rem;
+}
+.premium-content-lock h3 {
+    color: #333;
+    margin-bottom: 1rem;
+}
+.premium-content-lock p {
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+body.dark-mode .premium-content-lock {
+    background: linear-gradient(135deg, #23272b 0%, #1a1a1a 100%);
+}
+body.dark-mode .premium-content-lock h3 {
+    color: #e0e0e0;
+}
+body.dark-mode .premium-content-lock p {
+    color: #b0b0b0;
+}
+.comment {
+    background: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+@media (max-width: 768px) {
+    .card-body, .p-5 {
+        padding: 2rem 1rem !important;
+    }
+    .display-6 {
+        font-size: 1.5rem;
+    }
     .stats-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #6c757d;
-    }
-    
-    .stats-item i {
-        font-size: 0.9rem;
-    }
-    
-    .stats-item span {
         font-size: 0.95rem;
     }
-
-    .premium-badge-small {
-        background: linear-gradient(45deg, #ffd700, #ffa500);
-        color: #000;
-        font-weight: 500;
-        padding: 0.2rem 0.6rem;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-    }
-
-    .premium-content-lock {
-        position: relative;
-        min-height: 200px;
-        background: rgba(0, 0, 0, 0.05);
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-        text-align: center;
-    }
-
-    .premium-content-lock i {
-        font-size: 3rem;
-        color: #ffd700;
-        margin-bottom: 1rem;
-    }
-
-    .premium-content-lock h3 {
-        color: #333;
-        margin-bottom: 1rem;
-    }
-
-    .premium-content-lock p {
-        color: #666;
-        margin-bottom: 1.5rem;
-    }
-
-    body.dark-mode .premium-content-lock {
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    body.dark-mode .premium-content-lock h3 {
-        color: #e0e0e0;
-    }
-
-    body.dark-mode .premium-content-lock p {
-        color: #b0b0b0;
-    }
+}
 </style>
 {% endblock %}
