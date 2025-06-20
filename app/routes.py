@@ -226,24 +226,26 @@ def story(story_id):
     if current_user.is_authenticated and story.is_premium and current_user != story.author:
         unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, story_id=story_id).first() is not None
 
-    # Increment view if not author (or always, if not logged in)
-    if (not current_user.is_authenticated) or (current_user.is_authenticated and current_user.id != story.author_id):
-        story.views = (story.views or 0) + 1
-        db.session.commit()
-        # Add to reading history (FIFO, max 20) only if logged in
-        if current_user.is_authenticated:
-            existing = ReadingHistory.query.filter_by(user_id=current_user.id, story_id=story.id).first()
-            if existing:
-                existing.timestamp = datetime.utcnow()
-            else:
-                db.session.add(ReadingHistory(user_id=current_user.id, story_id=story.id))
+    # For quotes, increment view immediately (normal behavior)
+    if story.writing_type == 'quote':
+        if (not current_user.is_authenticated) or (current_user.is_authenticated and current_user.id != story.author_id):
+            story.views = (story.views or 0) + 1
             db.session.commit()
-            # Keep only 20 most recent
-            history = ReadingHistory.query.filter_by(user_id=current_user.id).order_by(ReadingHistory.timestamp.desc()).all()
-            if len(history) > 20:
-                for h in history[20:]:
-                    db.session.delete(h)
+            # Add to reading history (FIFO, max 20) only if logged in
+            if current_user.is_authenticated:
+                existing = ReadingHistory.query.filter_by(user_id=current_user.id, story_id=story.id).first()
+                if existing:
+                    existing.timestamp = datetime.utcnow()
+                else:
+                    db.session.add(ReadingHistory(user_id=current_user.id, story_id=story.id))
                 db.session.commit()
+                # Keep only 20 most recent
+                history = ReadingHistory.query.filter_by(user_id=current_user.id).order_by(ReadingHistory.timestamp.desc()).all()
+                if len(history) > 20:
+                    for h in history[20:]:
+                        db.session.delete(h)
+                    db.session.commit()
+    # For other types, handled by JS/API
     return render_template('story/view.html', 
         story=story, 
         form=form, 
@@ -1094,13 +1096,41 @@ def redeem_points():
     # Get user's point transactions
     transactions = PointsTransaction.query.filter_by(user_id=current_user.id).order_by(PointsTransaction.timestamp.desc()).all()
     
-    # Get available premium content
-    premium_stories = Story.query.filter(
-        Story.is_premium == True,
-        Story.author_id != current_user.id
-    ).all()
-    premium_volumes = Volume.query.filter_by(is_premium=True).all()
-    premium_novels = Novel.query.filter_by(is_premium=True).all()
+    # Get IDs of users the current user is following
+    following_ids = [follow.followed_id for follow in current_user.following]
+
+    # Get IDs of content already unlocked by the user
+    unlocked_story_ids = [uc.story_id for uc in UnlockedContent.query.filter_by(user_id=current_user.id).filter(UnlockedContent.story_id.isnot(None)).all()]
+    unlocked_novel_ids = [uc.novel_id for uc in UnlockedContent.query.filter_by(user_id=current_user.id).filter(UnlockedContent.novel_id.isnot(None)).all()]
+    unlocked_volume_ids = [uc.volume_id for uc in UnlockedContent.query.filter_by(user_id=current_user.id).filter(UnlockedContent.volume_id.isnot(None)).all()]
+
+    # Get available premium content from followed authors that is not yet unlocked
+    premium_stories = []
+    if following_ids:
+        premium_stories = Story.query.filter(
+            Story.is_premium == True,
+            Story.author_id != current_user.id,
+            Story.author_id.in_(following_ids),
+            Story.id.notin_(unlocked_story_ids)
+        ).all()
+
+    premium_volumes = []
+    if following_ids:
+        premium_volumes = Volume.query.join(Novel).join(Story).filter(
+            Volume.is_premium == True,
+            Story.author_id != current_user.id,
+            Story.author_id.in_(following_ids),
+            Volume.id.notin_(unlocked_volume_ids)
+        ).all()
+
+    premium_novels = []
+    if following_ids:
+        premium_novels = Novel.query.join(Story).filter(
+            Novel.is_premium == True,
+            Story.author_id != current_user.id,
+            Story.author_id.in_(following_ids),
+            Novel.id.notin_(unlocked_novel_ids)
+        ).all()
 
     # Get data for premium content unlocked by others from the current user's content
     unlocked_user_premium_content = []
@@ -1199,7 +1229,8 @@ def redeem_points():
                 'content_type': 'Story',
                 'title': story.title,
                 'author': story.author.username,
-                'unlocked_at': entry.unlocked_at
+                'unlocked_at': entry.unlocked_at,
+                'story_id': story.id
             })
     
     # Get unlocked novels
@@ -1214,7 +1245,8 @@ def redeem_points():
                 'content_type': 'Novel',
                 'title': novel.title,
                 'author': novel.story.author.username,
-                'unlocked_at': entry.unlocked_at
+                'unlocked_at': entry.unlocked_at,
+                'novel_slug': novel.slug
             })
     
     # Get unlocked volumes
@@ -1229,7 +1261,9 @@ def redeem_points():
                 'content_type': 'Volume',
                 'title': volume.title,
                 'author': volume.novel.story.author.username,
-                'unlocked_at': entry.unlocked_at
+                'unlocked_at': entry.unlocked_at,
+                'novel_slug': volume.novel.slug,
+                'volume_slug': volume.slug
             })
     
     # Get unlocked chapters
@@ -1244,7 +1278,10 @@ def redeem_points():
                 'content_type': 'Chapter',
                 'title': chapter.title,
                 'author': chapter.novel.story.author.username,
-                'unlocked_at': entry.unlocked_at
+                'unlocked_at': entry.unlocked_at,
+                'novel_slug': chapter.novel.slug,
+                'volume_slug': chapter.volume.slug if chapter.volume else 'null',
+                'chapter_slug': chapter.slug
             })
     
     # Sort by unlock date
@@ -1382,3 +1419,30 @@ def unlock_chapter(chapter_id):
         flash('Error unlocking chapter. Please try again.', 'error')
     
     return redirect(url_for('main.chapter_view_slug', novel_slug=chapter.novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug))
+
+# API endpoint for incrementing views after 10s delay (non-quote only)
+@main.route('/api/story/<int:story_id>/increment_view', methods=['POST'])
+def increment_story_view(story_id):
+    story = Story.query.get_or_404(story_id)
+    if story.writing_type == 'quote':
+        return jsonify({'success': False, 'error': 'Views not counted for quotes.'}), 400
+    # Only increment if not author (or not logged in)
+    if (not current_user.is_authenticated) or (current_user.is_authenticated and current_user.id != story.author_id):
+        story.views = (story.views or 0) + 1
+        db.session.commit()
+        # Add to reading history (FIFO, max 20) only if logged in
+        if current_user.is_authenticated:
+            existing = ReadingHistory.query.filter_by(user_id=current_user.id, story_id=story.id).first()
+            if existing:
+                existing.timestamp = datetime.utcnow()
+            else:
+                db.session.add(ReadingHistory(user_id=current_user.id, story_id=story.id))
+            db.session.commit()
+            # Keep only 20 most recent
+            history = ReadingHistory.query.filter_by(user_id=current_user.id).order_by(ReadingHistory.timestamp.desc()).all()
+            if len(history) > 20:
+                for h in history[20:]:
+                    db.session.delete(h)
+                db.session.commit()
+        return jsonify({'success': True, 'views': story.views})
+    return jsonify({'success': False, 'error': 'Not allowed.'}), 403

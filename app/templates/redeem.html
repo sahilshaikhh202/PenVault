@@ -13,6 +13,82 @@
                     <div class="alert alert-info mb-4 rounded-3">
                         <h5 class="fw-bold">Your Points Balance: {{ current_user.points }}</h5>
                     </div>
+                    
+                    <!-- How to Earn Points Section -->
+                    <div class="card mb-4 shadow-sm border-0 rounded-3">
+                        <div class="card-header bg-white border-0 pb-0">
+                            <h5 class="mb-0 fw-bold text-success">💡 How to Earn Points</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-sign-in-alt text-success"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1 fw-semibold">Daily Login</h6>
+                                            <p class="mb-0 text-muted small">+5 points per day</p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-pen text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1 fw-semibold">New Post</h6>
+                                            <p class="mb-0 text-muted small">+25 points per day</p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-comment text-info"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1 fw-semibold">Meaningful Comment</h6>
+                                            <p class="mb-0 text-muted small">+4 points (20+ words, max 10/day)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-share text-warning"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1 fw-semibold">Share Story</h6>
+                                            <p class="mb-0 text-muted small">+5 points (max 2/day)</p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-secondary bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-user-plus text-secondary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1 fw-semibold">New Follower</h6>
+                                            <p class="mb-0 text-muted small">+5 points when someone follows you</p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-danger bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-star text-danger"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1 fw-semibold">Pulse Tier Bonus</h6>
+                                            <p class="mb-0 text-muted small">25-300 points for reaching new tiers</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-light mt-3 mb-0">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <strong>Tip:</strong> Stay active daily, engage with other writers, and create quality content to maximize your points!
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Premium Posts -->
                     <h5 class="mt-4 fw-semibold">Premium Posts <span class="badge bg-warning text-dark">50 points</span></h5>
                     <div class="row g-3">
@@ -37,6 +113,10 @@
                                     </form>
                                 </div>
                             </div>
+                        </div>
+                        {% else %}
+                        <div class="col-12">
+                            <p class="text-muted">No premium posts available to unlock. Follow authors to see their premium content here.</p>
                         </div>
                         {% endfor %}
                     </div>
@@ -63,6 +143,10 @@
                                 </div>
                             </div>
                         </div>
+                        {% else %}
+                        <div class="col-12">
+                            <p class="text-muted">No premium volumes available to unlock. Follow authors to see their premium content here.</p>
+                        </div>
                         {% endfor %}
                     </div>
                     <!-- Premium Novels -->
@@ -87,6 +171,10 @@
                                     </form>
                                 </div>
                             </div>
+                        </div>
+                        {% else %}
+                        <div class="col-12">
+                            <p class="text-muted">No premium novels available to unlock. Follow authors to see their premium content here.</p>
                         </div>
                         {% endfor %}
                     </div>
@@ -160,7 +248,23 @@
                         <div class="list-group-item rounded-3 mb-2">
                             <div class="d-flex w-100 justify-content-between align-items-center">
                                 <h6 class="mb-1 fw-semibold">
-                                    {{ item.content_type }}: {{ item.title }}
+                                    {% if item.content_type == 'Novel' %}
+                                        <a href="{{ url_for('main.novel_detail_slug', novel_slug=item.novel_slug) }}" class="text-decoration-none text-primary">
+                                            {{ item.content_type }}: {{ item.title }}
+                                        </a>
+                                    {% elif item.content_type == 'Volume' %}
+                                        <a href="{{ url_for('main.volume_detail_slug', novel_slug=item.novel_slug, volume_slug=item.volume_slug) }}" class="text-decoration-none text-primary">
+                                            {{ item.content_type }}: {{ item.title }}
+                                        </a>
+                                    {% elif item.content_type == 'Chapter' %}
+                                        <a href="{{ url_for('main.chapter_view_slug', novel_slug=item.novel_slug, volume_slug=item.volume_slug, chapter_slug=item.chapter_slug) }}" class="text-decoration-none text-primary">
+                                            {{ item.content_type }}: {{ item.title }}
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for('main.story', story_id=item.story_id) }}" class="text-decoration-none text-primary">
+                                            {{ item.content_type }}: {{ item.title }}
+                                        </a>
+                                    {% endif %}
                                 </h6>
                                 <small class="text-muted">{{ item.unlocked_at.strftime('%Y-%m-%d %H:%M') }}</small>
                             </div>

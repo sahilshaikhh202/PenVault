@@ -121,28 +121,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="reading-options">
-    <div class="form-group">
-        <label>Font Size</label>
-        <select id="fontSize" class="form-select">
-            <option value="small">Small</option>
-            <option value="medium" selected>Medium</option>
-            <option value="large">Large</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label>Background</label>
-        <select id="bgColorDropdown" class="form-select">
-            <option value="#ffffff">White</option>
-            <option value="#1a1a1a">Dark</option>
-            <option value="#f4ecd8">Sepia</option>
-            <option value="#edf2ff">Cool</option>
-        </select>
-    </div>
-</div>
 <div class="container py-5">
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-lg-8 position-relative">
             <!-- Story Header -->
             <div class="mb-4">
                 <div class="d-flex align-items-center mb-2">
@@ -181,7 +162,29 @@
             <!-- Story Content -->
             {% if story.is_premium and current_user.is_authenticated and current_user != story.author %}
                 {% if unlocked %}
-            <div class="story-content mb-4" id="storyContent">
+            <div class="story-content mb-4 position-relative" id="storyContent">
+                    <!-- Three-dot menu for reading options -->
+                    <div class="dropdown position-absolute" style="top: 0.5rem; right: 0.5rem; z-index: 10;">
+                        <button class="btn btn-sm btn-light border-0" type="button" id="readingOptionsDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Reading options">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="readingOptionsDropdown" style="min-width: 200px;">
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <div class="btn-group me-2" role="group" aria-label="Font size controls">
+                                    <button type="button" id="decreaseFont" class="btn btn-outline-secondary btn-sm" tabindex="0" aria-label="Decrease font size">&minus;</button>
+                                    <button type="button" id="increaseFont" class="btn btn-outline-secondary btn-sm" tabindex="0" aria-label="Increase font size">&plus;</button>
+                                </div>
+                            </div>
+                            <div>
+                                <select id="bgColorDropdown" class="form-select form-select-sm bg-white border rounded" style="width: 100%; min-width: 90px;">
+                                    <option value="#ffffff">White</option>
+                                    <option value="#1a1a1a">Dark</option>
+                                    <option value="#f4ecd8">Sepia</option>
+                                    <option value="#edf2ff">Cool</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                     {% if story.writing_type == 'poetry' %}
                     <div class="poetry-content" style="white-space: pre-line; font-family: 'Georgia', serif; font-size: 1.2em;">
                         {{ story.content|safe }}
@@ -242,7 +245,29 @@
                 <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Log In</a>
                 </div>
                 {% else %}
-            <div class="story-content mb-4" id="storyContent">
+            <div class="story-content mb-4 position-relative" id="storyContent">
+                <!-- Three-dot menu for reading options -->
+                <div class="dropdown position-absolute" style="top: 0.5rem; right: 0.5rem; z-index: 10;">
+                    <button class="btn btn-sm btn-light border-0" type="button" id="readingOptionsDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Reading options">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="readingOptionsDropdown" style="min-width: 200px;">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <div class="btn-group me-2" role="group" aria-label="Font size controls">
+                                <button type="button" id="decreaseFont" class="btn btn-outline-secondary btn-sm" tabindex="0" aria-label="Decrease font size">&minus;</button>
+                                <button type="button" id="increaseFont" class="btn btn-outline-secondary btn-sm" tabindex="0" aria-label="Increase font size">&plus;</button>
+                            </div>
+                        </div>
+                        <div>
+                            <select id="bgColorDropdown" class="form-select form-select-sm bg-white border rounded" style="width: 100%; min-width: 90px;">
+                                <option value="#ffffff">White</option>
+                                <option value="#1a1a1a">Dark</option>
+                                <option value="#f4ecd8">Sepia</option>
+                                <option value="#edf2ff">Cool</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
                 {% if story.writing_type == 'poetry' %}
                 <div class="poetry-content" style="white-space: pre-line; font-family: 'Georgia', serif; font-size: 1.2em;">
                     {{ story.content|safe }}
@@ -250,14 +275,6 @@
                     <div class="alert alert-secondary mt-3"><strong>Author Notes:</strong> {{ story.notes }}</div>
                     {% endif %}
                 </div>
-                {% elif story.writing_type == 'quote' %}
-                <blockquote class="blockquote mb-4">
-                    <p class="mb-0">{{ story.content|safe }}</p>
-                    {% if story.quote_author %}<footer class="blockquote-footer">— {{ story.quote_author }}</footer>{% endif %}
-                </blockquote>
-                {% if story.quote_source %}
-                <p class="text-muted small">Source: {{ story.quote_source }}</p>
-                {% endif %}
                 {% elif story.writing_type == 'essay' %}
                 <div class="essay-content">
                     {{ story.content|safe }}
@@ -293,14 +310,21 @@
                         </form>
                     </div>
                     {% if current_user.is_authenticated %}
-                    <div class="me-3">
-                        <form method="POST" action="{{ url_for('main.save_story', story_id=story.id) }}" class="d-inline">
-                            <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-bookmark{% if story in current_user.saved_stories %} text-primary{% endif %}"></i>
-                                <span class="ms-1">Save</span>
-                            </button>
-                        </form>
-                    </div>
+                        {% if story in current_user.saved_stories %}
+                            <form action="{{ url_for('main.unsave_story', story_id=story.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm" 
+                                    aria-label="Remove {{ story.title }} from reading list">
+                                    <i class="fas fa-bookmark me-1" aria-hidden="true"></i>Saved
+                                </button>
+                            </form>
+                        {% else %}
+                        <a href="{{ url_for('main.save_story', story_id=story.id) }}" 
+                            class="btn btn-outline-secondary btn-sm" 
+                            role="button" 
+                            aria-label="Save {{ story.title }} to reading list">
+                            <i class="far fa-bookmark me-1" aria-hidden="true"></i>Save
+                        </a>
+                        {% endif %}
                     {% endif %}
                     <div class="text-muted">
                         <small>
@@ -375,13 +399,15 @@
 {{ super() }}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Font size control
-        const fontSizeSelect = document.getElementById('fontSize');
+        // Font size control with segmented buttons
         const storyContent = document.getElementById('storyContent');
-        
-        fontSizeSelect.addEventListener('change', function() {
-            const size = this.value;
-            switch(size) {
+        const decreaseFontBtn = document.getElementById('decreaseFont');
+        const increaseFontBtn = document.getElementById('increaseFont');
+        // Font size states
+        const fontSizes = ['small', 'medium', 'large'];
+        let currentFontIndex = 1; // default to medium
+        function applyFontSize(idx) {
+            switch(fontSizes[idx]) {
                 case 'small':
                     storyContent.style.fontSize = '0.9em';
                     break;
@@ -392,8 +418,22 @@
                     storyContent.style.fontSize = '1.2em';
                     break;
             }
+        }
+        applyFontSize(currentFontIndex);
+        decreaseFontBtn.addEventListener('click', function() {
+            if (currentFontIndex > 0) {
+                currentFontIndex--;
+                applyFontSize(currentFontIndex);
+            }
         });
-    
+        increaseFontBtn.addEventListener('click', function() {
+            if (currentFontIndex < fontSizes.length - 1) {
+                currentFontIndex++;
+                applyFontSize(currentFontIndex);
+            }
+        });
+
+        // Background color dropdown logic (unchanged)
         const bgColorDropdown = document.getElementById('bgColorDropdown');
         bgColorDropdown.addEventListener('change', function() {
             const color = this.value;
@@ -407,6 +447,37 @@
             storyContent.style.padding = '20px';
             storyContent.style.borderRadius = '8px';
         });
+
+        // --- Delayed view increment logic ---
+        // Only for non-quote types, not author
+        const writingType = '{{ story.writing_type }}';
+        const storyId = {{ story.id }};
+        const isAuthor = {% if current_user.is_authenticated and current_user.id == story.author_id %}true{% else %}false{% endif %};
+        if (writingType !== 'quote' && !isAuthor) {
+            setTimeout(function() {
+                fetch(`/api/story/${storyId}/increment_view`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Optionally update the view count in the UI
+                    if (data.success && data.views !== undefined) {
+                        const viewEls = document.querySelectorAll('.fa-eye, .stat-value');
+                        viewEls.forEach(function(el) {
+                            if (el.classList.contains('stat-value')) {
+                                el.textContent = data.views;
+                            }
+                        });
+                    }
+                });
+            }, 10000); // 10 seconds
+        }
+        // --- End delayed view logic ---
     });
 </script>
 {% endblock scripts %}
