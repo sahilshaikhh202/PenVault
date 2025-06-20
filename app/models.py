@@ -58,17 +58,28 @@ class User(UserMixin, db.Model):
     referral_count = db.Column(db.Integer, default=0)
     highest_pulse_tier = db.Column(db.String(20))
     
+    # Referral system fields
+    referral_code = db.Column(db.String(20), unique=True)  # Format: username25
+    referred_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    monthly_referral_count = db.Column(db.Integer, default=0)
+    last_referral_reset = db.Column(db.Date)  # Track when monthly count was last reset
+    
     # Add relationships
     stories = db.relationship('Story', backref='author', lazy='dynamic')
     following = db.relationship('Follow', foreign_keys='Follow.follower_id', backref='follower', lazy='dynamic')
     followers = db.relationship('Follow', foreign_keys='Follow.followed_id', backref='followed', lazy='dynamic')
     reading_history = db.relationship('ReadingHistory', backref='user', lazy='dynamic')
     saved_stories = db.relationship('Story', secondary='reading_list', backref='saved_by', lazy='dynamic')
+    
+    # Referral relationships
+    referrals = db.relationship('User', backref=db.backref('referrer', remote_side=[id]))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.points is None:
             self.points = 0
+        if not self.referral_code:
+            self.referral_code = f"{self.username}25" if self.username else None
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -137,8 +148,23 @@ class User(UserMixin, db.Model):
         return self.share_points_count < 2
 
     def can_earn_referral_points(self):
-        """Check if user can earn referral points"""
-        return self.referral_count < 5
+        """Check if user can earn referral points (max 3 per month)"""
+        today = datetime.utcnow().date()
+        # Reset monthly count if it's a new month
+        if not self.last_referral_reset or self.last_referral_reset.month != today.month or self.last_referral_reset.year != today.year:
+            self.monthly_referral_count = 0
+            self.last_referral_reset = today
+        return self.monthly_referral_count < 3
+
+    def process_referral(self, referred_user):
+        """Process a successful referral"""
+        if self.can_earn_referral_points():
+            self.add_points(25, 'referral', f'Referred {referred_user.username}')
+            self.referral_count += 1
+            self.monthly_referral_count += 1
+            self.last_referral_reset = datetime.utcnow().date()
+            return True
+        return False
 
     def check_pulse_tier_bonus(self, current_tier):
         """Check and award pulse tier bonus points"""

@@ -108,9 +108,24 @@ def register():
     if form.validate_on_submit():
         user = User(username=form.username.data, email=form.email.data)
         user.set_password(form.password.data)
+        
+        # Handle referral code
+        if form.referral_code.data:
+            referrer = User.query.filter_by(referral_code=form.referral_code.data).first()
+            if referrer and referrer.can_earn_referral_points():
+                user.referred_by = referrer.id
+                # Process referral and award points to referrer
+                referrer.process_referral(user)
+                # Award welcome bonus points to the new user
+                user.add_points(25, 'referral_welcome', f'Welcome bonus for using referral code')
+                flash(f'Welcome! You were referred by {referrer.username}. You both earned 25 points!', 'success')
+            else:
+                flash('Invalid or expired referral code. Registration completed without referral bonus.', 'warning')
+        else:
+            flash('Congratulations, you are now a registered user!', 'success')
+        
         db.session.add(user)
         db.session.commit()
-        flash('Congratulations, you are now a registered user!', 'success')
         return redirect(url_for('auth.login'))
     
     return render_template('auth/register.html', title='Register', form=form)
