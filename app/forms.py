@@ -152,14 +152,14 @@ class NovelForm(FlaskForm):
         Optional(),
         FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')
     ])
-    submit = SubmitField('Create Novel')
+    submit = SubmitField('Save Novel')
 
 class VolumeForm(FlaskForm):
     title = StringField('Volume Title', validators=[DataRequired(), Length(max=200)])
     summary = TextAreaField('Summary', validators=[Length(max=1000)])
     order = StringField('Order', validators=[DataRequired()])
     is_premium = BooleanField('Premium Content (All chapters in this volume will be premium)')
-    submit = SubmitField('Add Volume')
+    submit = SubmitField('Save Volume')
 
 class ChapterForm(FlaskForm):
     title = StringField('Chapter Title', validators=[DataRequired(), Length(max=200)])
@@ -171,7 +171,7 @@ class ChapterForm(FlaskForm):
     author_notes = TextAreaField('Author Notes', validators=[Optional(), Length(max=500)])
     is_draft = BooleanField('Save as Draft')
     is_premium = BooleanField('Premium Content (Only this chapter will be premium)')
-    submit = SubmitField('Add Chapter')
+    submit = SubmitField('Save Chapter')
 
 class OtherWritingForm(StoryForm):
     custom_type = StringField('Custom Type', validators=[DataRequired(), Length(max=50)])

@@ -6,7 +6,9 @@
         <div class="col-lg-8">
             <div class="card shadow-lg border-0" style="border-radius: 1.25rem;">
                 <div class="card-body p-5">
-                    <h2 class="fw-bold mb-4 display-6 text-center">Start a New Novel</h2>
+                    <h2 class="fw-bold mb-4 display-6 text-center">
+                        {% if novel %}Edit Novel{% else %}Start a New Novel{% endif %}
+                    </h2>
                     <form method="POST" enctype="multipart/form-data">
                         {{ form.hidden_tag() }}
                         <div class="mb-4">

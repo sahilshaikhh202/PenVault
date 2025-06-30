@@ -58,21 +58,39 @@
                             
                         <!-- Enhanced Story Title -->
                         <h2 id="feed-story-title-{{ story.id }}" class="story-title h4 fw-bold mb-3">
-                                <a href="{{ url_for('main.story', story_id=story.id) }}" 
+                                <a href="{{ url_for('main.story_by_slug', story_slug=story.slug) }}" 
                                class="text-decoration-none text-dark story-link">
                                     {{ story.title }}
                                 </a>
                         </h2>
                             
                         <!-- Enhanced Cover Image -->
-                            {% if story.cover_image %}
+                        {% if story.cover_image and story.cover_image != 'default.jpg' %}
                         <div class="story-cover mb-3">
-                                <img src="{{ url_for('static', filename='story_covers/' + story.cover_image) }}" 
+                            {% if story.is_premium and current_user != story.author %}
+                            <div class="cover-container">
+                                <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
+                                     class="img-fluid rounded story-cover-img" 
+                                     alt="Cover image for {{ story.title }}"
+                                     style="max-height: 400px; width: 100%; object-fit: cover;">
+                                <div class="cover-overlay">
+                                    <div class="text-center">
+                                        <h4 class="text-white mb-2">Premium Content</h4>
+                                        <p class="text-white mb-3">Unlock to view the full cover image</p>
+                                        <a href="{{ url_for('main.story_by_slug', story_slug=story.slug) }}" class="btn btn-light btn-sm">
+                                            <i class="fas fa-lock me-1"></i>Unlock
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
                                  class="img-fluid rounded story-cover-img" 
                                  alt="Cover image for {{ story.title }}"
-                                     style="max-height: 400px; width: 100%; object-fit: cover;">
-                        </div>
+                                 style="max-height: 400px; width: 100%; object-fit: cover;">
                             {% endif %}
+                        </div>
+                        {% endif %}
                             
                         <!-- Enhanced Story Preview -->
                         <div class="story-preview mb-4">
@@ -95,7 +113,7 @@
                         <footer class="story-actions">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div class="action-buttons">
-                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=story.slug) }}{% endif %}" 
                                        class="btn btn-primary btn-sm me-2" 
                                        role="button" 
                                        aria-label="Read {{ story.title }}">
@@ -237,6 +255,46 @@
     
     .feed-story-card:hover .story-cover-img {
         transform: scale(1.02);
+    }
+    
+    /* Cover image overlay styles */
+    .cover-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--border-radius-md);
+    }
+    
+    .cover-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+    
+    .cover-container:hover .cover-overlay {
+        opacity: 1;
+    }
+    
+    .cover-overlay .btn {
+        background: rgba(255, 255, 255, 0.9);
+        color: #333;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: var(--font-weight-medium);
+        transition: all var(--transition-fast);
+    }
+    
+    .cover-overlay .btn:hover {
+        background: rgba(255, 255, 255, 1);
+        transform: scale(1.05);
     }
     
     .story-excerpt {

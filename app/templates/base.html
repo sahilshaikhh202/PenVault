@@ -598,15 +598,15 @@
                 </div>
                 <div class="col-md-6">
                     <div class="d-flex justify-content-center justify-content-md-end gap-3">
-                        <a href="#" class="text-muted text-decoration-none" aria-label="Privacy Policy">
+                        <a href="{{ url_for('main.privacy') }}" class="text-muted text-decoration-none" aria-label="Privacy Policy">
                             <i class="fas fa-shield-alt" aria-hidden="true"></i>
                             <span class="ms-1">Privacy</span>
                         </a>
-                        <a href="#" class="text-muted text-decoration-none" aria-label="Terms of Service">
+                        <a href="{{ url_for('main.terms') }}" class="text-muted text-decoration-none" aria-label="Terms of Service">
                             <i class="fas fa-file-contract" aria-hidden="true"></i>
                             <span class="ms-1">Terms</span>
                         </a>
-                        <a href="#" class="text-muted text-decoration-none" aria-label="Contact Support">
+                        <a href="{{ url_for('main.contact') }}" class="text-muted text-decoration-none" aria-label="Contact Support">
                             <i class="fas fa-envelope" aria-hidden="true"></i>
                             <span class="ms-1">Contact</span>
                         </a>

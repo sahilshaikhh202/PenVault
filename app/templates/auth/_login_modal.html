@@ -1,0 +1,201 @@
+<div id="login-modal" class="login-modal-overlay">
+    <div class="login-modal-content">
+        <button id="close-login-modal" class="close-button">&times;</button>
+        <div class="login-modal-header">
+            <h2 class="brand-title">PenVault</h2>
+            <p>Login to continue reading</p>
+        </div>
+        {% if login_form %}
+        <form method="POST" action="{{ url_for('auth.login', next=request.full_path) }}" class="login-modal-form">
+            {{ login_form.hidden_tag() }}
+            <div class="input-group">
+                <span class="input-group-icon"><i class="fas fa-envelope"></i></span>
+                {{ login_form.email(class="form-control-modal", placeholder="Enter your Email") }}
+            </div>
+            <div class="input-group">
+                <span class="input-group-icon"><i class="fas fa-lock"></i></span>
+                {{ login_form.password(class="form-control-modal", placeholder="Password", id="modal_password") }}
+                <span class="password-toggle" onclick="togglePasswordVisibility('modal_password')"><i class="fas fa-eye-slash"></i></span>
+            </div>
+            <div class="form-options">
+                {{ login_form.remember_me(class="remember-me-checkbox") }}
+                {{ login_form.remember_me.label }}
+            </div>
+            {{ login_form.submit(class="btn-login-modal") }}
+        </form>
+        <div class="login-modal-footer">
+            <p>Not a member? <a href="{{ url_for('auth.register', next=request.full_path) }}">Create New Account</a></p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function togglePasswordVisibility(fieldId) {
+    const passwordField = document.getElementById(fieldId);
+    const toggleIcon = passwordField.nextElementSibling.querySelector('i');
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    } else {
+        passwordField.type = "password";
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    }
+}
+</script>
+
+<style>
+.login-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.login-modal-content {
+    background: #1e1e1e;
+    color: #fff;
+    padding: 40px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-button:hover {
+    color: #fff;
+}
+
+.login-modal-header .brand-title {
+    font-size: 42px;
+    color: #3b82f6;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.login-modal-header p {
+    font-size: 18px;
+    color: #ccc;
+    margin-bottom: 30px;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.form-control-modal {
+    width: 100%;
+    box-sizing: border-box;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 12px;
+    padding: 15px 15px 15px 50px;
+    color: #fff;
+    font-size: 16px;
+}
+
+.form-control-modal:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.form-control-modal::placeholder {
+    color: #888;
+}
+
+.input-group-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    cursor: pointer;
+}
+
+.form-options {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+    font-size: 14px;
+    color: #ccc;
+    text-align: left;
+}
+.remember-me-checkbox {
+    margin-right: 8px;
+    accent-color: #3b82f6;
+    width: 16px;
+    height: 16px;
+}
+
+.btn-login-modal {
+    width: 100%;
+    padding: 15px;
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: background-color 0.2s;
+}
+
+.btn-login-modal:hover {
+    background: #2563eb;
+}
+
+.login-modal-footer p {
+    color: #ccc;
+    font-size: 14px;
+}
+.login-modal-footer a {
+    color: #fff;
+    font-weight: bold;
+    text-decoration: none;
+}
+.login-modal-footer a:hover {
+    text-decoration: underline;
+}
+</style> 

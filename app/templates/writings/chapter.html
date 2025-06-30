@@ -6,7 +6,9 @@
         <div class="col-lg-8">
             <div class="card shadow-lg border-0" style="border-radius: 1.25rem;">
                 <div class="card-body p-5">
-                    <h2 class="fw-bold mb-4 display-6 text-center">Add a New Chapter</h2>
+                    <h2 class="fw-bold mb-4 display-6 text-center">
+                        {% if chapter %}Edit Chapter{% else %}Add a New Chapter{% endif %}
+                    </h2>
                     <form method="POST">
                         {{ form.hidden_tag() }}
                         <div class="mb-4">

@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Page Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-5 fw-bold text-primary mb-3">
+                    <i class="fas fa-envelope me-2"></i>Contact Us
+                </h1>
+                <p class="lead text-muted">Get in touch with the PenVault team</p>
+            </div>
+
+            <div class="row g-5">
+                <!-- Contact Information -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body p-4">
+                            <h3 class="h4 fw-bold text-primary mb-4">
+                                <i class="fas fa-info-circle me-2"></i>Get in Touch
+                            </h3>
+                            
+                            <div class="mb-4">
+                                <h5 class="fw-bold mb-2">
+                                    <i class="fas fa-envelope text-primary me-2"></i>General Inquiries
+                                </h5>
+                                <p class="mb-1">support@penvault.com</p>
+                                <small class="text-muted">Response within 24 hours</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5 class="fw-bold mb-2">
+                                    <i class="fas fa-shield-alt text-primary me-2"></i>Privacy & Legal
+                                </h5>
+                                <p class="mb-1">privacy@penvault.com</p>
+                                <small class="text-muted">Data protection inquiries</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5 class="fw-bold mb-2">
+                                    <i class="fas fa-copyright text-primary me-2"></i>Copyright Issues
+                                </h5>
+                                <p class="mb-1">copyright@penvault.com</p>
+                                <small class="text-muted">DMCA and copyright claims</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5 class="fw-bold mb-2">
+                                    <i class="fas fa-bug text-primary me-2"></i>Technical Support
+                                </h5>
+                                <p class="mb-1">tech@penvault.com</p>
+                                <small class="text-muted">Platform issues and bugs</small>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading fw-bold">
+                                    <i class="fas fa-clock me-2"></i>Response Times
+                                </h6>
+                                <ul class="mb-0 small">
+                                    <li>General inquiries: 24 hours</li>
+                                    <li>Technical issues: 48 hours</li>
+                                    <li>Legal matters: 72 hours</li>
+                                    <li>Copyright claims: 5 business days</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-4">
+                            <h3 class="h4 fw-bold text-primary mb-4">
+                                <i class="fas fa-paper-plane me-2"></i>Send us a Message
+                            </h3>
+                            
+                            <form>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="name" class="form-label fw-semibold">Full Name *</label>
+                                        <input type="text" class="form-control" id="name" name="name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="email" class="form-label fw-semibold">Email Address *</label>
+                                        <input type="email" class="form-control" id="email" name="email" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="subject" class="form-label fw-semibold">Subject *</label>
+                                        <select class="form-select" id="subject" name="subject" required>
+                                            <option value="">Choose a topic...</option>
+                                            <option value="general">General Inquiry</option>
+                                            <option value="technical">Technical Support</option>
+                                            <option value="privacy">Privacy & Data</option>
+                                            <option value="copyright">Copyright Issue</option>
+                                            <option value="feature">Feature Request</option>
+                                            <option value="bug">Bug Report</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="message" class="form-label fw-semibold">Message *</label>
+                                        <textarea class="form-control" id="message" name="message" rows="6" 
+                                                  placeholder="Please provide details about your inquiry..." required></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter">
+                                            <label class="form-check-label small" for="newsletter">
+                                                Subscribe to our newsletter for updates and writing tips
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="fas fa-paper-plane me-2"></i>Send Message
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="mt-5">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h3 class="h4 fw-bold text-primary mb-4">
+                            <i class="fas fa-question-circle me-2"></i>Frequently Asked Questions
+                        </h3>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="accordion" id="faqAccordion1">
+                                    <div class="accordion-item border-0">
+                                        <h2 class="accordion-header" id="faq1">
+                                            <button class="accordion-button collapsed bg-light" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapse1" 
+                                                    aria-expanded="false" aria-controls="collapse1">
+                                                How do I report plagiarism?
+                                            </button>
+                                        </h2>
+                                        <div id="collapse1" class="accordion-collapse collapse" 
+                                             aria-labelledby="faq1" data-bs-parent="#faqAccordion1">
+                                            <div class="accordion-body">
+                                                Email us at copyright@penvault.com with evidence of the plagiarism, including links to original content and specific examples.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="accordion-item border-0">
+                                        <h2 class="accordion-header" id="faq2">
+                                            <button class="accordion-button collapsed bg-light" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapse2" 
+                                                    aria-expanded="false" aria-controls="collapse2">
+                                                Can I delete my account?
+                                            </button>
+                                        </h2>
+                                        <div id="collapse2" class="accordion-collapse collapse" 
+                                             aria-labelledby="faq2" data-bs-parent="#faqAccordion1">
+                                            <div class="accordion-body">
+                                                Yes, you can request account deletion in your settings. Your account will be permanently deleted after 20 days.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="accordion" id="faqAccordion2">
+                                    <div class="accordion-item border-0">
+                                        <h2 class="accordion-header" id="faq3">
+                                            <button class="accordion-button collapsed bg-light" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapse3" 
+                                                    aria-expanded="false" aria-controls="collapse3">
+                                                How do I earn points?
+                                            </button>
+                                        </h2>
+                                        <div id="collapse3" class="accordion-collapse collapse" 
+                                             aria-labelledby="faq3" data-bs-parent="#faqAccordion2">
+                                            <div class="accordion-body">
+                                                Earn points by logging in daily, posting content, commenting, and engaging with other writers' work.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="accordion-item border-0">
+                                        <h2 class="accordion-header" id="faq4">
+                                            <button class="accordion-button collapsed bg-light" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapse4" 
+                                                    aria-expanded="false" aria-controls="collapse4">
+                                                Is my content safe?
+                                            </button>
+                                        </h2>
+                                        <div id="collapse4" class="accordion-collapse collapse" 
+                                             aria-labelledby="faq4" data-bs-parent="#faqAccordion2">
+                                            <div class="accordion-body">
+                                                Yes, you retain full copyright to your work. We only have a non-exclusive license to host and display your content.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Resources -->
+            <div class="mt-5">
+                <div class="card border-primary">
+                    <div class="card-body text-center p-4">
+                        <h4 class="fw-bold text-primary mb-3">
+                            <i class="fas fa-book me-2"></i>Additional Resources
+                        </h4>
+                        <p class="mb-4">Need more information? Check out our comprehensive guides and policies.</p>
+                        <div class="d-flex justify-content-center gap-3 flex-wrap">
+                            <a href="{{ url_for('main.terms') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-file-contract me-2"></i>Terms of Service
+                            </a>
+                            <a href="{{ url_for('main.privacy') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-shield-alt me-2"></i>Privacy Policy
+                            </a>
+                            <a href="{{ url_for('main.discover') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-compass me-2"></i>Discover Stories
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

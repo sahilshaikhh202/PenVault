@@ -10,7 +10,7 @@
                     <h4 class="mb-0 fw-bold display-6 text-center">Redeem Points</h4>
                 </div>
                 <div class="card-body p-5">
-                    <div class="alert alert-info mb-4 rounded-3">
+                    <div class="alert-info mb-4 rounded-3">
                         <h5 class="fw-bold">Your Points Balance: {{ current_user.points }}</h5>
                     </div>
                     
@@ -226,6 +226,10 @@
                     </div>
                     <!-- Feature Post -->
                     <h5 class="mt-4 fw-semibold">Feature Your Post <span class="badge bg-warning text-dark">150 points</span></h5>
+                    <p class="text-muted small mb-3">
+                        <i class="fas fa-clock me-1" aria-hidden="true"></i>
+                        Featured stories appear on the homepage for 24 hours and are automatically removed after that time.
+                    </p>
                     <div class="row g-3">
                         {% for story in current_user.stories %}
                         {% if not story.is_featured %}
@@ -245,8 +249,34 @@
                                     <form action="{{ url_for('main.redeem_points') }}" method="POST">
                                         <input type="hidden" name="action" value="feature_post">
                                         <input type="hidden" name="item_id" value="{{ story.id }}">
-                                        <button type="submit" class="btn btn-primary btn-sm">Feature</button>
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-star me-1" aria-hidden="true"></i>Feature for 24h
+                                        </button>
                                     </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="col-md-6">
+                            <div class="card h-100 shadow-sm border-0 rounded-3 border-success">
+                                <div class="card-body">
+                                    <h6 class="card-title fw-bold">{{ story.title }}</h6>
+                                    <p class="card-text small mb-2">
+                                        {% if story.writing_type %}
+                                            <span class="badge {% if story.writing_type == 'Poetry' %}bg-info{% elif story.writing_type == 'Short Story' %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {{ story.writing_type|title }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-primary">Webnovel</span>
+                                        {% endif %}
+                                        <span class="badge bg-success ms-1">
+                                            <i class="fas fa-star me-1" aria-hidden="true"></i>Featured
+                                        </span>
+                                    </p>
+                                    <p class="text-success small mb-0">
+                                        <i class="fas fa-clock me-1" aria-hidden="true"></i>
+                                        Featured until: {{ story.featured_at.strftime('%Y-%m-%d %H:%M') if story.featured_at else 'Unknown' }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -307,7 +337,7 @@
                                             {{ item.content_type }}: {{ item.title }}
                                         </a>
                                     {% else %}
-                                        <a href="{{ url_for('main.story', story_id=item.story_id) }}" class="text-decoration-none text-primary">
+                                        <a href="{{ url_for('main.story_by_slug', story_slug=item.story.slug) }}" class="text-decoration-none text-primary">
                                             {{ item.content_type }}: {{ item.title }}
                                         </a>
                                     {% endif %}

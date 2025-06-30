@@ -20,7 +20,7 @@
             <a href="{{ url_for('main.edit_volume', volume_slug=volume.slug) }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-edit"></i> Edit Volume</a>
             <form action="{{ url_for('main.delete_volume', volume_slug=volume.slug) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this volume? This action cannot be undone.');">
                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i> Delete Volume</button>
-            </form>
+    </form>
         </div>
     </div>
     {% endif %}
@@ -119,7 +119,7 @@
                                 <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Are you sure you want to delete this chapter? This action cannot be undone.');">
                                     <i class="fas fa-trash"></i> Delete Chapter
                                 </button>
-                        </form>
+                    </form>
                         </li>
                     </ul>
                 </div>
@@ -149,17 +149,17 @@
 {{ super() }}
 <!-- Enhanced styles for modern look and accessibility -->
 <style>
-.premium-badge-small {
-    background: linear-gradient(45deg, #ffd700, #ffa500);
-    color: #000;
-    font-weight: 500;
-    padding: 0.2rem 0.6rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-}
+    .premium-badge-small {
+        background: linear-gradient(45deg, #ffd700, #ffa500);
+        color: #000;
+        font-weight: 500;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
 .premium-badge {
     background: linear-gradient(45deg, #ffd700, #ffa500);
     color: #000;
@@ -171,41 +171,41 @@
     gap: 0.5rem;
     font-size: 1rem;
 }
-.premium-content-lock {
-    position: relative;
-    min-height: 200px;
+    .premium-content-lock {
+        position: relative;
+        min-height: 200px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-radius: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     padding: 2.5rem 1.5rem;
-    text-align: center;
+        text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-.premium-content-lock i {
-    font-size: 3rem;
-    color: #ffd700;
-    margin-bottom: 1rem;
-}
-.premium-content-lock h3 {
-    color: #333;
-    margin-bottom: 1rem;
-}
-.premium-content-lock p {
-    color: #666;
-    margin-bottom: 1.5rem;
-}
-body.dark-mode .premium-content-lock {
+    }
+    .premium-content-lock i {
+        font-size: 3rem;
+        color: #ffd700;
+        margin-bottom: 1rem;
+    }
+    .premium-content-lock h3 {
+        color: #333;
+        margin-bottom: 1rem;
+    }
+    .premium-content-lock p {
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+    body.dark-mode .premium-content-lock {
     background: linear-gradient(135deg, #23272b 0%, #1a1a1a 100%);
-}
-body.dark-mode .premium-content-lock h3 {
-    color: #e0e0e0;
-}
-body.dark-mode .premium-content-lock p {
-    color: #b0b0b0;
-}
+    }
+    body.dark-mode .premium-content-lock h3 {
+        color: #e0e0e0;
+    }
+    body.dark-mode .premium-content-lock p {
+        color: #b0b0b0;
+    }
 @media (max-width: 768px) {
     .card-body, .p-5 {
         padding: 2rem 1rem !important;

@@ -47,6 +47,143 @@
                     </form>
                 </div>
             </div>
+            
+            <!-- Account Management Section -->
+            <div class="card shadow-lg border-0" style="border-radius: 1.25rem;">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h4 class="mb-0 fw-bold text-danger">⚠️ Account Management</h4>
+                </div>
+                <div class="card-body p-5">
+                    
+                    <!-- Deletion Status Alert -->
+                    {% if current_user.is_scheduled_for_deletion() %}
+                    <div class="alert alert-warning rounded-3 mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle me-3 fs-4"></i>
+                            <div>
+                                <h6 class="mb-1 fw-semibold">Account Scheduled for Deletion</h6>
+                                <p class="mb-2">Your account will be permanently deleted in {{ current_user.days_until_deletion() }} days.</p>
+                                <form method="POST" action="{{ url_for('main.cancel_account_deletion') }}" class="d-inline">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-undo me-1"></i>Cancel Deletion
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Account Actions -->
+                    <div class="row g-4">
+                        <!-- Disable Account -->
+                        <div class="col-md-6">
+                            <div class="card border-warning h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-pause-circle text-warning fs-1 mb-3"></i>
+                                    <h6 class="fw-semibold">Disable Account</h6>
+                                    <p class="small text-muted mb-3">Temporarily hide your content. You can re-enable by logging back in.</p>
+                                    <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#disableAccountModal">
+                                        Disable Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Delete Account -->
+                        <div class="col-md-6">
+                            <div class="card border-danger h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-trash-alt text-danger fs-1 mb-3"></i>
+                                    <h6 class="fw-semibold">Delete Account</h6>
+                                    <p class="small text-muted mb-3">Permanently delete your account after 20-day waiting period.</p>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                                        Delete Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Important Notes -->
+                    <div class="info rounded-3 mt-4">
+                        <h6 class="fw-semibold mb-2">📋 Important Information</h6>
+                        <ul class="mb-0 small">
+                            <li><strong>Disable Account:</strong> Your content will be hidden but can be restored by logging back in.</li>
+                            <li><strong>Delete Account:</strong> Your account and all data will be permanently deleted after 20 days.</li>
+                            <li><strong>Points & Data:</strong> All your points, Pulse Score, and writing data will be preserved during disable.</li>
+                            <li><strong>Cancellation:</strong> You can cancel deletion anytime during the 20-day waiting period.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Disable Account Modal -->
+<div class="modal fade" id="disableAccountModal" tabindex="-1" aria-labelledby="disableAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="disableAccountModalLabel">
+                    <i class="fas fa-pause-circle text-warning me-2"></i>Disable Account
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to disable your account?</p>
+                <ul class="mb-3">
+                    <li>Your content will be hidden from other users</li>
+                    <li>You can re-enable by logging back in</li>
+                    <li>All your data and points will be preserved</li>
+                </ul>
+                <form method="POST" action="{{ url_for('main.disable_account') }}">
+                    <div class="mb-3">
+                        <label for="disableReason" class="form-label">Reason (optional):</label>
+                        <textarea class="form-control" id="disableReason" name="reason" rows="2" placeholder="Why are you disabling your account?"></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">Disable Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold text-danger" id="deleteAccountModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Delete Account
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <strong>⚠️ This action cannot be undone!</strong>
+                </div>
+                <p>Are you absolutely sure you want to delete your account?</p>
+                <ul class="mb-3">
+                    <li>Your account will be scheduled for deletion</li>
+                    <li>You have 20 days to cancel the deletion</li>
+                    <li>After 20 days, all your data will be permanently deleted</li>
+                    <li>This includes all your stories, comments, points, and profile data</li>
+                </ul>
+                <form method="POST" action="{{ url_for('main.request_account_deletion') }}">
+                    <div class="mb-3">
+                        <label for="deleteReason" class="form-label">Reason (optional):</label>
+                        <textarea class="form-control" id="deleteReason" name="reason" rows="2" placeholder="Why are you deleting your account?"></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete Account</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -71,6 +208,12 @@
 }
 hr {
     border-top: 1.5px solid #e9ecef;
+}
+.modal-content {
+    border-radius: 1rem;
+}
+.modal-header {
+    border-bottom: 2px solid #e9ecef;
 }
 @media (max-width: 768px) {
     .card-body, .p-5 {

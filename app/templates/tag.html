@@ -2,94 +2,295 @@
 
 {% block content %}
 <div class="container">
-    <form method="get" action="{{ url_for('main.tag_search') }}" class="mb-4">
-        <div class="input-group">
-            <input type="text" 
-                   class="form-control" 
-                   name="search" 
-                   placeholder="Search for a tag... (e.g. #fantasy)" 
-                   value="{{ search or '' }}"
-                   pattern="#.*"
-                   title="Tag search must start with #">
-            <button class="btn btn-primary" type="submit">Search</button>
-        </div>
-        {% if not search or not search.startswith('#') %}
-        <small class="text-muted">Tag search must start with # (e.g. #fantasy)</small>
-        {% endif %}
-    </form>
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Page Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-5 fw-bold text-primary mb-3">
+                    <i class="fas fa-tags me-2"></i>Tag Explorer
+                </h1>
+                <p class="lead text-muted">Discover stories by tags and find content that matches your interests</p>
+            </div>
 
-    {% if tag %}
-        <h1 class="mb-4">Content tagged with "#{{ tag.name }}"</h1>
-        {% if stories and stories.items|length > 0 %}
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            {% for story in stories.items %}
-            <div class="col">
-                <div class="card h-100">
-                    {% if story.cover_image %}
-                    <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" class="card-img-top" alt="{{ story.title }}">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ story.title }}</h5>
+            <!-- Search Form -->
+            <div class="card shadow-sm border-0 mb-5">
+                <div class="card-body p-4">
+                    <form method="get" action="{{ url_for('main.tag_search') }}" class="mb-0">
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-primary text-white border-0">
+                                <i class="fas fa-hashtag"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control border-0 shadow-none" 
+                                   name="search" 
+                                   placeholder="Search for a tag... (e.g. #fantasy, #romance, #mystery)" 
+                                   value="{{ search or '' }}"
+                                   pattern="#.*"
+                                   title="Tag search must start with #"
+                                   aria-label="Search tags">
+                            <button class="btn btn-primary px-4" type="submit">
+                                <i class="fas fa-search me-2"></i>Search
+                            </button>
+                        </div>
+                        {% if not search or not search.startswith('#') %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>Tag search must start with # (e.g. #fantasy)
+                                </small>
+                            </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <!-- Search Results Section -->
+            {% if tag %}
+                <div class="mb-5">
+                    <div class="d-flex align-items-center mb-4">
+                        <h2 class="h4 mb-0 text-primary">
+                            <i class="fas fa-tag me-2"></i>Content tagged with "#{{ tag.name }}"
+                        </h2>
+                        <span class="badge bg-primary ms-3">{{ stories.total }} stories</span>
                     </div>
-                    <div class="card-footer">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">By <a href="{{ url_for('main.profile', username=story.author.username) }}">{{ story.author.username }}</a></small>
-                            <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" class="btn btn-sm btn-primary">Read</a>
+                    
+                    {% if stories and stories.items|length > 0 %}
+                        <div class="row g-4">
+                            {% for story in stories.items %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card h-100 shadow-sm border-0 hover-lift">
+                                        {% if story.cover_image %}
+                                            <div class="position-relative">
+                                                <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
+                                                     class="card-img-top" 
+                                                     style="height: 200px; object-fit: cover;" 
+                                                     alt="{{ story.title }} cover">
+                                                <div class="position-absolute top-0 end-0 m-2">
+                                                    <span class="badge bg-primary">{{ story.writing_type|title }}</span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        <div class="card-body p-4">
+                                            <h5 class="card-title fw-bold mb-2">
+                                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=story.slug) }}{% endif %}" 
+                                                   class="text-decoration-none text-dark hover-primary">
+                                                    {{ story.title }}
+                                                </a>
+                                            </h5>
+                                            {% if story.description %}
+                                                <p class="card-text text-muted small mb-3">
+                                                    {{ story.description[:120] }}{% if story.description|length > 120 %}...{% endif %}
+                                                </p>
+                                            {% endif %}
+                                            <div class="d-flex align-items-center mb-3">
+                                                <img src="{{ url_for('static', filename='uploads/' + story.author.profile_picture) }}" 
+                                                     class="rounded-circle me-2" 
+                                                     style="width: 30px; height: 30px; object-fit: cover;" 
+                                                     alt="{{ story.author.username }}">
+                                                <small class="text-muted">
+                                                    By <a href="{{ url_for('main.profile', username=story.author.username) }}" 
+                                                          class="text-decoration-none hover-primary">{{ story.author.username }}</a>
+                                                </small>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex gap-2">
+                                                    {% for tag in story.tags[:3] %}
+                                                        <span class="badge bg-light text-dark border">{{ tag.name }}</span>
+                                                    {% endfor %}
+                                                    {% if story.tags|length > 3 %}
+                                                        <span class="badge bg-light text-dark border">+{{ story.tags|length - 3 }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=story.slug) }}{% endif %}" 
+                                                   class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-book-open me-1"></i>Read
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if stories.pages > 1 %}
+                            <nav aria-label="Page navigation" class="mt-5">
+                                <ul class="pagination justify-content-center">
+                                    {% if stories.has_prev %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=stories.prev_num) }}">
+                                                <i class="fas fa-chevron-left me-1"></i>Previous
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">
+                                                <i class="fas fa-chevron-left me-1"></i>Previous
+                                            </span>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in stories.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                                        {% if page_num %}
+                                            {% if page_num == stories.page %}
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ page_num }}</span>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=page_num) }}">{{ page_num }}</a>
+                                                </li>
+                                            {% endif %}
+                                        {% else %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if stories.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=stories.next_num) }}">
+                                                Next<i class="fas fa-chevron-right ms-1"></i>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">
+                                                Next<i class="fas fa-chevron-right ms-1"></i>
+                                            </span>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="fas fa-tag fa-3x text-muted"></i>
+                            </div>
+                            <h3 class="text-muted mb-3">No stories found</h3>
+                            <p class="text-muted mb-4">No stories found for tag "#{{ tag.name }}". Try searching for a different tag.</p>
+                            <a href="{{ url_for('main.tag_search') }}" class="btn btn-primary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Tag Search
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% elif search %}
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning"></i>
+                    </div>
+                    {% if not search.startswith('#') %}
+                        <h3 class="text-warning mb-3">Invalid Tag Format</h3>
+                        <p class="text-muted mb-4">Please start your tag search with # (e.g. #fantasy)</p>
+                    {% else %}
+                        <h3 class="text-muted mb-3">Tag Not Found</h3>
+                        <p class="text-muted mb-4">No content found for tag "{{ search }}"</p>
+                    {% endif %}
+                    <a href="{{ url_for('main.tag_search') }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Tag Search
+                    </a>
+                </div>
+            {% endif %}
+
+            <!-- Default Content Section (shown when no search query) -->
+            {% if not search %}
+                <div class="mb-5">
+                    <h2 class="h4 mb-4 text-primary">
+                        <i class="fas fa-lightbulb me-2"></i>How to Use Tag Search
+                        <span class="badge bg-info ms-2">Guide</span>
+                    </h2>
+                    
+                    <!-- Instructions -->
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body p-4 text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-hashtag fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Start with #</h5>
+                                    <p class="card-text text-muted">Begin your search with the hashtag symbol to find specific tags</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body p-4 text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-search fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Search Tags</h5>
+                                    <p class="card-text text-muted">Find stories tagged with specific topics like #fantasy, #romance, or #mystery</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body p-4 text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-book-open fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Discover Stories</h5>
+                                    <p class="card-text text-muted">Browse through stories that match your interests and reading preferences</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Call to Action -->
+                    <div class="text-center">
+                        <div class="card bg-gradient-primary text-white border-0">
+                            <div class="card-body p-5">
+                                <h3 class="mb-3">
+                                    <i class="fas fa-lightbulb me-2"></i>Ready to Explore?
+                                </h3>
+                                <p class="mb-4">Use the search bar above to find specific tags or browse our community to discover amazing stories.</p>
+                                <div class="d-flex justify-content-center gap-3">
+                                    <button class="btn btn-light btn-lg" onclick="document.querySelector('input[name=search]').focus()">
+                                        <i class="fas fa-search me-2"></i>Search Tags
+                                    </button>
+                                    <a href="{{ url_for('main.discover') }}" class="btn btn-outline-light btn-lg">
+                                        <i class="fas fa-compass me-2"></i>Browse All Stories
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            {% endfor %}
+            {% endif %}
         </div>
-        <!-- Pagination -->
-        <nav aria-label="Page navigation" class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if stories.has_prev %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=stories.prev_num) }}">Previous</a>
-                </li>
-                {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Previous</span>
-                </li>
-                {% endif %}
-                {% for page_num in stories.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-                    {% if page_num %}
-                        {% if page_num == stories.page %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ page_num }}</span>
-                        </li>
-                        {% else %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=page_num) }}">{{ page_num }}</a>
-                        </li>
-                        {% endif %}
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">...</span>
-                    </li>
-                    {% endif %}
-                {% endfor %}
-                {% if stories.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('main.tag', tag_name=tag.name, page=stories.next_num) }}">Next</a>
-                </li>
-                {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Next</span>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% else %}
-            <div class="alert alert-info">No stories found for this tag.</div>
-        {% endif %}
-    {% elif search %}
-        {% if not search.startswith('#') %}
-            <div class="alert alert-warning">Please start your tag search with # (e.g. #fantasy)</div>
-        {% else %}
-            <div class="alert alert-warning">No content found for tag "{{ search }}"</div>
-        {% endif %}
-    {% endif %}
+    </div>
 </div>
+
+<style>
+.hover-lift {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+
+.hover-primary:hover {
+    color: var(--bs-primary) !important;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-dark) 100%);
+}
+
+@media (max-width: 768px) {
+    .input-group-lg {
+        flex-direction: column;
+    }
+    
+    .input-group-lg > * {
+        border-radius: 0.5rem !important;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
 {% endblock %}

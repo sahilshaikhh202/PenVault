@@ -51,6 +51,20 @@
                 </form>
                 {% endif %}
             </div>
+            <!-- Quick Read Buttons -->
+            <div class="mb-4 d-flex gap-2 flex-wrap">
+                {% if first_chapter %}
+                <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=first_chapter.volume.slug if first_chapter.volume else 'no-volume', chapter_slug=first_chapter.slug) }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-book-open me-1"></i> Read Chapter 1
+                </a>
+                {% endif %}
+                {% if current_user.is_authenticated and last_read_chapter %}
+                <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=last_read_chapter.volume.slug if last_read_chapter.volume else 'no-volume', chapter_slug=last_read_chapter.slug) }}" class="btn btn-success btn-sm">
+                    <i class="fas fa-play me-1"></i> Continue Reading ({{ last_read_chapter.title }})
+                </a>
+                {% endif %}
+            </div>
+            <!-- End Quick Read Buttons -->
             {% if novel.is_premium and current_user.is_authenticated and novel.story.author != current_user %}
                 {% if unlocked %}
                     <!-- Display Volumes -->
@@ -167,51 +181,378 @@
     </div>
     <!-- Comments Section -->
     <div class="comments-section mt-5">
-        <h4 class="mb-3 fw-semibold">Comments</h4>
-        {% if current_user.is_authenticated %}
-        <form method="POST" action="{{ url_for('main.comment', story_id=novel.story.id) }}" class="mb-4">
-            {{ form.hidden_tag() }}
-            <div class="mb-3">
-                {{ form.content(class="form-control", rows=3, placeholder="Write a comment...") }}
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-header bg-white border-0 pb-0">
+                <h4 class="mb-0 fw-bold">
+                    <i class="fas fa-comments me-2 text-primary"></i>
+                    Comments ({{ novel.story.comments.count() }})
+                </h4>
             </div>
-            {{ form.submit(class="btn btn-primary") }}
-        </form>
-        {% endif %}
-        {% for comment in novel.story.comments.filter_by(parent_id=None).order_by(Comment.created_at.desc()).all() %}
-        <div class="comment mb-3 position-relative p-3 rounded shadow-sm bg-white">
-            <div class="d-flex align-items-start gap-2">
-                <img src="{{ url_for('static', filename='uploads/' + comment.author.profile_picture) if comment.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
-                     class="rounded-circle me-2" width="32" height="32" alt="{{ comment.author.username }}">
-                <div class="flex-grow-1">
-                    <div class="d-flex align-items-center mb-1">
-                        <a href="{{ url_for('main.profile', username=comment.author.username) }}" class="text-decoration-none text-dark fw-bold me-2">
-                            {{ comment.author.username }}
-                        </a>
-                        <small class="text-muted">{{ comment.created_at.strftime('%B %d, %Y') }}</small>
-                    </div>
-                    <p class="mb-1">{{ comment.content }}</p>
+            <div class="card-body p-4">
+                <!-- Comment Form -->
+                {% if current_user.is_authenticated %}
+                <div class="comment-form mb-4">
+                    <form method="POST" action="{{ url_for('main.comment', story_id=novel.story.id) }}" id="commentForm">
+                        {{ form.hidden_tag() }}
+                        <div class="d-flex align-items-start gap-3">
+                            <img src="{{ url_for('static', filename='uploads/' + current_user.profile_picture) if current_user.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
+                                 class="rounded-circle" width="40" height="40" alt="{{ current_user.username }}">
+                            <div class="flex-grow-1">
+                                <div class="mb-2">
+                                    <span class="fw-semibold">{{ current_user.username }}</span>
+                                    <span id="replyToText" class="text-muted ms-2" style="display: none;"></span>
+                                </div>
+                                {{ form.content(class="form-control", rows=3, placeholder="Write a comment...", id="commentContent") }}
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="text-muted">Press Ctrl+Enter to submit</small>
+                                    <div>
+                                        <button type="button" id="cancelReply" class="btn btn-sm btn-outline-secondary me-2" style="display: none;">Cancel Reply</button>
+                                        {{ form.submit(class="btn btn-primary btn-sm") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-                {% if current_user.is_authenticated and (current_user == comment.author or current_user == novel.story.author) %}
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('main.edit_comment', comment_id=comment.id) }}">Edit</a></li>
-                        <li>
-                            <form method="POST" action="{{ url_for('main.delete_comment', comment_id=comment.id) }}" style="display:inline;">
-                                <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Delete this comment?')">Delete</button>
-                            </form>
-                        </li>
-                    </ul>
+                {% else %}
+                <div class="alert alert-info rounded-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Please <a href="{{ url_for('auth.login', next=request.url) }}" class="alert-link">log in</a> to comment.
                 </div>
                 {% endif %}
+
+                <!-- Comments List -->
+                <div class="comments-list">
+                    {% for comment in novel.story.comments.filter_by(parent_id=None).order_by(Comment.created_at.desc()).all() %}
+                    <div class="comment-item mb-4" id="comment-{{ comment.id }}">
+                        <div class="d-flex gap-3">
+                            <img src="{{ url_for('static', filename='uploads/' + comment.author.profile_picture) if comment.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
+                                 class="rounded-circle" width="40" height="40" alt="{{ comment.author.username }}">
+                            <div class="flex-grow-1">
+                                <!-- Comment Header -->
+                                <div class="d-flex align-items-center mb-2">
+                                    <a href="{{ url_for('main.profile', username=comment.author.username) }}" class="text-decoration-none">
+                                        <span class="fw-semibold text-dark">{{ comment.author.username }}</span>
+                                    </a>
+                                    {% if comment.author == novel.story.author %}
+                                    <span class="badge bg-primary ms-2">Author</span>
+                                    {% endif %}
+                                    <small class="text-muted ms-2">{{ comment.created_at.strftime('%B %d, %Y at %I:%M %p') }}</small>
+                                    {% if current_user.is_authenticated and (current_user == comment.author or current_user == novel.story.author) %}
+                                    <div class="ms-auto">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                {% if current_user == comment.author %}
+                                                <li>
+                                                    <a class="dropdown-item" href="#" onclick="editComment({{ comment.id }}, '{{ comment.content|replace("'", "\\'")|replace("\n", "\\n") }}')">
+                                                        <i class="fas fa-edit me-2"></i>Edit
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ comment.id }})">
+                                                        <i class="fas fa-trash me-2"></i>Delete
+                                                    </a>
+                                                </li>
+                                                {% elif current_user == novel.story.author %}
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ comment.id }})">
+                                                        <i class="fas fa-trash me-2"></i>Delete
+                                                    </a>
+                                                </li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Comment Content -->
+                                <div class="comment-content mb-2" id="comment-content-{{ comment.id }}">
+                                    <p class="mb-0">{{ comment.content|nl2br }}</p>
+                                </div>
+                                
+                                <!-- Comment Actions -->
+                                {% if current_user.is_authenticated %}
+                                <div class="comment-actions">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="replyToComment('{{ comment.author.username }}', {{ comment.id }})">
+                                        <i class="fas fa-reply me-1"></i>Reply
+                                    </button>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Replies -->
+                                {% if comment.replies.count() > 0 %}
+                                <div class="replies mt-3 ms-4">
+                                    {% for reply in comment.replies.order_by(Comment.created_at.asc()).all() %}
+                                    <div class="reply-item mb-3" id="comment-{{ reply.id }}">
+                                        <div class="d-flex gap-2">
+                                            <img src="{{ url_for('static', filename='uploads/' + reply.author.profile_picture) if reply.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
+                                                 class="rounded-circle" width="32" height="32" alt="{{ reply.author.username }}">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <a href="{{ url_for('main.profile', username=reply.author.username) }}" class="text-decoration-none">
+                                                        <span class="fw-semibold text-dark">{{ reply.author.username }}</span>
+                                                    </a>
+                                                    {% if reply.author == novel.story.author %}
+                                                    <span class="badge bg-primary ms-2">Author</span>
+                                                    {% endif %}
+                                                    <small class="text-muted ms-2">{{ reply.created_at.strftime('%B %d, %Y at %I:%M %p') }}</small>
+                                                    {% if current_user.is_authenticated and (current_user == reply.author or current_user == novel.story.author) %}
+                                                    <div class="ms-auto">
+                                                        <div class="dropdown">
+                                                            <button class="btn btn-sm btn-outline-secondary border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                <i class="fas fa-ellipsis-h"></i>
+                                                            </button>
+                                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                                {% if current_user == reply.author %}
+                                                                <li>
+                                                                    <a class="dropdown-item" href="#" onclick="editComment({{ reply.id }}, '{{ reply.content|replace("'", "\\'")|replace("\n", "\\n") }}')">
+                                                                        <i class="fas fa-edit me-2"></i>Edit
+                                                                    </a>
+                                                                </li>
+                                                                <li><hr class="dropdown-divider"></li>
+                                                                <li>
+                                                                    <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ reply.id }})">
+                                                                        <i class="fas fa-trash me-2"></i>Delete
+                                                                    </a>
+                                                                </li>
+                                                                {% elif current_user == novel.story.author %}
+                                                                <li>
+                                                                    <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ reply.id }})">
+                                                                        <i class="fas fa-trash me-2"></i>Delete
+                                                                    </a>
+                                                                </li>
+                                                                {% endif %}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="reply-content" id="comment-content-{{ reply.id }}">
+                                                    <p class="mb-0">{{ reply.content|nl2br }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-comments fa-2x mb-3"></i>
+                        <p>No comments yet. Be the first to comment!</p>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
-        {% endfor %}
     </div>
 </div>
 {% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Comment functionality ---
+        let currentReplyTo = null;
+        let editingCommentId = null;
+
+        // Reply to comment functionality
+        window.replyToComment = function(username, commentId) {
+            currentReplyTo = commentId;
+            const replyToText = document.getElementById('replyToText');
+            const commentContent = document.getElementById('commentContent');
+            const cancelReplyBtn = document.getElementById('cancelReply');
+            
+            replyToText.textContent = `replying to @${username}`;
+            replyToText.style.display = 'inline';
+            commentContent.placeholder = `Reply to @${username}...`;
+            cancelReplyBtn.style.display = 'inline-block';
+            
+            // Focus on comment box
+            commentContent.focus();
+            
+            // Scroll to comment form
+            document.getElementById('commentForm').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        // Cancel reply
+        document.getElementById('cancelReply').addEventListener('click', function() {
+            currentReplyTo = null;
+            document.getElementById('replyToText').style.display = 'none';
+            document.getElementById('commentContent').placeholder = 'Write a comment...';
+            this.style.display = 'none';
+        });
+
+        // Edit comment functionality
+        window.editComment = function(commentId, content) {
+            const commentContent = document.getElementById(`comment-content-${commentId}`);
+            const currentContent = commentContent.querySelector('p').textContent;
+            
+            // Create edit form
+            const editForm = document.createElement('div');
+            editForm.className = 'comment-edit-mode';
+            editForm.innerHTML = `
+                <textarea class="form-control mb-2" rows="3">${currentContent}</textarea>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="saveCommentEdit(${commentId})">
+                        <i class="fas fa-save me-1"></i>Save
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="cancelCommentEdit(${commentId})">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                </div>
+            `;
+            
+            // Replace content with edit form
+            commentContent.innerHTML = '';
+            commentContent.appendChild(editForm);
+            editingCommentId = commentId;
+            
+            // Focus on textarea
+            editForm.querySelector('textarea').focus();
+        };
+
+        // Save comment edit
+        window.saveCommentEdit = function(commentId) {
+            const editForm = document.querySelector(`#comment-content-${commentId} .comment-edit-mode`);
+            const newContent = editForm.querySelector('textarea').value.trim();
+            
+            if (newContent === '') {
+                alert('Comment cannot be empty');
+                return;
+            }
+            
+            // Send AJAX request to update comment
+            fetch(`/comment/${commentId}/edit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ content: newContent })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the comment content
+                    const commentContent = document.getElementById(`comment-content-${commentId}`);
+                    commentContent.innerHTML = `<p class="mb-0">${newContent.replace(/\n/g, '<br>')}</p>`;
+                    editingCommentId = null;
+                } else {
+                    alert('Error updating comment: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating comment');
+            });
+        };
+
+        // Cancel comment edit
+        window.cancelCommentEdit = function(commentId) {
+            // Reload the page to restore original content
+            location.reload();
+        };
+
+        // Delete comment functionality
+        window.deleteComment = function(commentId) {
+            if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+                return;
+            }
+            
+            fetch(`/comment/${commentId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the comment from DOM
+                    const commentElement = document.getElementById(`comment-${commentId}`);
+                    if (commentElement) {
+                        commentElement.remove();
+                    }
+                    
+                    // Update comment count
+                    const commentCount = document.querySelector('.comments-section h4');
+                    const currentCount = parseInt(commentCount.textContent.match(/\((\d+)\)/)[1]);
+                    commentCount.innerHTML = `<i class="fas fa-comments me-2 text-primary"></i>Comments (${currentCount - 1})`;
+                } else {
+                    alert('Error deleting comment: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting comment');
+            });
+        };
+
+        // Handle comment form submission
+        document.getElementById('commentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const content = formData.get('content').trim();
+            
+            if (content === '') {
+                alert('Please enter a comment');
+                return;
+            }
+            
+            // If replying to a comment, add the reply data
+            if (currentReplyTo) {
+                formData.append('parent_id', currentReplyTo);
+            }
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Reload the page to show the new comment
+                    location.reload();
+                } else {
+                    alert('Error posting comment: ' + (data.error || JSON.stringify(data.errors) || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error posting comment');
+            });
+        });
+
+        // Ctrl+Enter to submit comment
+        document.getElementById('commentContent').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                document.getElementById('commentForm').dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // --- End comment functionality ---
+    });
+</script>
+{% endblock scripts %}
 
 {% block head %}
 {{ super() }}
@@ -281,11 +622,6 @@ body.dark-mode .premium-content-lock h3 {
 body.dark-mode .premium-content-lock p {
     color: #b0b0b0;
 }
-.comment {
-    background: #fff;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-}
 @media (max-width: 768px) {
     .card-body, .p-5 {
         padding: 2rem 1rem !important;
@@ -297,5 +633,109 @@ body.dark-mode .premium-content-lock p {
         font-size: 0.95rem;
     }
 }
+    /* Comment section styles */
+    .comments-section {
+        border-top: 1px solid #e9ecef;
+        padding-top: 2rem;
+    }
+
+    .comment-item {
+        border-bottom: 1px solid #f8f9fa;
+        padding-bottom: 1rem;
+    }
+
+    .comment-item:last-child {
+        border-bottom: none;
+    }
+
+    .reply-item {
+        border-left: 3px solid #e9ecef;
+        padding-left: 1rem;
+        margin-left: 1rem;
+    }
+
+    .comment-content p {
+        line-height: 1.6;
+        margin-bottom: 0;
+    }
+
+    .comment-actions {
+        margin-top: 0.5rem;
+    }
+
+    .comment-actions .btn {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.75rem;
+    }
+
+    .replies {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .comment-form {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .comment-form .form-control {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        resize: vertical;
+    }
+
+    .comment-form .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    /* Dark mode styles for comments */
+    body.dark-mode .comments-section {
+        border-top-color: #404040;
+    }
+
+    body.dark-mode .comment-item {
+        border-bottom-color: #404040;
+    }
+
+    body.dark-mode .reply-item {
+        border-left-color: #404040;
+    }
+
+    body.dark-mode .replies {
+        background: #2d3136;
+    }
+
+    body.dark-mode .comment-form {
+        background: #2d3136;
+    }
+
+    body.dark-mode .comment-form .form-control {
+        background: #23272b;
+        border-color: #404040;
+        color: #e0e0e0;
+    }
+
+    body.dark-mode .comment-form .form-control:focus {
+        border-color: #80bdff;
+        background: #23272b;
+    }
+
+    /* Edit mode styles */
+    .comment-edit-mode {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+
+    body.dark-mode .comment-edit-mode {
+        background: #2d3136;
+        border-color: #404040;
+    }
 </style>
 {% endblock %}

@@ -53,6 +53,7 @@ class User(UserMixin, db.Model):
     last_daily_login = db.Column(db.Date)
     last_post_points = db.Column(db.Date)
     last_comment_points = db.Column(db.Date)
+    last_share_points = db.Column(db.Date)  # Track when share points were last reset
     comment_points_count = db.Column(db.Integer, default=0)
     share_points_count = db.Column(db.Integer, default=0)
     referral_count = db.Column(db.Integer, default=0)
@@ -64,6 +65,10 @@ class User(UserMixin, db.Model):
     monthly_referral_count = db.Column(db.Integer, default=0)
     last_referral_reset = db.Column(db.Date)  # Track when monthly count was last reset
     
+    # Account management fields
+    is_disabled = db.Column(db.Boolean, default=False)
+    deletion_requested_at = db.Column(db.DateTime, nullable=True)
+    
     # Add relationships
     stories = db.relationship('Story', backref='author', lazy='dynamic')
     following = db.relationship('Follow', foreign_keys='Follow.follower_id', backref='follower', lazy='dynamic')
@@ -73,6 +78,11 @@ class User(UserMixin, db.Model):
     
     # Referral relationships
     referrals = db.relationship('User', backref=db.backref('referrer', remote_side=[id]))
+    
+    # Account actions audit
+    account_actions = db.relationship('AccountAction', backref='user', lazy='dynamic')
+
+    chapter_reading_history = db.relationship('ChapterReadingHistory', backref='user', lazy='dynamic')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -86,6 +96,88 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
+    def is_account_active(self):
+        """Check if account is active (not disabled and not scheduled for deletion)"""
+        if self.is_disabled:
+            return False
+        if self.deletion_requested_at:
+            # Check if 20 days have passed since deletion was requested
+            days_since_deletion_request = (datetime.utcnow() - self.deletion_requested_at).days
+            if days_since_deletion_request >= 20:
+                return False
+        return True
+    
+    def is_scheduled_for_deletion(self):
+        """Check if account is scheduled for deletion but still within 20-day period"""
+        return self.deletion_requested_at is not None and (datetime.utcnow() - self.deletion_requested_at).days < 20
+    
+    def days_until_deletion(self):
+        """Get number of days until account is permanently deleted"""
+        if not self.deletion_requested_at:
+            return None
+        days_since_request = (datetime.utcnow() - self.deletion_requested_at).days
+        return max(0, 20 - days_since_request)
+    
+    def disable_account(self, reason="User requested"):
+        """Disable the user account"""
+        self.is_disabled = True
+        action = AccountAction(
+            user_id=self.id,
+            action_type='disable',
+            details=reason
+        )
+        db.session.add(action)
+        db.session.commit()
+    
+    def enable_account(self):
+        """Re-enable the user account"""
+        self.is_disabled = False
+        action = AccountAction(
+            user_id=self.id,
+            action_type='enable',
+            details='Account re-enabled'
+        )
+        db.session.add(action)
+        db.session.commit()
+    
+    def request_deletion(self, reason="User requested"):
+        """Request account deletion (20-day waiting period)"""
+        self.deletion_requested_at = datetime.utcnow()
+        action = AccountAction(
+            user_id=self.id,
+            action_type='deletion_requested',
+            details=reason
+        )
+        db.session.add(action)
+        db.session.commit()
+    
+    def cancel_deletion(self):
+        """Cancel account deletion request"""
+        self.deletion_requested_at = None
+        action = AccountAction(
+            user_id=self.id,
+            action_type='deletion_cancelled',
+            details='User cancelled deletion request'
+        )
+        db.session.add(action)
+        db.session.commit()
+    
+    def delete_account_permanently(self):
+        """Permanently delete the account and all related data"""
+        # This method should be called by a scheduled task after 20 days
+        action = AccountAction(
+            user_id=self.id,
+            action_type='account_deleted',
+            details='Account permanently deleted after 20-day waiting period'
+        )
+        db.session.add(action)
+        
+        # Delete all related data
+        # Stories and comments will be deleted via cascade
+        # Reading history, follows, etc. will be deleted via cascade
+        db.session.delete(self)
+        db.session.commit()
         
     def is_following(self, user):
         """Check if this user is following the given user"""
@@ -190,6 +282,7 @@ class User(UserMixin, db.Model):
 class Story(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(200), unique=True, nullable=False)
     content = db.Column(db.Text, nullable=False)
     summary = db.Column(db.Text)
     cover_image = db.Column(db.String(200))
@@ -201,6 +294,7 @@ class Story(db.Model):
     likes = db.Column(db.Integer, default=0)
     writing_type = db.Column(db.String(50), nullable=False, server_default='story')
     is_featured = db.Column(db.Boolean, default=False, nullable=False)
+    featured_at = db.Column(db.DateTime, nullable=True)  # Track when story was featured
     # Add likes relationship
     liked_by = db.relationship('User', secondary='story_likes',
                              backref=db.backref('liked_stories', lazy='dynamic'),
@@ -231,6 +325,15 @@ class Story(db.Model):
     tags = db.relationship('Tag', secondary='story_tags', backref='stories')
     # Webnovel relationship
     novel = db.relationship('Novel', backref='story', uselist=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.slug:
+            self.slug = slugify(self.title)
+
+    def update_slug(self):
+        """Update the slug when the title changes"""
+        self.slug = slugify(self.title)
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -343,6 +446,22 @@ class ReadingHistory(db.Model):
     
     story = db.relationship('Story')
 
+class ChapterReadingHistory(db.Model):
+    """Track which chapters users have read for webnovels"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    novel_id = db.Column(db.Integer, db.ForeignKey('novel.id'), nullable=False)
+    chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    novel = db.relationship('Novel')
+    chapter = db.relationship('Chapter')
+    
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'novel_id', name='uq_user_novel_reading'),
+    )
+
 class UnlockedContent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -365,3 +484,11 @@ class UnlockedContent(db.Model):
         db.Index('uq_unlocked_chapter', 'user_id', 'chapter_id', unique=True, 
                  postgresql_where=db.Column('chapter_id').isnot(None)),
     )
+
+class AccountAction(db.Model):
+    """Audit log for account management actions"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    action_type = db.Column(db.String(50), nullable=False)  # disable, enable, deletion_requested, deletion_cancelled, account_deleted
+    details = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)

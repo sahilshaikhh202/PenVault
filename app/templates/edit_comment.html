@@ -13,7 +13,7 @@
                 {% if comment.story.writing_type == 'webnovel' and comment.story.novel %}
                 <a href="{{ url_for('main.novel_detail', novel_id=comment.story.novel.id) }}" class="btn btn-secondary ms-2">Cancel</a>
                 {% else %}
-                <a href="{{ url_for('main.story', story_id=comment.story.id) }}" class="btn btn-secondary ms-2">Cancel</a>
+                <a href="{{ url_for('main.story_by_slug', story_slug=comment.story.slug) }}" class="btn btn-secondary ms-2">Cancel</a>
                 {% endif %}
             </form>
         </div>

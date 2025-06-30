@@ -40,6 +40,22 @@
             {% for story in stories.items %}
             <div class="col-md-6 col-lg-4">
                 <article class="story-card card h-100 border-0 shadow-sm" role="article" aria-labelledby="story-title-{{ story.id }}">
+                    <!-- Cover Image -->
+                    {% if story.cover_image and story.cover_image != 'default.jpg' %}
+                    <div class="story-cover-container">
+                        <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
+                             alt="{{ story.title }} cover" 
+                             class="story-cover-img">
+                        {% if story.is_premium and current_user != story.author %}
+                        <div class="cover-overlay">
+                            <span class="premium-overlay-badge">
+                                <i class="fas fa-crown me-1"></i>Premium
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
                     <div class="card-body d-flex flex-column">
                         <!-- Enhanced Story Header -->
                         <header class="story-header mb-3">
@@ -72,7 +88,7 @@
                         <!-- Enhanced Story Content -->
                         <div class="story-content flex-grow-1">
                             <h3 id="story-title-{{ story.id }}" class="story-title h5 fw-bold mb-2">
-                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=story.slug) }}{% endif %}" 
                                    class="text-decoration-none text-dark story-link">
                                     {{ story.title }}
                                 </a>
@@ -153,7 +169,7 @@
                                         <span class="stat-value">{{ story.views }}</span>
                                     </span>
                                 </div>
-                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=story.slug) }}{% endif %}" 
                                    class="btn btn-primary btn-sm read-btn" 
                                    role="button" 
                                    aria-label="Read {{ story.title }}">
@@ -279,6 +295,51 @@
     .story-card:hover {
         transform: translateY(-4px);
         box-shadow: var(--shadow-lg);
+    }
+    
+    /* Cover image styles */
+    .story-cover-container {
+        position: relative;
+        overflow: hidden;
+        height: 200px;
+    }
+    
+    .story-cover-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform var(--transition-normal);
+    }
+    
+    .story-card:hover .story-cover-img {
+        transform: scale(1.05);
+    }
+    
+    .cover-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+    
+    .story-card:hover .cover-overlay {
+        opacity: 1;
+    }
+    
+    .premium-overlay-badge {
+        background: rgba(255, 215, 0, 0.9);
+        color: #000;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: var(--font-weight-bold);
+        font-size: 0.875rem;
     }
     
     .story-card .card-body {

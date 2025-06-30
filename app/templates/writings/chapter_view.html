@@ -101,6 +101,9 @@
     {% endif %}
     {% endif %}
 </div>
+{% if not current_user.is_authenticated %}
+    {% include 'auth/_login_modal.html' %}
+{% endif %}
 {% endblock %}
 
 {% block styles %}
@@ -166,6 +169,34 @@
         content.style.color = (this.value === '#000') ? '#fff' : '#222';
     });
 })();
+
+document.addEventListener('DOMContentLoaded', function() {
+    {% if not current_user.is_authenticated %}
+    const loginModal = document.getElementById('login-modal');
+    const closeModalBtn = document.getElementById('close-login-modal');
+
+    if (!sessionStorage.getItem('loginModalShown')) {
+        if (loginModal) {
+            loginModal.style.display = 'flex';
+            sessionStorage.setItem('loginModalShown', 'true');
+        }
+    }
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            loginModal.style.display = 'none';
+        });
+    }
+
+    if (loginModal) {
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                loginModal.style.display = 'none';
+            }
+        });
+    }
+    {% endif %}
+});
 </script>
 <!--
 NOTE: To fully support slug updates when a novel, volume, or chapter name changes,

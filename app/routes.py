@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 import os
-from app.models import User, Story, Comment, Tag, Follow, Novel, Volume, Chapter, ReadingHistory, PointsTransaction, UnlockedContent
+from app.models import User, Story, Comment, Tag, Follow, Novel, Volume, Chapter, ReadingHistory, PointsTransaction, UnlockedContent, ChapterReadingHistory
 from app.forms import LoginForm, RegistrationForm, ProfileForm, StoryForm, CommentForm, SearchForm, PoetryForm, QuoteForm, EssayForm, NovelForm, VolumeForm, ChapterForm, OtherWritingForm, EditCommentForm
 from app import db
 from datetime import datetime, timedelta
@@ -21,17 +21,30 @@ def allowed_file(filename):
 def index():
     # Get all tags for the sidebar
     tags = Tag.query.all()
-    # Get featured stories (published and featured)
-    featured_stories = Story.query.filter_by(is_featured=True, is_published=True).order_by(Story.created_at.desc()).limit(5).all()
-    return render_template('index.html', title='Home', tags=tags, featured_stories=featured_stories)
+    # Get featured stories (published and featured within last 24 hours)
+    twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
+    featured_stories = Story.query.filter(
+        Story.is_featured == True, 
+        Story.is_published == True,
+        Story.featured_at >= twenty_four_hours_ago
+    ).order_by(Story.featured_at.desc()).limit(5).all()
+    return render_template('index.html', title='Home', tags=tags, featured_stories=featured_stories, timedelta=timedelta)
 
 @main.route('/discover')
 def discover():
     page = request.args.get('page', 1, type=int)
     type_filter = request.args.get('type', None)
     query = Story.query.filter_by(is_published=True)
+    
+    # Filter out content from disabled users and accounts scheduled for deletion
+    # Handle None values properly for existing users who haven't been migrated yet
+    query = query.join(User).filter(
+        (User.is_disabled.is_(None) | (User.is_disabled == False)) &
+        (User.deletion_requested_at.is_(None))
+    )
+    
     if type_filter:
-        query = query.filter_by(writing_type=type_filter)
+        query = query.filter(Story.writing_type == type_filter)
     # Always include webnovels in the discovery page
     stories = query.order_by(Story.created_at.desc()).paginate(
         page=page, per_page=6, error_out=False)
@@ -60,6 +73,25 @@ def login():
         user = User.query.filter_by(email=form.email.data).first()
         if user is None or not user.check_password(form.password.data):
             flash('Invalid email or password', 'error')
+            return redirect(url_for('auth.login'))
+        
+        # Check account status
+        if user.is_disabled:
+            # Re-enable account on successful login
+            user.enable_account()
+            flash('Your account has been re-enabled!', 'success')
+        elif user.is_scheduled_for_deletion():
+            # Allow login but show deletion warning
+            login_user(user, remember=form.remember_me.data)
+            days_left = user.days_until_deletion()
+            flash(f'Your account is scheduled for deletion in {days_left} days. You can cancel this in your settings.', 'warning')
+            next_page = request.args.get('next')
+            if not next_page or url_parse(next_page).netloc != '':
+                next_page = url_for('main.index')
+            return redirect(next_page)
+        elif not user.is_account_active():
+            # Account has been permanently deleted (past 20 days)
+            flash('This account has been permanently deleted and cannot be accessed.', 'error')
             return redirect(url_for('auth.login'))
         
         login_user(user, remember=form.remember_me.data)
@@ -110,14 +142,14 @@ def register():
         user.set_password(form.password.data)
         
         # Handle referral code
+        referral_bonus_awarded = False
         if form.referral_code.data:
             referrer = User.query.filter_by(referral_code=form.referral_code.data).first()
             if referrer and referrer.can_earn_referral_points():
                 user.referred_by = referrer.id
                 # Process referral and award points to referrer
                 referrer.process_referral(user)
-                # Award welcome bonus points to the new user
-                user.add_points(25, 'referral_welcome', f'Welcome bonus for using referral code')
+                referral_bonus_awarded = True
                 flash(f'Welcome! You were referred by {referrer.username}. You both earned 25 points!', 'success')
             else:
                 flash('Invalid or expired referral code. Registration completed without referral bonus.', 'warning')
@@ -125,16 +157,69 @@ def register():
             flash('Congratulations, you are now a registered user!', 'success')
         
         db.session.add(user)
-        db.session.commit()
-        return redirect(url_for('auth.login'))
+        db.session.commit()  # Commit user first to get user.id
+        
+        # Award welcome bonus points to the new user after commit
+        if referral_bonus_awarded:
+            user.add_points(25, 'referral_welcome', f'Welcome bonus for using referral code')
+        
+        next_page = request.args.get('next')
+        return redirect(url_for('auth.login', next=next_page))
     
     return render_template('auth/register.html', title='Register', form=form)
 
 @main.route('/profile/<username>')
 def profile(username):  # Remove @login_required decorator
     user = User.query.filter_by(username=username).first_or_404()
+    
+    # Check if user account is active
+    if not user.is_account_active():
+        if user.is_disabled:
+            flash('This account has been disabled by the user.', 'info')
+        elif user.is_scheduled_for_deletion():
+            days_left = user.days_until_deletion()
+            flash(f'This account is scheduled for deletion in {days_left} days.', 'warning')
+        else:
+            flash('This account has been permanently deleted.', 'error')
+        return redirect(url_for('main.index'))
+    
+    # Only show published stories from active accounts
     stories = Story.query.filter_by(author=user, is_published=True).order_by(Story.created_at.desc()).all()
-    return render_template('profile.html', user=user, stories=stories, ReadingHistory=ReadingHistory)
+    
+    # Get combined reading history (stories + chapters)
+    combined_history = []
+    
+    # Get story reading history
+    story_history = user.reading_history.order_by(ReadingHistory.timestamp.desc()).limit(20).all()
+    for entry in story_history:
+        combined_history.append({
+            'type': 'story',
+            'title': entry.story.title,
+            'timestamp': entry.timestamp,
+            'story': entry.story,
+            'novel': None,
+            'chapter': None,
+            'history_id': entry.id
+        })
+    
+    # Get chapter reading history
+    chapter_history = user.chapter_reading_history.order_by(ChapterReadingHistory.timestamp.desc()).limit(20).all()
+    for entry in chapter_history:
+        combined_history.append({
+            'type': 'chapter',
+            'title': f"{entry.chapter.title} ({entry.novel.title})",
+            'timestamp': entry.timestamp,
+            'story': entry.novel.story,
+            'novel': entry.novel,
+            'chapter': entry.chapter,
+            'history_id': entry.id
+        })
+    
+    # Sort combined history by timestamp (most recent first) and take top 20
+    combined_history.sort(key=lambda x: x['timestamp'], reverse=True)
+    combined_history = combined_history[:20]
+    
+    return render_template('profile.html', user=user, stories=stories, ReadingHistory=ReadingHistory, combined_history=combined_history)
 
 @main.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
@@ -229,13 +314,15 @@ def new_story():
             return redirect(url_for('main.drafts'))
         else:
             flash('Your story has been published!', 'success')
-            return redirect(url_for('main.story', story_id=story.id))
+            return redirect(url_for('main.story_by_slug', story_slug=story.slug))
     return render_template(template, form=form, title='New ' + writing_type.capitalize())
 
 @main.route('/story/<int:story_id>')
 def story(story_id):
     story = Story.query.get_or_404(story_id)
     form = CommentForm()
+    
+    login_form = LoginForm() if not current_user.is_authenticated else None
     
     unlocked = False
     if current_user.is_authenticated and story.is_premium and current_user != story.author:
@@ -264,6 +351,48 @@ def story(story_id):
     return render_template('story/view.html', 
         story=story, 
         form=form, 
+        login_form=login_form,
+        Story=Story, 
+        Comment=Comment, 
+        Chapter=Chapter,
+        Volume=Volume,
+        unlocked=unlocked)
+
+@main.route('/story/<story_slug>')
+def story_by_slug(story_slug):
+    story = Story.query.filter_by(slug=story_slug).first_or_404()
+    form = CommentForm()
+    
+    login_form = LoginForm() if not current_user.is_authenticated else None
+    
+    unlocked = False
+    if current_user.is_authenticated and story.is_premium and current_user != story.author:
+        unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, story_id=story.id).first() is not None
+
+    # For quotes, increment view immediately (normal behavior)
+    if story.writing_type == 'quote':
+        if (not current_user.is_authenticated) or (current_user.is_authenticated and current_user.id != story.author_id):
+            story.views = (story.views or 0) + 1
+            db.session.commit()
+            # Add to reading history (FIFO, max 20) only if logged in
+            if current_user.is_authenticated:
+                existing = ReadingHistory.query.filter_by(user_id=current_user.id, story_id=story.id).first()
+                if existing:
+                    existing.timestamp = datetime.utcnow()
+                else:
+                    db.session.add(ReadingHistory(user_id=current_user.id, story_id=story.id))
+                db.session.commit()
+                # Keep only 20 most recent
+                history = ReadingHistory.query.filter_by(user_id=current_user.id).order_by(ReadingHistory.timestamp.desc()).all()
+                if len(history) > 20:
+                    for h in history[20:]:
+                        db.session.delete(h)
+                    db.session.commit()
+    # For other types, handled by JS/API
+    return render_template('story/view.html', 
+        story=story, 
+        form=form, 
+        login_form=login_form,
         Story=Story, 
         Comment=Comment, 
         Chapter=Chapter,
@@ -282,48 +411,153 @@ def publish_story(story_id):
     db.session.commit()
     
     flash('Your story has been published and is now visible in the Discover section!')
-    return redirect(url_for('main.story', story_id=story.id))
+    return redirect(url_for('main.story_by_slug', story_slug=story.slug))
 
 @main.route('/story/<int:story_id>/comment', methods=['POST'])
 def comment(story_id):
     if not current_user.is_authenticated:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Please log in to comment.'}), 401
         flash('Please log in to comment.', 'info')
-        return redirect(url_for('auth.login', next=url_for('main.story', story_id=story_id)))
+        return redirect(url_for('auth.login', next=url_for('main.story_by_slug', story_slug=story.slug)))
     
     story = Story.query.get_or_404(story_id)
     form = CommentForm()
+
     if form.validate_on_submit():
         try:
+            parent_id = request.form.get('parent_id')
+            parent_comment = None
+            if parent_id:
+                parent_comment = Comment.query.get(parent_id)
+                if not parent_comment or parent_comment.story_id != story.id:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'success': False, 'error': 'Invalid parent comment.'}), 400
+                    flash('Invalid parent comment.', 'danger')
+                    return redirect(url_for('main.story_by_slug', story_slug=story.slug))
+            
             comment = Comment(
                 content=form.content.data,
                 author=current_user,
-                story=story
+                story=story,
+                parent=parent_comment
             )
             db.session.add(comment)
             
-            # Award points for meaningful comment
+            # Award points logic
+            points_earned = 0
             word_count = len(form.content.data.split())
             if word_count >= 20 and current_user.can_earn_comment_points():
                 current_user.add_points(4, 'meaningful_comment', f'Comment on {story.title}')
                 current_user.comment_points_count += 1
-                db.session.commit()
-                flash('You earned 4 points for your meaningful comment!', 'success')
+                points_earned = 4
             
-            # Award points to story author for receiving comment
             if word_count >= 10 and story.author.can_earn_comment_points():
                 story.author.add_points(3, 'received_comment', f'Comment on {story.title}')
                 story.author.comment_points_count += 1
-                db.session.commit()
             
             db.session.commit()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                response_data = {
+                    'success': True,
+                    'message': 'Comment posted successfully.'
+                }
+                if points_earned > 0:
+                    response_data['points_earned'] = points_earned
+                return jsonify(response_data)
+            
+            if points_earned > 0:
+                flash(f'You earned {points_earned} points for your meaningful comment!', 'success')
             flash('Your comment has been added.', 'success')
+            return redirect(url_for('main.story_by_slug', story_slug=story.slug))
+
         except Exception as e:
             db.session.rollback()
-            flash('Error processing comment. Please try again.', 'error')
-        
-        return redirect(url_for('main.story', story_id=story.id))
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'error': 'An internal error occurred while posting the comment.'}), 500
+            flash('Error processing comment.', 'error')
+        return redirect(url_for('main.story_by_slug', story_slug=story.slug))
     
-    return render_template('story/view.html', story=story, form=form)
+    # Handle form validation failure
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': False, 'error': 'Invalid data provided.', 'errors': form.errors}), 400
+    
+    flash('Could not post comment. Please check your input.', 'danger')
+    return redirect(url_for('main.story_by_slug', story_slug=story.slug))
+
+@main.route('/story/<story_slug>/comment', methods=['POST'])
+def comment_by_slug(story_slug):
+    if not current_user.is_authenticated:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Please log in to comment.'}), 401
+        flash('Please log in to comment.', 'info')
+        return redirect(url_for('auth.login', next=url_for('main.story_by_slug', story_slug=story_slug)))
+    
+    story = Story.query.filter_by(slug=story_slug).first_or_404()
+    form = CommentForm()
+
+    if form.validate_on_submit():
+        try:
+            parent_id = request.form.get('parent_id')
+            parent_comment = None
+            if parent_id:
+                parent_comment = Comment.query.get(parent_id)
+                if not parent_comment or parent_comment.story_id != story.id:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'success': False, 'error': 'Invalid parent comment.'}), 400
+                    flash('Invalid parent comment.', 'danger')
+                    return redirect(url_for('main.story_by_slug', story_slug=story_slug))
+            
+            comment = Comment(
+                content=form.content.data,
+                author=current_user,
+                story=story,
+                parent=parent_comment
+            )
+            db.session.add(comment)
+            
+            # Award points logic
+            points_earned = 0
+            word_count = len(form.content.data.split())
+            if word_count >= 20 and current_user.can_earn_comment_points():
+                current_user.add_points(4, 'meaningful_comment', f'Comment on {story.title}')
+                current_user.comment_points_count += 1
+                points_earned = 4
+            
+            if word_count >= 10 and story.author.can_earn_comment_points():
+                story.author.add_points(3, 'received_comment', f'Comment on {story.title}')
+                story.author.comment_points_count += 1
+            
+            db.session.commit()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                response_data = {
+                    'success': True,
+                    'message': 'Comment posted successfully.'
+                }
+                if points_earned > 0:
+                    response_data['points_earned'] = points_earned
+                return jsonify(response_data)
+            
+            if points_earned > 0:
+                flash(f'You earned {points_earned} points for your meaningful comment!', 'success')
+            flash('Your comment has been added.', 'success')
+            return redirect(url_for('main.story_by_slug', story_slug=story_slug))
+
+        except Exception as e:
+            db.session.rollback()
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'error': 'An internal error occurred while posting the comment.'}), 500
+            flash('Error processing comment.', 'error')
+        return redirect(url_for('main.story_by_slug', story_slug=story_slug))
+    
+    # Handle form validation failure
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': False, 'error': 'Invalid data provided.', 'errors': form.errors}), 400
+    
+    flash('Could not post comment. Please check your input.', 'danger')
+    return redirect(url_for('main.story_by_slug', story_slug=story_slug))
 
 @main.route('/follow/<username>')
 @login_required
@@ -416,12 +650,12 @@ def search():
 def like_story(story_id):
     if not current_user.is_authenticated:
         flash('Please log in to like stories.', 'info')
-        return redirect(url_for('auth.login', next=url_for('main.story', story_id=story_id)))
+        return redirect(url_for('auth.login', next=url_for('main.story_by_slug', story_slug=story.slug)))
     
     story = Story.query.get_or_404(story_id)
     if story.author == current_user:
         flash('You cannot like your own story.', 'warning')
-        return redirect(url_for('main.story', story_id=story_id))
+        return redirect(url_for('main.story_by_slug', story_slug=story.slug))
     
     if story in current_user.liked_stories:
         current_user.liked_stories.remove(story)
@@ -434,7 +668,31 @@ def like_story(story_id):
         db.session.commit()
         flash('You have liked this story.', 'success')
     
-    return redirect(url_for('main.story', story_id=story_id))
+    return redirect(url_for('main.story_by_slug', story_slug=story.slug))
+
+@main.route('/story/<story_slug>/like', methods=['GET', 'POST'])
+def like_story_by_slug(story_slug):
+    if not current_user.is_authenticated:
+        flash('Please log in to like stories.', 'info')
+        return redirect(url_for('auth.login', next=url_for('main.story_by_slug', story_slug=story_slug)))
+    
+    story = Story.query.filter_by(slug=story_slug).first_or_404()
+    if story.author == current_user:
+        flash('You cannot like your own story.', 'warning')
+        return redirect(url_for('main.story_by_slug', story_slug=story_slug))
+    
+    if story in current_user.liked_stories:
+        current_user.liked_stories.remove(story)
+        story.likes = (story.likes or 0) - 1
+        db.session.commit()
+        flash('You have unliked this story.', 'info')
+    else:
+        current_user.liked_stories.append(story)
+        story.likes = (story.likes or 0) + 1
+        db.session.commit()
+        flash('You have liked this story.', 'success')
+    
+    return redirect(url_for('main.story_by_slug', story_slug=story_slug))
 
 @main.route('/story/<int:story_id>/save')
 @login_required
@@ -450,7 +708,23 @@ def save_story(story_id):
         db.session.commit()
         flash('Story saved to your reading list!')
         
-    return redirect(url_for('main.story', story_id=story_id))
+    return redirect(url_for('main.story_by_slug', story_slug=story.slug))
+
+@main.route('/story/<story_slug>/save')
+@login_required
+def save_story_by_slug(story_slug):
+    story = Story.query.filter_by(slug=story_slug).first_or_404()
+    
+    # Check if the story is already in the user's reading list
+    if story in current_user.saved_stories:
+        flash('This story is already in your reading list.')
+    else:
+        # Add the story to the user's reading list
+        current_user.saved_stories.append(story)
+        db.session.commit()
+        flash('Story saved to your reading list!')
+        
+    return redirect(url_for('main.story_by_slug', story_slug=story_slug))
 
 @main.route('/story/<int:story_id>/delete', methods=['POST'])
 @login_required
@@ -512,7 +786,7 @@ def edit_story(story_id):
                 story.tags.append(tag)
         db.session.commit()
         flash('Your story has been updated.', 'success')
-        return redirect(url_for('main.story', story_id=story.id))
+        return redirect(url_for('main.story_by_slug', story_slug=story.slug))
     # Pre-fill form for GET
     if request.method == 'GET':
         if hasattr(form, 'title'): form.title.data = story.title
@@ -530,40 +804,55 @@ def edit_story(story_id):
         if hasattr(form, 'tags'): form.tags.data = ', '.join([tag.name for tag in story.tags])
     return render_template('story/edit.html', title='Edit Story', form=form, story=story)
 
-@main.route('/comment/<int:comment_id>/edit', methods=['GET', 'POST'])
-@login_required
+@main.route('/comment/<int:comment_id>/edit', methods=['POST'])
 def edit_comment(comment_id):
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'error': 'Please log in to edit comments.'}), 401
+    
     comment = Comment.query.get_or_404(comment_id)
-    story = comment.story
-    if current_user != comment.author and current_user != story.author:
-        abort(403)
-    form = EditCommentForm(obj=comment)
-    if form.validate_on_submit():
-        comment.content = form.content.data
+    
+    # Check if user can edit this comment
+    if comment.author != current_user:
+        return jsonify({'success': False, 'error': 'You can only edit your own comments.'}), 403
+    
+    try:
+        data = request.get_json()
+        new_content = data.get('content', '').strip()
+        
+        if not new_content:
+            return jsonify({'success': False, 'error': 'Comment cannot be empty.'}), 400
+        
+        comment.content = new_content
         db.session.commit()
-        flash('Comment updated successfully.', 'success')
-        # Redirect to the correct detail page
-        if story.writing_type == 'webnovel' and story.novel:
-            return redirect(url_for('main.novel_detail_slug', novel_slug=story.novel.slug))
-        else:
-            return redirect(url_for('main.story', story_id=story.id))
-    return render_template('edit_comment.html', form=form, comment=comment)
+        
+        return jsonify({'success': True, 'message': 'Comment updated successfully.'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Error updating comment.'}), 500
 
 @main.route('/comment/<int:comment_id>/delete', methods=['POST'])
-@login_required
 def delete_comment(comment_id):
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'error': 'Please log in to delete comments.'}), 401
+    
     comment = Comment.query.get_or_404(comment_id)
-    story = comment.story
-    if current_user != comment.author and current_user != story.author:
-        abort(403)
-    db.session.delete(comment)
-    db.session.commit()
-    flash('Comment deleted successfully.', 'success')
-    # Redirect to the correct detail page
-    if story.writing_type == 'webnovel' and story.novel:
-        return redirect(url_for('main.novel_detail_slug', novel_slug=story.novel.slug))
-    else:
-        return redirect(url_for('main.story', story_id=story.id))
+    
+    # Check if user can delete this comment
+    if comment.author != current_user and comment.story.author != current_user:
+        return jsonify({'success': False, 'error': 'You can only delete your own comments or comments on your stories.'}), 403
+    
+    try:
+        # Delete replies first
+        for reply in comment.replies:
+            db.session.delete(reply)
+        
+        db.session.delete(comment)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Comment deleted successfully.'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Error deleting comment.'}), 500
 
 @main.route('/api/comment/<int:comment_id>/reply', methods=['POST'])
 @login_required
@@ -594,6 +883,18 @@ def unsave_story(story_id):
     else:
         flash('Story was not in your reading list.')
     return redirect(request.referrer or url_for('main.profile', username=current_user.username))
+
+@main.route('/story/<story_slug>/unsave', methods=['POST'])
+@login_required
+def unsave_story_by_slug(story_slug):
+    story = Story.query.filter_by(slug=story_slug).first_or_404()
+    if story in current_user.saved_stories:
+        current_user.saved_stories.remove(story)
+        db.session.commit()
+        flash('Story removed from your reading list.')
+    else:
+        flash('Story was not in your reading list.')
+    return redirect(request.referrer or url_for('main.story_by_slug', story_slug=story_slug))
 
 @main.route('/settings', methods=['GET', 'POST'])
 @login_required
@@ -631,16 +932,96 @@ def update_theme():
         print('Error in theme update:', str(e))
         return jsonify({'error': str(e)}), 500
 
+@main.route('/settings/disable-account', methods=['POST'])
+@login_required
+def disable_account():
+    """Disable user account"""
+    try:
+        reason = request.form.get('reason', 'User requested account disable')
+        current_user.disable_account(reason)
+        logout_user()
+        flash('Your account has been disabled. You can re-enable it by logging back in.', 'info')
+        return redirect(url_for('main.index'))
+    except Exception as e:
+        flash('Error disabling account. Please try again.', 'error')
+        return redirect(url_for('main.settings'))
+
+@main.route('/settings/request-deletion', methods=['POST'])
+@login_required
+def request_account_deletion():
+    """Request account deletion (20-day waiting period)"""
+    try:
+        reason = request.form.get('reason', 'User requested account deletion')
+        current_user.request_deletion(reason)
+        logout_user()
+        flash('Your account deletion has been requested. You have 20 days to cancel by logging back in.', 'warning')
+        return redirect(url_for('main.index'))
+    except Exception as e:
+        flash('Error requesting account deletion. Please try again.', 'error')
+        return redirect(url_for('main.settings'))
+
+@main.route('/settings/cancel-deletion', methods=['POST'])
+@login_required
+def cancel_account_deletion():
+    """Cancel account deletion request"""
+    try:
+        current_user.cancel_deletion()
+        flash('Your account deletion has been cancelled. Your account is now active.', 'success')
+        return redirect(url_for('main.settings'))
+    except Exception as e:
+        flash('Error cancelling account deletion. Please try again.', 'error')
+        return redirect(url_for('main.settings'))
+
+@main.route('/admin/delete-expired-accounts', methods=['POST'])
+@login_required
+def delete_expired_accounts():
+    """Admin route to delete accounts that have passed the 20-day waiting period"""
+    if not current_user.is_authenticated or current_user.username != 'admin':  # Simple admin check
+        abort(403)
+    
+    try:
+        # Find accounts that have passed the 20-day waiting period
+        cutoff_date = datetime.utcnow() - timedelta(days=20)
+        expired_accounts = User.query.filter(
+            User.deletion_requested_at.isnot(None),
+            User.deletion_requested_at <= cutoff_date
+        ).all()
+        
+        deleted_count = 0
+        for user in expired_accounts:
+            try:
+                user.delete_account_permanently()
+                deleted_count += 1
+            except Exception as e:
+                print(f"Error deleting user {user.id}: {e}")
+        
+        flash(f'Successfully deleted {deleted_count} expired accounts.', 'success')
+        return redirect(url_for('main.settings'))
+    except Exception as e:
+        flash('Error deleting expired accounts.', 'error')
+        return redirect(url_for('main.settings'))
+
 @main.route('/history/delete/<int:history_id>', methods=['POST'])
 @login_required
 def delete_history_item(history_id):
-    history = ReadingHistory.query.get_or_404(history_id)
-    if history.user_id != current_user.id:
-        abort(403)
-    db.session.delete(history)
-    db.session.commit()
-    flash('History item deleted.', 'success')
-    return redirect(request.referrer or url_for('main.profile', username=current_user.username))
+    # Try to find in story reading history first
+    history = ReadingHistory.query.get(history_id)
+    if history and history.user_id == current_user.id:
+        db.session.delete(history)
+        db.session.commit()
+        flash('History item deleted.', 'success')
+        return redirect(request.referrer or url_for('main.profile', username=current_user.username))
+    
+    # If not found in story history, try chapter reading history
+    chapter_history = ChapterReadingHistory.query.get(history_id)
+    if chapter_history and chapter_history.user_id == current_user.id:
+        db.session.delete(chapter_history)
+        db.session.commit()
+        flash('History item deleted.', 'success')
+        return redirect(request.referrer or url_for('main.profile', username=current_user.username))
+    
+    # If neither found, return 404
+    abort(404)
 
 # Webnovel creation routes
 @main.route('/novel/new', methods=['GET', 'POST'])
@@ -676,6 +1057,8 @@ def new_novel():
         db.session.commit()
         flash('Novel created! Now add volumes and chapters.')
         return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+    # Set submit button text for creation
+    form.submit.label.text = 'Create Novel'
     return render_template('writings/novel.html', form=form)
 
 @main.route('/novel/<novel_slug>')
@@ -687,8 +1070,19 @@ def novel_detail_slug(novel_slug):
     unlocked = False
     if current_user.is_authenticated and novel.is_premium and novel.story.author != current_user:
         unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, novel_id=novel.id).first() is not None
-    
-    return render_template('writings/novel_detail.html', novel=novel, chapters=chapters, volumes=volumes, unlocked=unlocked, form=CommentForm(), Comment=Comment)
+
+    # Get first chapter
+    first_chapter = Chapter.query.filter_by(novel_id=novel.id).order_by(Chapter.order.asc()).first()
+
+    # Get last read chapter for this user and novel
+    last_read_chapter = None
+    if current_user.is_authenticated:
+        from app.models import ChapterReadingHistory
+        chapter_history = ChapterReadingHistory.query.filter_by(user_id=current_user.id, novel_id=novel.id).first()
+        if chapter_history:
+            last_read_chapter = Chapter.query.get(chapter_history.chapter_id)
+
+    return render_template('writings/novel_detail.html', novel=novel, chapters=chapters, volumes=volumes, unlocked=unlocked, form=CommentForm(), Comment=Comment, first_chapter=first_chapter, last_read_chapter=last_read_chapter)
 
 @main.route('/novel/<novel_slug>/volume/new', methods=['GET', 'POST'])
 @login_required
@@ -707,6 +1101,8 @@ def new_volume(novel_slug):
         db.session.commit()
         flash('Volume added!')
         return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+    # Set submit button text for creation
+    form.submit.label.text = 'Add Volume'
     return render_template('writings/volume.html', form=form, novel=novel)
 
 @main.route('/novel/<novel_slug>/volume/<volume_slug>/chapter/new', methods=['GET', 'POST'])
@@ -730,6 +1126,8 @@ def new_chapter(novel_slug, volume_slug):
         db.session.commit()
         flash('Chapter added!')
         return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+    # Set submit button text for creation
+    form.submit.label.text = 'Add Chapter'
     return render_template('writings/chapter.html', form=form, novel=novel, volume=volume)
 
 @main.route('/novel/<novel_slug>/edit', methods=['GET', 'POST'])
@@ -741,11 +1139,16 @@ def edit_novel(novel_slug):
         abort(403)
     form = NovelForm(obj=novel)
     if form.validate_on_submit():
+        # Check if premium status is being removed
+        was_premium = novel.is_premium
+        new_premium_status = form.is_premium.data
+        
         novel.title = form.title.data
         novel.summary = form.summary.data
         novel.genre = form.genre.data
         novel.status = form.status.data
         novel.is_mature = form.is_mature.data
+        novel.is_premium = new_premium_status  # Update novel premium status
         # Update slug if title changed
         novel.update_slug()
         if form.cover_image.data:
@@ -758,6 +1161,12 @@ def edit_novel(novel_slug):
         # Sync Story fields with Novel
         story.title = form.title.data
         story.summary = form.summary.data
+        story.is_premium = new_premium_status  # Update story premium status
+        
+        # If premium status was removed, delete all unlock records for this novel
+        if was_premium and not new_premium_status:
+            UnlockedContent.query.filter_by(novel_id=novel.id).delete()
+        
         # Handle tags for forms with a tags field
         if hasattr(form, 'tags') and form.tags.data:
             tag_names = [t.strip() for t in form.tags.data.split(',') if t.strip()]
@@ -771,6 +1180,18 @@ def edit_novel(novel_slug):
         db.session.commit()
         flash('Novel updated!', 'success')
         return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+    elif request.method == 'GET':
+        # Pre-populate form with current values
+        form.title.data = novel.title
+        form.summary.data = novel.summary
+        form.genre.data = novel.genre
+        form.status.data = novel.status
+        form.is_mature.data = novel.is_mature
+        form.is_premium.data = novel.is_premium
+        if hasattr(form, 'tags'):
+            form.tags.data = ', '.join([tag.name for tag in story.tags])
+        # Set submit button text for editing
+        form.submit.label.text = 'Update Novel'
     return render_template('writings/novel.html', form=form, novel=novel)
 
 @main.route('/novel/<novel_slug>/delete', methods=['POST'])
@@ -796,14 +1217,32 @@ def edit_volume(volume_slug):
         abort(403)
     form = VolumeForm(obj=volume)
     if form.validate_on_submit():
+        # Check if premium status is being removed
+        was_premium = volume.is_premium
+        new_premium_status = form.is_premium.data
+        
         volume.title = form.title.data
         volume.summary = form.summary.data
         volume.order = int(form.order.data)
+        volume.is_premium = new_premium_status  # Update volume premium status
+        
+        # If premium status was removed, delete all unlock records for this volume
+        if was_premium and not new_premium_status:
+            UnlockedContent.query.filter_by(volume_id=volume.id).delete()
+        
         # Update slug if title changed
         volume.slug = slugify(volume.title)
         db.session.commit()
         flash('Volume updated!', 'success')
         return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+    elif request.method == 'GET':
+        # Pre-populate form with current values
+        form.title.data = volume.title
+        form.summary.data = volume.summary
+        form.order.data = str(volume.order)
+        form.is_premium.data = volume.is_premium
+        # Set submit button text for editing
+        form.submit.label.text = 'Update Volume'
     return render_template('writings/volume.html', form=form, novel=novel, volume=volume)
 
 @main.route('/volume/<volume_slug>/delete', methods=['POST'])
@@ -829,16 +1268,36 @@ def edit_chapter(chapter_slug):
         abort(403)
     form = ChapterForm(obj=chapter)
     if form.validate_on_submit():
+        # Check if premium status is being removed
+        was_premium = chapter.is_premium
+        new_premium_status = form.is_premium.data
+        
         chapter.title = form.title.data
         chapter.content = form.content.data
         chapter.order = int(form.order.data)
         chapter.author_notes = form.author_notes.data
         chapter.is_draft = form.is_draft.data
+        chapter.is_premium = new_premium_status  # Update chapter premium status
+        
+        # If premium status was removed, delete all unlock records for this chapter
+        if was_premium and not new_premium_status:
+            UnlockedContent.query.filter_by(chapter_id=chapter.id).delete()
+        
         # Update slug if title changed
         chapter.slug = slugify(chapter.title)
         db.session.commit()
         flash('Chapter updated!', 'success')
         return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+    elif request.method == 'GET':
+        # Pre-populate form with current values
+        form.title.data = chapter.title
+        form.content.data = chapter.content
+        form.order.data = chapter.order
+        form.author_notes.data = chapter.author_notes
+        form.is_draft.data = chapter.is_draft
+        form.is_premium.data = chapter.is_premium
+        # Set submit button text for editing
+        form.submit.label.text = 'Update Chapter'
     return render_template('writings/chapter.html', form=form, novel=novel, volume=chapter.volume, chapter=chapter)
 
 @main.route('/chapter/<chapter_slug>/delete', methods=['POST'])
@@ -872,9 +1331,38 @@ def chapter_view_slug(novel_slug, volume_slug, chapter_slug):
     volume = Volume.query.filter_by(slug=volume_slug, novel_id=novel.id).first() # Volume can be null
     chapter = Chapter.query.filter_by(slug=chapter_slug, novel_id=novel.id).first_or_404()
     
+    login_form = LoginForm() if not current_user.is_authenticated else None
+    
     unlocked = False
     if current_user.is_authenticated and chapter.is_premium_content and novel.story.author != current_user:
         unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, chapter_id=chapter.id).first() is not None
+
+    # Track chapter reading history for authenticated users
+    if current_user.is_authenticated:
+        # Check if there's already an entry for this user and novel
+        existing_history = ChapterReadingHistory.query.filter_by(
+            user_id=current_user.id, 
+            novel_id=novel.id
+        ).first()
+        
+        if existing_history:
+            # Update existing entry with new chapter and timestamp
+            existing_history.chapter_id = chapter.id
+            existing_history.timestamp = datetime.utcnow()
+        else:
+            # Create new entry
+            new_history = ChapterReadingHistory(
+                user_id=current_user.id,
+                novel_id=novel.id,
+                chapter_id=chapter.id
+            )
+            db.session.add(new_history)
+        
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            # Don't fail the page load if history tracking fails
 
     # Get previous and next chapters for navigation
     prev_chapter = Chapter.query.filter(
@@ -893,7 +1381,8 @@ def chapter_view_slug(novel_slug, volume_slug, chapter_slug):
                            chapter=chapter,
                            prev_chapter=prev_chapter,
                            next_chapter=next_chapter,
-                           unlocked=unlocked)
+                           unlocked=unlocked,
+                           login_form=login_form)
 
 @main.route('/feed')
 @login_required
@@ -1049,7 +1538,57 @@ def share_story(story_id):
         db.session.rollback()
         flash('Error processing share. Please try again.', 'error')
     
-    return redirect(url_for('main.story', story_id=story_id))
+    return redirect(url_for('main.story_by_slug', story_slug=story.slug))
+
+@main.route('/story/<story_slug>/share', methods=['POST'])
+@login_required
+def share_story_by_slug(story_slug):
+    story = Story.query.filter_by(slug=story_slug).first_or_404()
+    try:
+        if current_user.can_earn_share_points():
+            current_user.add_points(5, 'share_story', f'Shared {story.title}')
+            current_user.share_points_count += 1
+            db.session.commit()
+            flash('You earned 5 points for sharing!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error processing share. Please try again.', 'error')
+    
+    return redirect(url_for('main.story_by_slug', story_slug=story.slug))
+
+@main.route('/story/<story_slug>/track-share', methods=['POST'])
+@login_required
+def track_story_share(story_slug):
+    """Track any type of sharing action and award points for first 2 shares per day"""
+    story = Story.query.filter_by(slug=story_slug).first_or_404()
+    share_type = request.form.get('share_type', 'general')  # general, twitter, facebook, linkedin, copy
+    
+    try:
+        if current_user.can_earn_share_points():
+            current_user.add_points(5, 'share_story', f'Shared {story.title} via {share_type}')
+            current_user.share_points_count += 1
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'message': 'You earned 5 points for sharing!',
+                'points_earned': 5,
+                'remaining_shares': 2 - current_user.share_points_count
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'You have already earned the maximum share points for today.',
+                'points_earned': 0,
+                'remaining_shares': 0
+            })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Error processing share. Please try again.',
+            'points_earned': 0,
+            'remaining_shares': 0
+        }), 500
 
 @main.route('/redeem', methods=['GET', 'POST'])
 @login_required
@@ -1098,8 +1637,9 @@ def redeem_points():
                 story = Story.query.get_or_404(item_id)
                 if not story.is_featured:
                     story.is_featured = True
+                    story.featured_at = datetime.utcnow()  # Set the featuring timestamp
                     current_user.add_points(-required_points, 'feature_post', f'Featured {story.title}')
-                    flash(f'Successfully featured {story.title}!', 'success')
+                    flash(f'Successfully featured {story.title}! It will be featured for 24 hours.', 'success')
             
             db.session.commit()
         except Exception as e:
@@ -1319,16 +1859,16 @@ def unlock_story(story_id):
 
     if story.author == current_user:
         flash('You own this story, no need to unlock!', 'info')
-        return redirect(url_for('main.story', story_id=story_id))
+        return redirect(url_for('main.story_by_slug', story_slug=story.slug))
     
     already_unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, story_id=story_id).first()
     if already_unlocked:
         flash('You have already unlocked this story.', 'info')
-        return redirect(url_for('main.story', story_id=story_id))
+        return redirect(url_for('main.story_by_slug', story_slug=story.slug))
 
     if not current_user.has_enough_points(required_points):
         flash('Not enough points to unlock this story.', 'error')
-        return redirect(url_for('main.story', story_id=story_id))
+        return redirect(url_for('main.story_by_slug', story_slug=story.slug))
 
     try:
         current_user.add_points(-required_points, 'unlock_premium_story', f'Unlocked story: {story.title}')
@@ -1340,7 +1880,7 @@ def unlock_story(story_id):
         db.session.rollback()
         flash('Error unlocking story. Please try again.', 'error')
     
-    return redirect(url_for('main.story', story_id=story_id))
+    return redirect(url_for('main.story_by_slug', story_slug=story.slug))
 
 @main.route('/novel/<int:novel_id>/unlock', methods=['POST'])
 @login_required
@@ -1461,3 +2001,85 @@ def increment_story_view(story_id):
                 db.session.commit()
         return jsonify({'success': True, 'views': story.views})
     return jsonify({'success': False, 'error': 'Not allowed.'}), 403
+
+# Legal pages routes
+@main.route('/privacy')
+def privacy():
+    """Privacy Policy page"""
+    return render_template('privacy.html', title='Privacy Policy')
+
+@main.route('/terms')
+def terms():
+    """Terms of Service page"""
+    return render_template('terms.html', title='Terms of Service')
+
+@main.route('/contact')
+def contact():
+    """Contact page"""
+    return render_template('contact.html', title='Contact Us')
+
+@main.route('/story/<story_slug>/unlock', methods=['POST'])
+@login_required
+def unlock_story_by_slug(story_slug):
+    story = Story.query.filter_by(slug=story_slug).first_or_404()
+    required_points = 50  # Define points cost for story
+
+    if story.author == current_user:
+        flash('You own this story, no need to unlock!', 'info')
+        return redirect(url_for('main.story_by_slug', story_slug=story_slug))
+    
+    already_unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, story_id=story.id).first()
+    if already_unlocked:
+        flash('You have already unlocked this story.', 'info')
+        return redirect(url_for('main.story_by_slug', story_slug=story_slug))
+
+    if not current_user.has_enough_points(required_points):
+        flash('Not enough points to unlock this story.', 'error')
+        return redirect(url_for('main.story_by_slug', story_slug=story_slug))
+
+    try:
+        current_user.add_points(-required_points, 'unlock_premium_story', f'Unlocked story: {story.title}')
+        unlock = UnlockedContent(user_id=current_user.id, story_id=story.id)
+        db.session.add(unlock)
+        db.session.commit()
+        flash('Story unlocked successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error unlocking story. Please try again.', 'error')
+    
+    return redirect(url_for('main.story_by_slug', story_slug=story_slug))
+
+def remove_expired_features():
+    """Remove stories that have been featured for more than 24 hours"""
+    try:
+        twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
+        expired_stories = Story.query.filter(
+            Story.is_featured == True,
+            Story.featured_at < twenty_four_hours_ago
+        ).all()
+        
+        for story in expired_stories:
+            story.is_featured = False
+            story.featured_at = None
+        
+        if expired_stories:
+            db.session.commit()
+            print(f"Removed {len(expired_stories)} expired featured stories")
+        
+        return len(expired_stories)
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error removing expired features: {e}")
+        return 0
+
+@main.route('/admin/remove-expired-features', methods=['POST'])
+@login_required
+def admin_remove_expired_features():
+    """Admin route to manually trigger expired feature removal"""
+    if not current_user.username == 'admin':  # Simple admin check
+        flash('Access denied', 'error')
+        return redirect(url_for('main.index'))
+    
+    removed_count = remove_expired_features()
+    flash(f'Removed {removed_count} expired featured stories', 'success')
+    return redirect(url_for('main.index'))

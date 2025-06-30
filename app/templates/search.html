@@ -2,41 +2,202 @@
 
 {% block content %}
 <div class="container">
-    <div class="row justify-content-center mb-4">
-        <div class="col-md-8">
-            <h1 class="mb-4">Search Users</h1>
-            <form method="GET" action="{{ url_for('main.search') }}" class="mb-4">
-                <div class="input-group">
-                    <input type="text" name="query" class="form-control" placeholder="Search by username..." value="{{ query }}" required>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i> Search
-                    </button>
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Page Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-5 fw-bold text-primary mb-3">
+                    <i class="fas fa-search me-2"></i>Discover Writers
+                </h1>
+                <p class="lead text-muted">Find amazing authors and connect with the writing community</p>
+            </div>
+
+            <!-- Search Form -->
+            <div class="card shadow-sm border-0 mb-5">
+                <div class="card-body p-4">
+                    <form method="GET" action="{{ url_for('main.search') }}" class="mb-0">
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-primary text-white border-0">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" 
+                                   name="query" 
+                                   class="form-control border-0 shadow-none" 
+                                   placeholder="Search by username, display name, or bio..." 
+                                   value="{{ query }}" 
+                                   required
+                                   aria-label="Search users">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-search me-2"></i>Search
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
             
+            <!-- Search Results Section -->
             {% if results %}
-                <h3>Search Results</h3>
-                <div class="list-group">
-                    {% for user in results %}
-                        <a href="{{ url_for('main.profile', username=user.username) }}" class="list-group-item list-group-item-action">
-                            <div class="d-flex align-items-center">
-                                <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" 
-                                     class="rounded-circle me-3" style="width: 50px; height: 50px;" 
-                                     alt="{{ user.username }}">
-                                <div>
-                                    <h5 class="mb-1">{{ user.username }}</h5>
-                                    <small class="text-muted">{{ user.stories.count() }} stories</small>
+                <div class="mb-5">
+                    <h2 class="h4 mb-4 text-primary">
+                        <i class="fas fa-users me-2"></i>Search Results
+                        <span class="badge bg-secondary ms-2">{{ results|length }} found</span>
+                    </h2>
+                    <div class="row g-4">
+                        {% for user in results %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="card h-100 shadow-sm border-0 hover-lift">
+                                    <div class="card-body p-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="position-relative me-3">
+                                                <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" 
+                                                     class="rounded-circle border border-3 border-primary" 
+                                                     style="width: 60px; height: 60px; object-fit: cover;" 
+                                                     alt="{{ user.username }}'s profile picture">
+                                                {% if user.is_online %}
+                                                    <span class="position-absolute bottom-0 end-0 bg-success rounded-circle border border-2 border-white" 
+                                                          style="width: 16px; height: 16px;"></span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h5 class="card-title mb-1 fw-bold">
+                                                    <a href="{{ url_for('main.profile', username=user.username) }}" 
+                                                       class="text-decoration-none text-dark hover-primary">
+                                                        {{ user.username }}
+                                                    </a>
+                                                </h5>
+                                                <p class="text-muted small mb-0">
+                                                    <i class="fas fa-book me-1"></i>{{ user.stories.count() }} stories
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {% if user.bio %}
+                                            <p class="card-text text-muted small mb-3">{{ user.bio[:100] }}{% if user.bio|length > 100 %}...{% endif %}</p>
+                                        {% endif %}
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>Joined {{ user.created_at.strftime('%b %Y') }}
+                                            </small>
+                                            <a href="{{ url_for('main.profile', username=user.username) }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye me-1"></i>View Profile
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </a>
-                    {% endfor %}
+                        {% endfor %}
+                    </div>
                 </div>
             {% elif query %}
-                <div class="alert alert-info">
-                    No users found matching "{{ query }}".
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-search fa-3x text-muted"></i>
+                    </div>
+                    <h3 class="text-muted mb-3">No users found</h3>
+                    <p class="text-muted mb-4">No users found matching "{{ query }}". Try a different search term.</p>
+                    <a href="{{ url_for('main.search') }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Search
+                    </a>
+                </div>
+            {% endif %}
+
+            <!-- Default Content Section (shown when no search query) -->
+            {% if not query %}
+                <div class="mb-5">
+                    <h2 class="h4 mb-4 text-primary">
+                        <i class="fas fa-lightbulb me-2"></i>How to Find Writers
+                        <span class="badge bg-info ms-2">Guide</span>
+                    </h2>
+                    
+                    <!-- Instructions -->
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body p-4 text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-user fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Search by Username</h5>
+                                    <p class="card-text text-muted">Find specific authors by their username or display name</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body p-4 text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-file-alt fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Search by Bio</h5>
+                                    <p class="card-text text-muted">Discover writers based on their bio content and interests</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body p-4 text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-users fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Connect & Follow</h5>
+                                    <p class="card-text text-muted">Follow your favorite authors and stay updated with their latest works</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Call to Action -->
+                    <div class="text-center">
+                        <div class="card bg-gradient-primary text-white border-0">
+                            <div class="card-body p-5">
+                                <h3 class="mb-3">
+                                    <i class="fas fa-lightbulb me-2"></i>Ready to Discover?
+                                </h3>
+                                <p class="mb-4">Use the search bar above to find specific authors or explore our community of talented writers.</p>
+                                <div class="d-flex justify-content-center gap-3">
+                                    <button class="btn btn-light btn-lg" onclick="document.querySelector('input[name=query]').focus()">
+                                        <i class="fas fa-search me-2"></i>Start Searching
+                                    </button>
+                                    <a href="{{ url_for('main.discover') }}" class="btn btn-outline-light btn-lg">
+                                        <i class="fas fa-compass me-2"></i>Browse Stories
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
+
+<style>
+.hover-lift {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+
+.hover-primary:hover {
+    color: var(--bs-primary) !important;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-dark) 100%);
+}
+
+@media (max-width: 768px) {
+    .input-group-lg {
+        flex-direction: column;
+    }
+    
+    .input-group-lg > * {
+        border-radius: 0.5rem !important;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
 {% endblock %}

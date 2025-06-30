@@ -25,4 +25,11 @@ def create_app(config_class=Config):
     app.register_blueprint(main)
     app.register_blueprint(auth, url_prefix='/auth')
 
+    # Custom Jinja filters
+    @app.template_filter('nl2br')
+    def nl2br_filter(text):
+        if text is None:
+            return ''
+        return text.replace('\n', '<br>')
+
     return app

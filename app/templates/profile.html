@@ -165,12 +165,27 @@
                                     {% for story in stories %}
                                     <div class="col-md-6 col-lg-4">
                                         <article class="story-card card h-100 border-0 shadow-sm" role="article" aria-labelledby="story-title-{{ story.id }}">
-                                            {% if story.cover_image %}
+                                            <!-- Cover Image -->
+                                            {% if story.cover_image and story.cover_image != 'default.jpg' %}
                                             <div class="story-cover">
+                                                {% if story.is_premium and current_user != user %}
+                                                <div class="cover-container">
+                                                    <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
+                                                         class="card-img-top story-cover-img" 
+                                                         style="height: 200px; object-fit: cover;" 
+                                                         alt="Cover image for {{ story.title }}">
+                                                    <div class="cover-overlay">
+                                                        <span class="premium-overlay-badge">
+                                                            <i class="fas fa-crown me-1"></i>Premium
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                {% else %}
                                                 <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
                                                      class="card-img-top story-cover-img" 
                                                      style="height: 200px; object-fit: cover;" 
                                                      alt="Cover image for {{ story.title }}">
+                                                {% endif %}
                                             </div>
                                             {% endif %}
                                             <div class="card-body position-relative">
@@ -186,7 +201,7 @@
                                                         <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
                                                     </button>
                                                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton{{ story.id }}">
-                                                        <li><a class="dropdown-item" href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}">
+                                                        <li><a class="dropdown-item" href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=story.slug) }}{% endif %}">
                                                             <i class="fas fa-book-open me-2" aria-hidden="true"></i>Read More</a></li>
                                                         {% if story.writing_type == 'webnovel' %}
                                                         <li><a class="dropdown-item" href="{{ url_for('main.edit_novel', novel_slug=story.novel.slug) }}">
@@ -215,7 +230,7 @@
                                                 </div>
                                                 {% endif %}
                                                 <h3 id="story-title-{{ story.id }}" class="story-title h5 fw-bold mb-2">
-                                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=story.slug) }}{% endif %}" 
                                                        class="text-decoration-none text-dark story-link">
                                                         {{ story.title }}
                                                     </a>
@@ -326,12 +341,27 @@
                                          data-type="{{ story.writing_type }}"
                                          data-author="{{ story.author.username }}">
                                         <article class="saved-story-card card h-100 border-0 shadow-sm" role="article">
-                                            {% if story.cover_image %}
+                                            <!-- Cover Image -->
+                                            {% if story.cover_image and story.cover_image != 'default.jpg' %}
                                             <div class="story-cover">
+                                                {% if story.is_premium and current_user != story.author %}
+                                                <div class="cover-container">
+                                                    <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
+                                                         class="card-img-top story-cover-img" 
+                                                         style="height: 200px; object-fit: cover;" 
+                                                         alt="Cover image for {{ story.title }}">
+                                                    <div class="cover-overlay">
+                                                        <span class="premium-overlay-badge">
+                                                            <i class="fas fa-crown me-1"></i>Premium
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                {% else %}
                                                 <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
                                                      class="card-img-top story-cover-img" 
                                                      style="height: 200px; object-fit: cover;" 
                                                      alt="Cover image for {{ story.title }}">
+                                                {% endif %}
                                             </div>
                                             {% endif %}
                                             <div class="card-body position-relative">
@@ -346,7 +376,7 @@
                                                         <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
                                                     </button>
                                                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonSaved{{ story.id }}">
-                                                        <li><a class="dropdown-item" href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}">
+                                                        <li><a class="dropdown-item" href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=story.slug) }}{% endif %}">
                                                             <i class="fas fa-book-open me-2" aria-hidden="true"></i>Read More</a></li>
                                                         <li>
                                                             <form method="POST" action="{{ url_for('main.unsave_story', story_id=story.id) }}" class="unsave-form">
@@ -358,7 +388,7 @@
                                                     </ul>
                                                 </div>
                                                 <h4 class="story-title h6 fw-bold mb-2">
-                                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=story.id) }}{% endif %}" 
+                                                    <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=story.slug) }}{% endif %}" 
                                                        class="text-decoration-none text-dark story-link">
                                                         {{ story.title }}
                                                     </a>
@@ -408,27 +438,36 @@
                             <div class="row">
                                 <div class="col-12">
                                     <h3 class="h5 fw-bold mb-4">Recent Reading History</h3>
-                                    {% set history = user.reading_history.order_by(ReadingHistory.timestamp.desc()).limit(20).all() %}
-                                    {% if history %}
+                                    {% if combined_history %}
                                     <div class="reading-history-list">
                                         <ul class="list-group">
-                                            {% for entry in history %}
+                                            {% for entry in combined_history %}
                                             <li class="list-group-item d-flex justify-content-between align-items-center reading-history-item">
-                                                <a href="{% if entry.story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=entry.story.novel.slug) }}{% else %}{{ url_for('main.story', story_id=entry.story.id) }}{% endif %}" 
-                                                   class="text-decoration-none story-link flex-grow-1">
-                                                    {{ entry.story.title }}
-                                                </a>
+                                                <div class="reading-history-content flex-grow-1">
+                                                    <a href="{% if entry.type == 'chapter' %}{{ url_for('main.chapter_view_slug', novel_slug=entry.novel.slug, volume_slug=entry.chapter.volume.slug if entry.chapter.volume else 'no-volume', chapter_slug=entry.chapter.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=entry.story.slug) }}{% endif %}" 
+                                                       class="text-decoration-none story-link">
+                                                        {{ entry.title }}
+                                                    </a>
+                                                    {% if entry.type == 'chapter' %}
+                                                    <div class="reading-history-meta-info">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-book me-1" aria-hidden="true"></i>
+                                                            Chapter {{ entry.chapter.order }} of {{ entry.novel.title }}
+                                                        </small>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
                                                 <div class="reading-history-meta d-flex align-items-center gap-3">
                                                     <span class="text-muted small">
                                                         <i class="fas fa-clock me-1" aria-hidden="true"></i>
                                                         {{ entry.timestamp.strftime('%b %d, %Y %H:%M') }}
                                                     </span>
                                                     {% if current_user == user %}
-                                                    <form method="POST" action="{{ url_for('main.delete_history_item', history_id=entry.id) }}" style="display:inline;">
+                                                    <form method="POST" action="{{ url_for('main.delete_history_item', history_id=entry.history_id) }}" style="display:inline;">
                                                         <button type="submit" 
                                                                 class="btn btn-sm btn-outline-danger" 
                                                                 title="Delete from history"
-                                                                aria-label="Delete {{ entry.story.title }} from reading history">
+                                                                aria-label="Delete {{ entry.title }} from reading history">
                                                             <i class="fas fa-trash" aria-hidden="true"></i>
                                                         </button>
                                                     </form>
@@ -575,17 +614,47 @@
         transition: transform var(--transition-normal);
     }
     
-    .story-card:hover .story-cover-img {
+    .story-card:hover .story-cover-img,
+    .saved-story-card:hover .story-cover-img {
         transform: scale(1.05);
+    }
+    
+    /* Cover image overlay styles */
+    .cover-container {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .cover-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+    
+    .cover-container:hover .cover-overlay {
+        opacity: 1;
+    }
+    
+    .premium-overlay-badge {
+        background: rgba(255, 215, 0, 0.9);
+        color: #000;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: var(--font-weight-bold);
+        font-size: 0.875rem;
     }
     
     .story-title a {
         transition: color var(--transition-fast);
         line-height: var(--line-height-tight);
-    }
-    
-    .story-card:hover .story-title a {
-        color: var(--primary-color) !important;
     }
     
     .tag-badge {
@@ -634,6 +703,15 @@
     .reading-history-item:hover {
         background-color: var(--primary-light);
         transform: translateX(4px);
+    }
+    
+    .reading-history-content {
+        flex-grow: 1;
+        min-width: 0; /* Allow text to wrap */
+    }
+    
+    .reading-history-meta-info {
+        margin-top: 0.25rem;
     }
     
     .reading-history-meta {
