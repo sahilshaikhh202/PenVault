@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Tour Test{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Tour System Test</h1>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Test Tour Controls</h5>
+                    <p class="card-text">Use these buttons to test the tour system functionality.</p>
+                    
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary" onclick="penvaultTour.startTour()">
+                            <i class="fas fa-play me-2"></i>Start Tour
+                        </button>
+                        <button class="btn btn-secondary" onclick="penvaultTour.restartTour()">
+                            <i class="fas fa-redo me-2"></i>Restart Tour
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="penvaultTour.closeTour()">
+                            <i class="fas fa-stop me-2"></i>Close Tour
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Tour Status</h5>
+                    <div id="tour-status">
+                        <p><strong>User ID:</strong> <span id="user-id">{{ current_user.id if current_user.is_authenticated else 'Not logged in' }}</span></p>
+                        <p><strong>Tour Completed:</strong> <span id="tour-completed">{{ current_user.tour_completed if current_user.is_authenticated else 'N/A' }}</span></p>
+                        <p><strong>Tour Progress:</strong> <span id="tour-progress">{{ current_user.tour_progress|tojson if current_user.is_authenticated else 'N/A' }}</span></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Test Elements</h5>
+                    <p class="card-text">These elements can be highlighted by the tour system.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-primary">
+                                <div class="card-body">
+                                    <h6 class="card-title">Test Element 1</h6>
+                                    <p class="card-text">This is a test element that can be highlighted.</p>
+                                    <button class="btn btn-primary btn-sm">Test Button</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-body">
+                                    <h6 class="card-title">Test Element 2</h6>
+                                    <p class="card-text">Another test element for highlighting.</p>
+                                    <button class="btn btn-success btn-sm">Another Button</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update tour status display
+function updateTourStatus() {
+    if (typeof currentUser !== 'undefined' && currentUser) {
+        document.getElementById('user-id').textContent = currentUser.id;
+        document.getElementById('tour-completed').textContent = currentUser.tour_completed;
+        document.getElementById('tour-progress').textContent = JSON.stringify(currentUser.tour_progress);
+    }
+}
+
+// Update status when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    updateTourStatus();
+});
+</script>
+{% endblock %} 

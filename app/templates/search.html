@@ -29,9 +29,9 @@
                                    aria-label="Search users">
                             <button type="submit" class="btn btn-primary px-4">
                                 <i class="fas fa-search me-2"></i>Search
-                            </button>
-                        </div>
-                    </form>
+                    </button>
+                </div>
+            </form>
                 </div>
             </div>
             
@@ -43,13 +43,13 @@
                         <span class="badge bg-secondary ms-2">{{ results|length }} found</span>
                     </h2>
                     <div class="row g-4">
-                        {% for user in results %}
+                    {% for user in results %}
                             <div class="col-md-6 col-lg-4">
                                 <div class="card h-100 shadow-sm border-0 hover-lift">
                                     <div class="card-body p-4">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="position-relative me-3">
-                                                <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" 
+                                <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" 
                                                      class="rounded-circle border border-3 border-primary" 
                                                      style="width: 60px; height: 60px; object-fit: cover;" 
                                                      alt="{{ user.username }}'s profile picture">
@@ -85,7 +85,7 @@
                                     </div>
                                 </div>
                             </div>
-                        {% endfor %}
+                    {% endfor %}
                     </div>
                 </div>
             {% elif query %}

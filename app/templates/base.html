@@ -26,6 +26,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-mode.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tour.css') }}">
     
     <!-- Theme application script - load early for better UX -->
     <script>
@@ -619,6 +620,7 @@
     <!-- Enhanced scripts with better error handling -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tour.js') }}"></script>
     <script>
     // Enhanced theme management with better error handling and accessibility
     function setTheme(theme) {
@@ -672,7 +674,12 @@
     });
 
     // Initialize currentUser variable for theme management
-    const currentUser = {% if current_user.is_authenticated %}true{% else %}false{% endif %};
+    const currentUser = {% if current_user.is_authenticated %}{
+        id: {{ current_user.id }},
+        username: "{{ current_user.username }}",
+        tour_completed: {{ 'true' if current_user.tour_completed else 'false' }},
+        tour_progress: {{ current_user.tour_progress|tojson if current_user.tour_progress else '{}' }}
+    }{% else %}null{% endif %};
     
     // Enhanced page load performance
     document.addEventListener('DOMContentLoaded', function() {
@@ -701,6 +708,92 @@
         });
     });
     </script>
+    {% if current_user.is_authenticated and not current_user.has_set_interests %}
+    <!-- Interests Modal -->
+    <div class="modal fade" id="interestsModal" tabindex="-1" aria-labelledby="interestsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="interestsModalLabel">Select Your Interests</h5>
+          </div>
+          <div class="modal-body">
+            <form id="interests-form">
+              <div id="interests-checkboxes" class="mb-3 d-flex flex-wrap gap-2"></div>
+              <input type="text" id="custom-interest" class="form-control mb-2" placeholder="Add custom interest (optional)">
+              <div class="text-danger small" id="interests-error" style="display:none;"></div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="skip-interests">Skip for now</button>
+            <button type="button" class="btn btn-primary" id="save-interests">Save Interests</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Only show if user hasn't set interests
+      if (typeof currentUser !== 'undefined' && currentUser && !currentUser.has_set_interests) {
+        // Fetch interests list
+        fetch('/api/interests/list').then(r => r.json()).then(data => {
+          const interests = data.interests || [];
+          const container = document.getElementById('interests-checkboxes');
+          container.innerHTML = '';
+          interests.forEach(tag => {
+            const id = 'interest_' + tag.replace(/[^a-z0-9]/gi, '_');
+            const label = document.createElement('label');
+            label.className = 'btn btn-outline-primary btn-sm';
+            label.innerHTML = `<input type="checkbox" class="btn-check" autocomplete="off" id="${id}" value="${tag}"> #${tag}`;
+            container.appendChild(label);
+          });
+        });
+        // Show modal
+        var modal = new bootstrap.Modal(document.getElementById('interestsModal'), {backdrop: 'static', keyboard: false});
+        modal.show();
+        // Add custom interest
+        document.getElementById('custom-interest').addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const val = this.value.trim();
+            if (val) {
+              const id = 'interest_' + val.replace(/[^a-z0-9]/gi, '_');
+              const label = document.createElement('label');
+              label.className = 'btn btn-outline-primary btn-sm';
+              label.innerHTML = `<input type="checkbox" class="btn-check" autocomplete="off" id="${id}" value="${val}" checked> #${val}`;
+              document.getElementById('interests-checkboxes').appendChild(label);
+              this.value = '';
+            }
+          }
+        });
+        // Save interests
+        document.getElementById('save-interests').onclick = function() {
+          const checked = Array.from(document.querySelectorAll('#interests-checkboxes input[type=checkbox]:checked')).map(cb => cb.value);
+          if (checked.length === 0) {
+            document.getElementById('interests-error').textContent = 'Please select at least one interest or skip.';
+            document.getElementById('interests-error').style.display = 'block';
+            return;
+          }
+          document.getElementById('interests-error').style.display = 'none';
+          fetch('/api/interests/save', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({interests: checked})
+          }).then(r => r.json()).then(data => {
+            if (data.success) {
+              // Hide modal and reload to update user state
+              bootstrap.Modal.getInstance(document.getElementById('interestsModal')).hide();
+              location.reload();
+            }
+          });
+        };
+        // Skip for now
+        document.getElementById('skip-interests').onclick = function() {
+          bootstrap.Modal.getInstance(document.getElementById('interestsModal')).hide();
+        };
+      }
+    });
+    </script>
+    {% endif %}
     {% block scripts %}{% endblock %}
 </body>
 </html>

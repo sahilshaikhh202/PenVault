@@ -21,7 +21,8 @@
                         </div>
                         <div class="mb-4">
                             {{ form.genre.label(class="form-label fw-semibold") }}
-                            {{ form.genre(class="form-select") }}
+                            {{ form.genre(class="form-control", placeholder="e.g. Fantasy, Romance, Mystery") }}
+                            <small class="form-text text-muted">Separate multiple genres with commas.</small>
                         </div>
                         <div class="mb-4">
                             {{ form.status.label(class="form-label fw-semibold") }}

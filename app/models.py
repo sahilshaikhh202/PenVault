@@ -59,6 +59,10 @@ class User(UserMixin, db.Model):
     referral_count = db.Column(db.Integer, default=0)
     highest_pulse_tier = db.Column(db.String(20))
     
+    # Tour tracking
+    tour_completed = db.Column(db.Boolean, default=False)
+    tour_progress = db.Column(db.JSON, default=dict)  # Store tour step progress
+    
     # Referral system fields
     referral_code = db.Column(db.String(20), unique=True)  # Format: username25
     referred_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
@@ -68,6 +72,10 @@ class User(UserMixin, db.Model):
     # Account management fields
     is_disabled = db.Column(db.Boolean, default=False)
     deletion_requested_at = db.Column(db.DateTime, nullable=True)
+    
+    # Interests feature
+    has_set_interests = db.Column(db.Boolean, default=False)
+    interests = db.Column(db.String(512), default='')  # Comma-separated tags
     
     # Add relationships
     stories = db.relationship('Story', backref='author', lazy='dynamic')
@@ -367,6 +375,9 @@ class Novel(db.Model):
     slug = db.Column(db.String(200), unique=True, nullable=False)
     summary = db.Column(db.Text)
     cover_image = db.Column(db.String(200))
+    genre = db.Column(db.String(100))  # Add genre field
+    status = db.Column(db.String(50), default='ongoing')  # Add status field
+    is_mature = db.Column(db.Boolean, default=False)  # Add mature content flag
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_premium = db.Column(db.Boolean, default=False)  # If true, all volumes and chapters are premium

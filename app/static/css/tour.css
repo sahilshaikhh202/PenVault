@@ -1,0 +1,286 @@
+/**
+ * PenVault Tour Styles
+ * Styling for the onboarding tour system
+ */
+
+/* Tour Tooltip */
+.penvault-tour-tooltip {
+    position: fixed;
+    z-index: 9999;
+    max-width: 350px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--primary-color);
+    animation: tourTooltipFadeIn 0.3s ease-out;
+    font-family: var(--font-family-base);
+}
+
+@keyframes tourTooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.tour-tooltip-content {
+    padding: 0;
+}
+
+.tour-tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1rem 0.5rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.tour-tooltip-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--primary-color);
+}
+
+.tour-tooltip-close {
+    background: none;
+    border: none;
+    color: #6c757d;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.tour-tooltip-close:hover {
+    background: #f8f9fa;
+    color: #495057;
+}
+
+.tour-tooltip-body {
+    padding: 1rem;
+}
+
+.tour-tooltip-body p {
+    margin: 0;
+    color: #495057;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.tour-tooltip-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem 1rem 1rem;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+    border-radius: 0 0 10px 10px;
+}
+
+.tour-tooltip-progress {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: var(--font-weight-medium);
+}
+
+.tour-tooltip-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.tour-tooltip-actions .btn {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-weight: var(--font-weight-medium);
+    transition: all 0.2s ease;
+}
+
+.tour-tooltip-actions .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Tour Overlay */
+.penvault-tour-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    backdrop-filter: blur(2px);
+    animation: tourOverlayFadeIn 0.3s ease-out;
+}
+
+@keyframes tourOverlayFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Highlighted Elements */
+.penvault-tour-highlight {
+    position: relative;
+    z-index: 9997;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.3), 0 0 20px rgba(13, 110, 253, 0.2);
+    border-radius: 8px;
+    animation: tourHighlightPulse 2s ease-in-out infinite;
+}
+
+@keyframes tourHighlightPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.3), 0 0 20px rgba(13, 110, 253, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(13, 110, 253, 0.4), 0 0 30px rgba(13, 110, 253, 0.3);
+    }
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .penvault-tour-tooltip {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .tour-tooltip-title {
+    color: #63b3ed;
+}
+
+[data-theme="dark"] .tour-tooltip-body p {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .tour-tooltip-footer {
+    background: #1a202c;
+    border-top-color: #4a5568;
+}
+
+[data-theme="dark"] .tour-tooltip-progress {
+    color: #a0aec0;
+}
+
+[data-theme="dark"] .tour-tooltip-close {
+    color: #a0aec0;
+}
+
+[data-theme="dark"] .tour-tooltip-close:hover {
+    background: #4a5568;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .penvault-tour-highlight {
+    box-shadow: 0 0 0 4px rgba(99, 179, 237, 0.3), 0 0 20px rgba(99, 179, 237, 0.2);
+}
+
+[data-theme="dark"] .penvault-tour-highlight {
+    animation: tourHighlightPulseDark 2s ease-in-out infinite;
+}
+
+@keyframes tourHighlightPulseDark {
+    0%, 100% {
+        box-shadow: 0 0 0 4px rgba(99, 179, 237, 0.3), 0 0 20px rgba(99, 179, 237, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(99, 179, 237, 0.4), 0 0 30px rgba(99, 179, 237, 0.3);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .penvault-tour-tooltip {
+        max-width: 300px;
+        margin: 0 10px;
+    }
+    
+    .tour-tooltip-header {
+        padding: 0.75rem 0.75rem 0.25rem 0.75rem;
+    }
+    
+    .tour-tooltip-body {
+        padding: 0.75rem;
+    }
+    
+    .tour-tooltip-footer {
+        padding: 0.5rem 0.75rem 0.75rem 0.75rem;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: stretch;
+    }
+    
+    .tour-tooltip-actions {
+        justify-content: center;
+    }
+    
+    .tour-tooltip-progress {
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .penvault-tour-tooltip {
+        max-width: 280px;
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
+    }
+    
+    .tour-tooltip-title {
+        font-size: 1rem;
+    }
+    
+    .tour-tooltip-body p {
+        font-size: 0.9rem;
+    }
+}
+
+/* Accessibility Enhancements */
+.penvault-tour-tooltip:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.tour-tooltip-close:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .penvault-tour-tooltip {
+        border-width: 3px;
+    }
+    
+    .penvault-tour-highlight {
+        box-shadow: 0 0 0 6px rgba(13, 110, 253, 0.6), 0 0 25px rgba(13, 110, 253, 0.4);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .penvault-tour-tooltip,
+    .penvault-tour-overlay,
+    .penvault-tour-highlight {
+        animation: none;
+    }
+    
+    .tour-tooltip-actions .btn:hover {
+        transform: none;
+    }
+} 

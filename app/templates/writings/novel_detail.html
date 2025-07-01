@@ -11,7 +11,12 @@
             <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
                 <span class="badge bg-secondary">{{ novel.status|capitalize }}</span>
                 {% if novel.genre %}
-                    <span class="badge bg-info">{{ novel.genre|capitalize }}</span>
+                    {% for genre in novel.genre.split(',') %}
+                        {% set genre_clean = genre.strip().lower() %}
+                        <a href="{{ url_for('main.tag', tag_name=genre_clean) }}" class="badge bg-light text-dark border me-1 mb-1" style="text-decoration:none;">
+                            {{ genre_clean }}
+                        </a>
+                    {% endfor %}
                 {% endif %}
                 {% if novel.is_mature %}<span class="badge bg-danger">Mature</span>{% endif %}
                 {% if novel.is_premium %}<span class="premium-badge ms-2"><i class="fas fa-crown"></i> Premium</span>{% endif %}
@@ -30,12 +35,6 @@
                             {{ total_chapters }} Chapter{{ 's' if total_chapters != 1 }}
                         </span>
                     </div>
-                    {% if novel.genre %}
-                        <div class="stats-item">
-                            <i class="fas fa-bookmark text-muted"></i>
-                            <span>{{ novel.genre|capitalize }}</span>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
             <p class="lead text-muted">{{ novel.summary }}</p>
@@ -83,22 +82,69 @@
                     {% else %}
                     <p class="text-muted">No volumes available yet.</p>
                     {% endif %}
-                    <!-- Display Chapters (if no volumes) -->
-                    {% if not volumes and chapters %}
-                    <h4 class="mt-4 fw-semibold">Chapters</h4>
-                    <div class="list-group mb-4 shadow-sm rounded">
-                        {% for chapter in chapters %}
-                        <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug='null', chapter_slug=chapter.slug) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            {{ chapter.title }}
-                            {% if chapter.is_premium %}
-                            <span class="premium-badge-small"><i class="fas fa-crown"></i> Premium</span>
-                            {% endif %}
-                        </a>
-                        {% endfor %}
+                    <!-- Asc/Desc Order Toggle and Grouped Chapters by Volume -->
+                    <div class="d-flex align-items-center mb-3">
+                        <h4 class="mt-4 fw-semibold mb-0 me-3">Chapters by Volume</h4>
+                        <button id="toggleOrderBtn" class="btn btn-outline-secondary btn-sm ms-auto" type="button">
+                            <i class="fas fa-sort-amount-down-alt me-1"></i> Ascending
+                        </button>
                     </div>
-                    {% elif not volumes %}
-                    <p class="text-muted">No chapters available yet.</p>
-                    {% endif %}
+                    <div id="volumesChaptersContainer">
+                        {% set chapters_by_volume = {} %}
+                        {% for volume in volumes %}
+                            {% set chapters_by_volume = chapters_by_volume.update({volume.id: []}) or chapters_by_volume %}
+                        {% endfor %}
+                        {% for chapter in chapters %}
+                            {% if chapter.volume %}
+                                {% set _ = chapters_by_volume[chapter.volume.id].append(chapter) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for volume in volumes %}
+                        <div class="volume-block mb-4" data-volume-order="{{ volume.order }}">
+                            <div class="bg-light p-2 rounded mb-2 fw-bold">{{ volume.title }}</div>
+                            <div class="list-group shadow-sm rounded">
+                                {% for chapter in chapters_by_volume[volume.id] %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
+                                    <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
+                                        <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
+                                        <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}</div>
+                                        {% if chapter.created_at >= (now - timedelta(days=2)) %}
+                                        <span class="badge bg-light text-dark ms-md-3">New</span>
+                                        {% endif %}
+                                    </div>
+                                    <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="btn btn-outline-primary btn-sm ms-2 flex-shrink-0">Read</a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {# Standalone chapters (no volume) #}
+                        {% set standalone_chapters = [] %}
+                        {% for chapter in chapters %}
+                            {% if not chapter.volume %}
+                                {% set _ = standalone_chapters.append(chapter) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if standalone_chapters %}
+                        <div class="volume-block mb-4" data-volume-order="0">
+                            <div class="bg-light p-2 rounded mb-2 fw-bold">Standalone Chapters</div>
+                            <div class="list-group shadow-sm rounded">
+                                {% for chapter in standalone_chapters %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
+                                    <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
+                                        <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
+                                        <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}</div>
+                                        {% if chapter.created_at >= (now - timedelta(days=2)) %}
+                                        <span class="badge bg-light text-dark ms-md-3">New</span>
+                                        {% endif %}
+                                    </div>
+                                    <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="btn btn-outline-primary btn-sm ms-2 flex-shrink-0">Read</a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
                 {% else %}
                     <!-- Enhanced premium lock card -->
                     <div class="premium-content-lock mt-4 shadow-sm">
@@ -140,22 +186,69 @@
                 {% else %}
                 <p class="text-muted">No volumes available yet.</p>
                 {% endif %}
-                <!-- Display Chapters (if no volumes) -->
-                {% if not volumes and chapters %}
-                <h4 class="mt-4 fw-semibold">Chapters</h4>
-                <div class="list-group mb-4 shadow-sm rounded">
-                    {% for chapter in chapters %}
-                    <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug='null', chapter_slug=chapter.slug) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        {{ chapter.title }}
-                        {% if chapter.is_premium %}
-                        <span class="premium-badge-small"><i class="fas fa-crown"></i> Premium</span>
-                        {% endif %}
-                    </a>
-                    {% endfor %}
+                <!-- Asc/Desc Order Toggle and Grouped Chapters by Volume -->
+                <div class="d-flex align-items-center mb-3">
+                    <h4 class="mt-4 fw-semibold mb-0 me-3">Chapters by Volume</h4>
+                    <button id="toggleOrderBtn" class="btn btn-outline-secondary btn-sm ms-auto" type="button">
+                        <i class="fas fa-sort-amount-down-alt me-1"></i> Ascending
+                    </button>
                 </div>
-                {% elif not volumes %}
-                <p class="text-muted">No chapters available yet.</p>
-                {% endif %}
+                <div id="volumesChaptersContainer">
+                    {% set chapters_by_volume = {} %}
+                    {% for volume in volumes %}
+                        {% set chapters_by_volume = chapters_by_volume.update({volume.id: []}) or chapters_by_volume %}
+                    {% endfor %}
+                    {% for chapter in chapters %}
+                        {% if chapter.volume %}
+                            {% set _ = chapters_by_volume[chapter.volume.id].append(chapter) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% for volume in volumes %}
+                    <div class="volume-block mb-4" data-volume-order="{{ volume.order }}">
+                        <div class="bg-light p-2 rounded mb-2 fw-bold">{{ volume.title }}</div>
+                        <div class="list-group shadow-sm rounded">
+                            {% for chapter in chapters_by_volume[volume.id] %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
+                                <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
+                                    <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
+                                    <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}</div>
+                                    {% if chapter.created_at >= (now - timedelta(days=2)) %}
+                                    <span class="badge bg-light text-dark ms-md-3">New</span>
+                                    {% endif %}
+                                </div>
+                                <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="btn btn-outline-primary btn-sm ms-2 flex-shrink-0">Read</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {# Standalone chapters (no volume) #}
+                    {% set standalone_chapters = [] %}
+                    {% for chapter in chapters %}
+                        {% if not chapter.volume %}
+                            {% set _ = standalone_chapters.append(chapter) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if standalone_chapters %}
+                    <div class="volume-block mb-4" data-volume-order="0">
+                        <div class="bg-light p-2 rounded mb-2 fw-bold">Standalone Chapters</div>
+                        <div class="list-group shadow-sm rounded">
+                            {% for chapter in standalone_chapters %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
+                                <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
+                                    <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
+                                    <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}</div>
+                                    {% if chapter.created_at >= (now - timedelta(days=2)) %}
+                                    <span class="badge bg-light text-dark ms-md-3">New</span>
+                                    {% endif %}
+                                </div>
+                                <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="btn btn-outline-primary btn-sm ms-2 flex-shrink-0">Read</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
         <div class="col-md-4">
@@ -192,7 +285,7 @@
                 <!-- Comment Form -->
                 {% if current_user.is_authenticated %}
                 <div class="comment-form mb-4">
-                    <form method="POST" action="{{ url_for('main.comment', story_id=novel.story.id) }}" id="commentForm">
+                    <form method="POST" action="{{ url_for('main.novel_comment', novel_slug=novel.slug) }}" id="commentForm">
                         {{ form.hidden_tag() }}
                         <div class="d-flex align-items-start gap-3">
                             <img src="{{ url_for('static', filename='uploads/' + current_user.profile_picture) if current_user.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
@@ -292,8 +385,8 @@
                                         <div class="d-flex gap-2">
                                             <img src="{{ url_for('static', filename='uploads/' + reply.author.profile_picture) if reply.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
                                                  class="rounded-circle" width="32" height="32" alt="{{ reply.author.username }}">
-                                            <div class="flex-grow-1">
-                                                <div class="d-flex align-items-center mb-1">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center mb-1">
                                                     <a href="{{ url_for('main.profile', username=reply.author.username) }}" class="text-decoration-none">
                                                         <span class="fw-semibold text-dark">{{ reply.author.username }}</span>
                                                     </a>
@@ -367,6 +460,7 @@
 
         // Reply to comment functionality
         window.replyToComment = function(username, commentId) {
+            console.log('replyToComment called for', username, commentId); // Debug log
             currentReplyTo = commentId;
             const replyToText = document.getElementById('replyToText');
             const commentContent = document.getElementById('commentContent');
@@ -550,6 +644,31 @@
         });
 
         // --- End comment functionality ---
+
+        // --- Asc/Desc Order Toggle for Volumes and Chapters ---
+        let ascending = true;
+        const toggleBtn = document.getElementById('toggleOrderBtn');
+        const container = document.getElementById('volumesChaptersContainer');
+        toggleBtn.addEventListener('click', function() {
+            ascending = !ascending;
+            // Toggle button icon/text
+            this.innerHTML = ascending
+                ? '<i class="fas fa-sort-amount-down-alt me-1"></i> Ascending'
+                : '<i class="fas fa-sort-amount-up-alt me-1"></i> Descending';
+            // Reverse order of volume blocks
+            const volumeBlocks = Array.from(container.querySelectorAll('.volume-block'));
+            volumeBlocks.reverse();
+            volumeBlocks.forEach(block => container.appendChild(block));
+            // For each volume, reverse order of chapters
+            volumeBlocks.forEach(block => {
+                const chapterList = block.querySelector('.list-group');
+                if (chapterList) {
+                    const chapters = Array.from(chapterList.querySelectorAll('.chapter-list-item'));
+                    chapters.reverse();
+                    chapters.forEach(chap => chapterList.appendChild(chap));
+                }
+            });
+        });
     });
 </script>
 {% endblock scripts %}
@@ -558,24 +677,24 @@
 {{ super() }}
 <!-- Enhanced styles for modern look and accessibility -->
 <style>
-.stats-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #6c757d;
+    .stats-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6c757d;
     font-size: 1rem;
-}
-.premium-badge-small {
-    background: linear-gradient(45deg, #ffd700, #ffa500);
-    color: #000;
-    font-weight: 500;
-    padding: 0.2rem 0.6rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-}
+    }
+    .premium-badge-small {
+        background: linear-gradient(45deg, #ffd700, #ffa500);
+        color: #000;
+        font-weight: 500;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
 .premium-badge {
     background: linear-gradient(45deg, #ffd700, #ffa500);
     color: #000;
@@ -587,33 +706,33 @@
     gap: 0.5rem;
     font-size: 1rem;
 }
-.premium-content-lock {
-    position: relative;
-    min-height: 200px;
+    .premium-content-lock {
+        position: relative;
+        min-height: 200px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-radius: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     padding: 2.5rem 1.5rem;
-    text-align: center;
+        text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-.premium-content-lock i {
-    font-size: 3rem;
-    color: #ffd700;
-    margin-bottom: 1rem;
-}
-.premium-content-lock h3 {
-    color: #333;
-    margin-bottom: 1rem;
-}
-.premium-content-lock p {
-    color: #666;
-    margin-bottom: 1.5rem;
-}
-body.dark-mode .premium-content-lock {
+    }
+    .premium-content-lock i {
+        font-size: 3rem;
+        color: #ffd700;
+        margin-bottom: 1rem;
+    }
+    .premium-content-lock h3 {
+        color: #333;
+        margin-bottom: 1rem;
+    }
+    .premium-content-lock p {
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+    body.dark-mode .premium-content-lock {
     background: linear-gradient(135deg, #23272b 0%, #1a1a1a 100%);
 }
 body.dark-mode .premium-content-lock h3 {

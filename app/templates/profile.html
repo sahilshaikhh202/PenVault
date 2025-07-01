@@ -170,10 +170,10 @@
                                             <div class="story-cover">
                                                 {% if story.is_premium and current_user != user %}
                                                 <div class="cover-container">
-                                                    <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
-                                                         class="card-img-top story-cover-img" 
-                                                         style="height: 200px; object-fit: cover;" 
-                                                         alt="Cover image for {{ story.title }}">
+                                                <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
+                                                     class="card-img-top story-cover-img" 
+                                                     style="height: 200px; object-fit: cover;" 
+                                                     alt="Cover image for {{ story.title }}">
                                                     <div class="cover-overlay">
                                                         <span class="premium-overlay-badge">
                                                             <i class="fas fa-crown me-1"></i>Premium
@@ -346,10 +346,10 @@
                                             <div class="story-cover">
                                                 {% if story.is_premium and current_user != story.author %}
                                                 <div class="cover-container">
-                                                    <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
-                                                         class="card-img-top story-cover-img" 
-                                                         style="height: 200px; object-fit: cover;" 
-                                                         alt="Cover image for {{ story.title }}">
+                                                <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
+                                                     class="card-img-top story-cover-img" 
+                                                     style="height: 200px; object-fit: cover;" 
+                                                     alt="Cover image for {{ story.title }}">
                                                     <div class="cover-overlay">
                                                         <span class="premium-overlay-badge">
                                                             <i class="fas fa-crown me-1"></i>Premium

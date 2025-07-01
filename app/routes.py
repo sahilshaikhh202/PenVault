@@ -1,7 +1,8 @@
-from flask import Blueprint, abort, render_template, flash, redirect, url_for, request, current_app, jsonify
+from flask import Blueprint, abort, render_template, flash, redirect, url_for, request, current_app, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
+from werkzeug.datastructures import FileStorage
 import os
 from app.models import User, Story, Comment, Tag, Follow, Novel, Volume, Chapter, ReadingHistory, PointsTransaction, UnlockedContent, ChapterReadingHistory
 from app.forms import LoginForm, RegistrationForm, ProfileForm, StoryForm, CommentForm, SearchForm, PoetryForm, QuoteForm, EssayForm, NovelForm, VolumeForm, ChapterForm, OtherWritingForm, EditCommentForm
@@ -110,7 +111,13 @@ def login():
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('main.index')
-        flash('Welcome back!', 'success')
+        
+        # Check if user should see the tour
+        if not user.tour_completed:
+            flash('Welcome to PenVault! Let\'s take a quick tour to help you get started.', 'success')
+        else:
+            flash('Welcome back!', 'success')
+            
         return redirect(next_page)
     
     return render_template('auth/login.html', title='Sign In', form=form)
@@ -456,7 +463,7 @@ def comment(story_id):
                 story.author.add_points(3, 'received_comment', f'Comment on {story.title}')
                 story.author.comment_points_count += 1
             
-            db.session.commit()
+                db.session.commit()
 
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 response_data = {
@@ -551,7 +558,7 @@ def comment_by_slug(story_slug):
                 return jsonify({'success': False, 'error': 'An internal error occurred while posting the comment.'}), 500
             flash('Error processing comment.', 'error')
         return redirect(url_for('main.story_by_slug', story_slug=story_slug))
-    
+        
     # Handle form validation failure
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': False, 'error': 'Invalid data provided.', 'errors': form.errors}), 400
@@ -598,9 +605,119 @@ def unfollow(username):
     flash(f'You are no longer following {username}.', 'info')
     return redirect(url_for('main.profile', username=username))
 
-@main.route('/tags')
+@main.route('/tags', methods=['GET', 'POST'])
 def tags():
+    if request.method == 'POST':
+        # Handle interest management
+        action = request.form.get('action')
+        
+        if action == 'add_interest':
+            new_interest = request.form.get('new_interest', '').strip().lower()
+            if new_interest:
+                current_interests = [t.strip().lower() for t in current_user.interests.split(',') if t.strip()] if current_user.interests else []
+                if new_interest not in current_interests:
+                    current_interests.append(new_interest)
+                    current_user.interests = ','.join(current_interests)
+                    current_user.has_set_interests = True
+                    db.session.commit()
+                    flash(f'Added "{new_interest}" to your interests!', 'success')
+        
+        elif action == 'remove_interest':
+            interest_to_remove = request.form.get('interest', '').strip().lower()
+            if interest_to_remove and current_user.interests:
+                current_interests = [t.strip().lower() for t in current_user.interests.split(',') if t.strip()]
+                current_interests = [t for t in current_interests if t != interest_to_remove]
+                current_user.interests = ','.join(current_interests) if current_interests else ''
+                db.session.commit()
+                flash(f'Removed "{interest_to_remove}" from your interests!', 'success')
+        
+        elif action == 'filter_interests':
+            selected_interests = request.form.getlist('selected_interests')
+            if selected_interests:
+                # Store filtered interests in session for this page
+                session['filtered_interests'] = selected_interests
+                flash(f'Showing stories for {len(selected_interests)} selected interests!', 'success')
+            else:
+                session.pop('filtered_interests', None)
+                flash('Showing all your interests!', 'success')
+        
+        return redirect(url_for('main.tags'))
+    
+    # GET request - display page
+    # If user is logged in and has selected interests, show stories matching those interests
+    if current_user.is_authenticated and current_user.interests:
+        # Get list of interests (tags/genres)
+        all_interests = [t.strip().lower() for t in current_user.interests.split(',') if t.strip()]
+        
+        # Check if user has filtered interests in session
+        filtered_interests = session.get('filtered_interests', all_interests)
+        
+        # Find Tag objects matching these interests (case-insensitive)
+        tags = Tag.query.filter(db.func.lower(Tag.name).in_(filtered_interests)).all()
+        tag_ids = [tag.id for tag in tags]
+        
+        # Get stories that have any of these tags, published only, order by newest
+        stories = []
+        if tag_ids:
+            stories = Story.query.filter(
+                Story.tags.any(Tag.id.in_(tag_ids)),
+                Story.is_published == True
+            ).order_by(Story.created_at.desc()).limit(18).all()
+        
+        # For display, get the tag names (for heading)
+        return render_template('tag.html', 
+                             user_interests=all_interests, 
+                             filtered_interests=filtered_interests,
+                             interest_tags=tags, 
+                             interest_stories=stories)
+    
+    # Default: show tag explorer
     return render_template('tag.html')
+
+@main.route('/tags/manage-interests', methods=['POST'])
+@login_required
+def manage_interests():
+    """API endpoint for managing interests from tag page"""
+    try:
+        data = request.get_json()
+        action = data.get('action')
+        
+        if action == 'add':
+            new_interest = data.get('interest', '').strip().lower()
+            if new_interest:
+                current_interests = [t.strip().lower() for t in current_user.interests.split(',') if t.strip()] if current_user.interests else []
+                if new_interest not in current_interests:
+                    current_interests.append(new_interest)
+                    current_user.interests = ','.join(current_interests)
+                    current_user.has_set_interests = True
+                    db.session.commit()
+                    return jsonify({'success': True, 'message': f'Added "{new_interest}" to your interests!'})
+                else:
+                    return jsonify({'success': False, 'message': 'Interest already exists!'})
+        
+        elif action == 'remove':
+            interest_to_remove = data.get('interest', '').strip().lower()
+            if interest_to_remove and current_user.interests:
+                current_interests = [t.strip().lower() for t in current_user.interests.split(',') if t.strip()]
+                current_interests = [t for t in current_interests if t != interest_to_remove]
+                current_user.interests = ','.join(current_interests) if current_interests else ''
+                db.session.commit()
+                return jsonify({'success': True, 'message': f'Removed "{interest_to_remove}" from your interests!'})
+        
+        elif action == 'filter':
+            selected_interests = data.get('interests', [])
+            if selected_interests:
+                session['filtered_interests'] = selected_interests
+                return jsonify({'success': True, 'message': f'Showing stories for {len(selected_interests)} selected interests!'})
+            else:
+                session.pop('filtered_interests', None)
+                return jsonify({'success': True, 'message': 'Showing all your interests!'})
+        
+        return jsonify({'success': False, 'message': 'Invalid action!'})
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': 'Error processing request!'}), 500
 
 @main.route('/tag', methods=['GET'])
 def tag_search():
@@ -692,7 +809,7 @@ def like_story_by_slug(story_slug):
         db.session.commit()
         flash('You have liked this story.', 'success')
     
-    return redirect(url_for('main.story_by_slug', story_slug=story_slug))
+    return redirect(url_for('main.story_by_slug', story_slug=story.slug))
 
 @main.route('/story/<int:story_id>/save')
 @login_required
@@ -1011,7 +1128,7 @@ def delete_history_item(history_id):
         db.session.commit()
         flash('History item deleted.', 'success')
         return redirect(request.referrer or url_for('main.profile', username=current_user.username))
-    
+        
     # If not found in story history, try chapter reading history
     chapter_history = ChapterReadingHistory.query.get(history_id)
     if chapter_history and chapter_history.user_id == current_user.id:
@@ -1029,6 +1146,18 @@ def delete_history_item(history_id):
 def new_novel():
     form = NovelForm()
     if form.validate_on_submit():
+        # Normalize genres: lowercase, trim, remove empty
+        genres = [g.strip().lower() for g in form.genre.data.split(',') if g.strip()]
+        genre_str = ', '.join(genres)
+        # Auto-create Tag objects for each genre if not exist
+        tag_objs = []
+        for genre in genres:
+            tag = Tag.query.filter_by(name=genre).first()
+            if not tag:
+                tag = Tag(name=genre)
+                db.session.add(tag)
+                db.session.flush()  # Ensure tag.id is available
+            tag_objs.append(tag)
         story = Story(
             title=form.title.data,
             content='',
@@ -1038,21 +1167,22 @@ def new_novel():
             is_published=False,
             writing_type='webnovel'
         )
+        story.tags = tag_objs  # Associate story with genre tags
         db.session.add(story)
         db.session.flush()  # Get story.id before commit
         novel = Novel(
             story_id=story.id,
             title=form.title.data,
             summary=form.summary.data,
+            genre=genre_str,
             cover_image=None,
             is_premium=form.is_premium.data
         )
-        if form.cover_image.data:
-            file = form.cover_image.data
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                novel.cover_image = filename
+        file = form.cover_image.data
+        if isinstance(file, FileStorage) and file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+            novel.cover_image = filename
         db.session.add(novel)
         db.session.commit()
         flash('Novel created! Now add volumes and chapters.')
@@ -1063,6 +1193,7 @@ def new_novel():
 
 @main.route('/novel/<novel_slug>')
 def novel_detail_slug(novel_slug):
+    from datetime import datetime, timedelta
     novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
     chapters = Chapter.query.filter_by(novel_id=novel.id).order_by(Chapter.order.asc()).all()
     volumes = Volume.query.filter_by(novel_id=novel.id).order_by(Volume.order.asc()).all()
@@ -1070,7 +1201,7 @@ def novel_detail_slug(novel_slug):
     unlocked = False
     if current_user.is_authenticated and novel.is_premium and novel.story.author != current_user:
         unlocked = UnlockedContent.query.filter_by(user_id=current_user.id, novel_id=novel.id).first() is not None
-
+    
     # Get first chapter
     first_chapter = Chapter.query.filter_by(novel_id=novel.id).order_by(Chapter.order.asc()).first()
 
@@ -1082,7 +1213,20 @@ def novel_detail_slug(novel_slug):
         if chapter_history:
             last_read_chapter = Chapter.query.get(chapter_history.chapter_id)
 
-    return render_template('writings/novel_detail.html', novel=novel, chapters=chapters, volumes=volumes, unlocked=unlocked, form=CommentForm(), Comment=Comment, first_chapter=first_chapter, last_read_chapter=last_read_chapter)
+    now = datetime.utcnow()
+    return render_template(
+        'writings/novel_detail.html',
+        novel=novel,
+        chapters=chapters,
+        volumes=volumes,
+        unlocked=unlocked,
+        form=CommentForm(),
+        Comment=Comment,
+        first_chapter=first_chapter,
+        last_read_chapter=last_read_chapter,
+        now=now,
+        timedelta=timedelta
+    )
 
 @main.route('/novel/<novel_slug>/volume/new', methods=['GET', 'POST'])
 @login_required
@@ -1139,44 +1283,53 @@ def edit_novel(novel_slug):
         abort(403)
     form = NovelForm(obj=novel)
     if form.validate_on_submit():
+        # Normalize genres: lowercase, trim, remove empty
+        genres = [g.strip().lower() for g in form.genre.data.split(',') if g.strip()]
+        genre_str = ', '.join(genres)
+        # Auto-create Tag objects for each genre if not exist
+        tag_objs = []
+        for genre in genres:
+            tag = Tag.query.filter_by(name=genre).first()
+            if not tag:
+                tag = Tag(name=genre)
+                db.session.add(tag)
+                db.session.flush()
+            tag_objs.append(tag)
+        story.tags = tag_objs  # Associate story with genre tags
         # Check if premium status is being removed
         was_premium = novel.is_premium
         new_premium_status = form.is_premium.data
-        
         novel.title = form.title.data
         novel.summary = form.summary.data
-        novel.genre = form.genre.data
+        novel.genre = genre_str
         novel.status = form.status.data
         novel.is_mature = form.is_mature.data
         novel.is_premium = new_premium_status  # Update novel premium status
         # Update slug if title changed
         novel.update_slug()
-        if form.cover_image.data:
-            file = form.cover_image.data
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                novel.cover_image = filename
-                story.cover_image = filename
+        file = form.cover_image.data
+        if isinstance(file, FileStorage) and file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+            novel.cover_image = filename
+            story.cover_image = filename
         # Sync Story fields with Novel
         story.title = form.title.data
         story.summary = form.summary.data
         story.is_premium = new_premium_status  # Update story premium status
-        
         # If premium status was removed, delete all unlock records for this novel
         if was_premium and not new_premium_status:
             UnlockedContent.query.filter_by(novel_id=novel.id).delete()
-        
-        # Handle tags for forms with a tags field
+        # Handle tags for forms with a tags field (for non-genre tags)
         if hasattr(form, 'tags') and form.tags.data:
             tag_names = [t.strip() for t in form.tags.data.split(',') if t.strip()]
-            story.tags = []
             for tag_name in tag_names:
                 tag = Tag.query.filter_by(name=tag_name).first()
                 if not tag:
                     tag = Tag(name=tag_name)
                     db.session.add(tag)
-                story.tags.append(tag)
+                if tag not in story.tags:
+                    story.tags.append(tag)
         db.session.commit()
         flash('Novel updated!', 'success')
         return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
@@ -2083,3 +2236,146 @@ def admin_remove_expired_features():
     removed_count = remove_expired_features()
     flash(f'Removed {removed_count} expired featured stories', 'success')
     return redirect(url_for('main.index'))
+
+@main.route('/api/tour/progress', methods=['POST'])
+@login_required
+def update_tour_progress():
+    """API endpoint to update user's tour progress"""
+    try:
+        data = request.get_json()
+        progress = data.get('progress', {})
+        completed = data.get('completed', False)
+        
+        current_user.tour_progress = progress
+        current_user.tour_completed = completed
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@main.route('/test-tour')
+@login_required
+def test_tour():
+    """Test page for the tour system"""
+    return render_template('test_tour.html', title='Tour Test')
+
+# Predefined interests list
+PREDEFINED_INTERESTS = [
+    'romance', 'mystery', 'sci-fi', 'fantasy', 'poetry', 'quotes',
+    'motivational', 'life', 'thriller', 'short-stories', 'fanfiction'
+]
+
+@main.route('/api/interests/list')
+@login_required
+def get_interests_list():
+    return jsonify({'interests': PREDEFINED_INTERESTS})
+
+@main.route('/api/interests/save', methods=['POST'])
+@login_required
+def save_user_interests():
+    data = request.get_json()
+    interests = data.get('interests', [])
+    if not isinstance(interests, list):
+        return jsonify({'success': False, 'error': 'Invalid interests format'}), 400
+    current_user.interests = ','.join([i.strip() for i in interests if i.strip()])
+    current_user.has_set_interests = True
+    db.session.commit()
+    return jsonify({'success': True})
+
+@main.route('/settings/interests', methods=['POST'])
+@login_required
+def save_interests():
+    # Always normalize tags
+    selected = [t.strip().lower() for t in current_user.interests.split(',') if t.strip()]
+    # Remove interest if requested
+    remove = request.form.get('remove_interest')
+    if remove:
+        remove = remove.strip().lower()
+        selected = [t for t in selected if t != remove]
+        current_user.interests = ','.join(selected) if selected else ''
+        db.session.commit()
+        return redirect(url_for('main.settings', interests_message='Interest removed.'))
+    # Add new interests
+    custom = request.form.get('custom_interests', '')
+    custom_tags = [t.strip().lower().replace('#', '') for t in custom.split(',') if t.strip()]
+    all_tags = list(dict.fromkeys([t for t in selected + custom_tags if t]))
+    current_user.interests = ','.join(all_tags) if all_tags else ''
+    current_user.has_set_interests = True
+    db.session.commit()
+    return redirect(url_for('main.settings', interests_message='Your interests have been updated!'))
+
+@main.route('/novel/<novel_slug>/comment', methods=['POST'])
+def novel_comment(novel_slug):
+    novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
+    story = novel.story
+    form = CommentForm()
+    
+    if not current_user.is_authenticated:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Please log in to comment.'}), 401
+        flash('Please log in to comment.', 'info')
+        return redirect(url_for('auth.login', next=url_for('main.novel_detail_slug', novel_slug=novel_slug)))
+    
+    if form.validate_on_submit():
+        try:
+            parent_id = request.form.get('parent_id')
+            parent_comment = None
+            if parent_id:
+                parent_comment = Comment.query.get(parent_id)
+                if not parent_comment or parent_comment.story_id != story.id:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'success': False, 'error': 'Invalid parent comment.'}), 400
+                    flash('Invalid parent comment.', 'danger')
+                    return redirect(url_for('main.novel_detail_slug', novel_slug=novel_slug))
+            
+            comment = Comment(
+                content=form.content.data,
+                author=current_user,
+                story=story,
+                parent=parent_comment
+            )
+            db.session.add(comment)
+            
+            # Award points logic
+            points_earned = 0
+            word_count = len(form.content.data.split())
+            if word_count >= 20 and current_user.can_earn_comment_points():
+                current_user.add_points(4, 'meaningful_comment', f'Comment on {story.title}')
+                current_user.comment_points_count += 1
+                points_earned = 4
+            
+            if word_count >= 10 and story.author.can_earn_comment_points():
+                story.author.add_points(3, 'received_comment', f'Comment on {story.title}')
+                story.author.comment_points_count += 1
+            
+            db.session.commit()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                response_data = {
+                    'success': True,
+                    'message': 'Comment posted successfully.'
+                }
+                if points_earned > 0:
+                    response_data['points_earned'] = points_earned
+                return jsonify(response_data)
+            
+            if points_earned > 0:
+                flash(f'You earned {points_earned} points for your meaningful comment!', 'success')
+            flash('Your comment has been added.', 'success')
+            return redirect(url_for('main.novel_detail_slug', novel_slug=novel_slug))
+
+        except Exception as e:
+            db.session.rollback()
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'error': 'An internal error occurred while posting the comment.'}), 500
+            flash('Error processing comment.', 'error')
+            return redirect(url_for('main.novel_detail_slug', novel_slug=novel_slug))
+    
+    # Handle form validation failure
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': False, 'error': 'Invalid data provided.', 'errors': form.errors}), 400
+    
+    flash('Could not post comment. Please check your input.', 'danger')
+    return redirect(url_for('main.novel_detail_slug', novel_slug=novel_slug))

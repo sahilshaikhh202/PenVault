@@ -134,13 +134,7 @@ class NovelForm(FlaskForm):
         DataRequired(),
         Length(min=100, max=1000)
     ])
-    genre = SelectField('Genre', choices=[
-        ('fantasy', 'Fantasy'),
-        ('scifi', 'Science Fiction'),
-        ('romance', 'Romance'),
-        ('mystery', 'Mystery'),
-        ('other', 'Other')
-    ])
+    genre = StringField('Genres (comma-separated)', render_kw={"placeholder": "e.g. Fantasy, Romance, Mystery"})
     status = SelectField('Status', choices=[
         ('ongoing', 'Ongoing'),
         ('completed', 'Completed'),

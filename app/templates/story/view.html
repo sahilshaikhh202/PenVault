@@ -706,7 +706,7 @@
                                     </a>
                                 </li>
                             </ul>
-                        </div>
+                    </div>
                     {% endif %}
                     <div class="text-muted">
                         <small>
@@ -739,10 +739,10 @@
                         </div>
                         <div class="card-body p-4">
                             <!-- Comment Form -->
-                            {% if current_user.is_authenticated %}
+                    {% if current_user.is_authenticated %}
                             <div class="comment-form mb-4">
                                 <form method="POST" action="{{ url_for('main.comment_by_slug', story_slug=story.slug) }}" id="commentForm">
-                                    {{ form.hidden_tag() }}
+                        {{ form.hidden_tag() }}
                                     <div class="d-flex align-items-start gap-3">
                                         <img src="{{ url_for('static', filename='uploads/' + current_user.profile_picture) if current_user.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
                                              class="rounded-circle" width="40" height="40" alt="{{ current_user.username }}">
@@ -750,7 +750,7 @@
                                             <div class="mb-2">
                                                 <span class="fw-semibold">{{ current_user.username }}</span>
                                                 <span id="replyToText" class="text-muted ms-2" style="display: none;"></span>
-                                            </div>
+                        </div>
                                             {{ form.content(class="form-control", rows=3, placeholder="Write a comment...", id="commentContent") }}
                                             <div class="d-flex justify-content-between align-items-center mt-2">
                                                 <small class="text-muted">Press Ctrl+Enter to submit</small>
@@ -829,9 +829,9 @@
                                             <div class="comment-actions">
                                                 <button class="btn btn-sm btn-outline-primary" onclick="replyToComment('{{ comment.author.username }}', {{ comment.id }})">
                                                     <i class="fas fa-reply me-1"></i>Reply
-                                                </button>
-                                            </div>
-                                            {% endif %}
+                                            </button>
+                                    </div>
+                                    {% endif %}
                                             
                                             <!-- Replies -->
                                             {% if comment.replies.count() > 0 %}
@@ -877,27 +877,27 @@
                                                                             </li>
                                                                             {% endif %}
                                                                         </ul>
-                                                                    </div>
-                                                                </div>
+                                </div>
+                            </div>
                                                                 {% endif %}
                                                             </div>
                                                             <div class="reply-content" id="comment-content-{{ reply.id }}">
                                                                 <p class="mb-0">{{ reply.content|nl2br }}</p>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                                {% endfor %}
-                                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
                                             {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
+            </div>
+        </div>
+    </div>
                                 {% else %}
                                 <div class="text-center text-muted py-4">
                                     <i class="fas fa-comments fa-2x mb-3"></i>
                                     <p>No comments yet. Be the first to comment!</p>
-                                </div>
+</div>
                                 {% endfor %}
                             </div>
                         </div>

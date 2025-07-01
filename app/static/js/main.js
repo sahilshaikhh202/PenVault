@@ -619,74 +619,77 @@ function unfollowAuthor(authorId) {
     });
 }
 
-// Enhanced comment reply functionality
-function replyToComment(commentId) {
-    const commentElement = document.querySelector(`button[onclick="replyToComment(${commentId})"]`).closest('.comment');
-    
-    // Remove existing reply forms
-    const existingForms = commentElement.querySelectorAll('.reply-form');
-    existingForms.forEach(form => form.remove());
-    
-    const replyForm = document.createElement('form');
-    replyForm.className = 'reply-form mt-3';
-    replyForm.innerHTML = `
-        <div class="mb-3">
-            <textarea class="form-control" rows="3" placeholder="Write a reply..." required></textarea>
-        </div>
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary btn-sm">
-                <i class="fas fa-paper-plane me-1"></i>Reply
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="this.closest('.reply-form').remove()">
-                <i class="fas fa-times me-1"></i>Cancel
-            </button>
-        </div>
-    `;
-    
-    commentElement.appendChild(replyForm);
-    
-    // Focus on textarea
-    const textarea = replyForm.querySelector('textarea');
-    setTimeout(() => textarea.focus(), 100);
-    
-    replyForm.onsubmit = function(e) {
-        e.preventDefault();
-        const content = this.querySelector('textarea').value.trim();
+// Only run story/comment logic if on a story page (not on a novel page)
+if (document.getElementById('storyContent')) {
+    // Enhanced comment reply functionality
+    function replyToComment(commentId) {
+        const commentElement = document.querySelector(`button[onclick="replyToComment(${commentId})"]`).closest('.comment');
         
-        if (!content) {
-            showToast('Please enter a reply', 'error');
-            return;
-        }
+        // Remove existing reply forms
+        const existingForms = commentElement.querySelectorAll('.reply-form');
+        existingForms.forEach(form => form.remove());
         
-        const submitBtn = this.querySelector('button[type="submit"]');
-        submitBtn.classList.add('loading');
-        submitBtn.disabled = true;
+        const replyForm = document.createElement('form');
+        replyForm.className = 'reply-form mt-3';
+        replyForm.innerHTML = `
+            <div class="mb-3">
+                <textarea class="form-control" rows="3" placeholder="Write a reply..." required></textarea>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-paper-plane me-1"></i>Reply
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="this.closest('.reply-form').remove()">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+            </div>
+        `;
         
-        fetch(`/api/comment/${commentId}/reply`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ content }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast('Reply posted successfully!', 'success');
-                location.reload();
-            } else {
-                showToast(data.message || 'Error posting reply', 'error');
+        commentElement.appendChild(replyForm);
+        
+        // Focus on textarea
+        const textarea = replyForm.querySelector('textarea');
+        setTimeout(() => textarea.focus(), 100);
+        
+        replyForm.onsubmit = function(e) {
+            e.preventDefault();
+            const content = this.querySelector('textarea').value.trim();
+            
+            if (!content) {
+                showToast('Please enter a reply', 'error');
+                return;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Error posting reply', 'error');
-        })
-        .finally(() => {
-            submitBtn.classList.remove('loading');
-            submitBtn.disabled = false;
-        });
-    };
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            
+            fetch(`/api/comment/${commentId}/reply`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Reply posted successfully!', 'success');
+                    location.reload();
+                } else {
+                    showToast(data.message || 'Error posting reply', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error posting reply', 'error');
+            })
+            .finally(() => {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+            });
+        };
+    }
 }
 
 // Enhanced draft saving functionality
