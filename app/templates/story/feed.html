@@ -25,7 +25,7 @@
                         <a href="{{ url_for('main.profile', username=story.author.username) }}" 
                            class="author-profile-link text-decoration-none d-flex align-items-center" 
                            aria-label="View {{ story.author.username }}'s profile">
-                                <img src="{{ url_for('static', filename='profile_pics/' + story.author.profile_picture) }}" 
+                                <img src="{{ url_for('static', filename='uploads/' + (story.author.profile_picture or 'default.jpg')) }}" 
                                  class="author-avatar rounded-circle me-3" 
                                  style="width: 48px; height: 48px; object-fit: cover;"
                                  alt="Profile picture of {{ story.author.username }}">
@@ -67,7 +67,7 @@
                         <!-- Enhanced Cover Image -->
                         {% if story.cover_image and story.cover_image != 'default.jpg' %}
                         <div class="story-cover mb-3">
-                            {% if story.is_premium and current_user != story.author %}
+                            {% if story.is_premium and current_user != story.author and (not story.unlocked_by_current_user) %}
                             <div class="cover-container">
                                 <img src="{{ url_for('static', filename='uploads/' + story.cover_image) }}" 
                                      class="img-fluid rounded story-cover-img" 
@@ -94,11 +94,11 @@
                             
                         <!-- Enhanced Story Preview -->
                         <div class="story-preview mb-4">
-                                {% if story.is_premium and current_user != story.author %}
+                                {% if story.is_premium and current_user != story.author and (not story.unlocked_by_current_user) %}
                                 <div class="premium-content-lock">
                                 <i class="fas fa-lock" aria-hidden="true"></i>
                                 <h3 class="h5 mb-2">Premium Content</h3>
-                                <p class="mb-3">This content is only available to the author</p>
+                                <p class="mb-3">This content is only available to the author or users who have unlocked it</p>
                                 </div>
                                 {% else %}
                             <div class="story-excerpt">

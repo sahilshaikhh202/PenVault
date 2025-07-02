@@ -72,10 +72,7 @@
                     <div class="list-group mb-4 shadow-sm rounded">
                         {% for volume in volumes %}
                         <a href="{{ url_for('main.volume_detail_slug', novel_slug=novel.slug, volume_slug=volume.slug) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            {{ volume.title }}
-                            {% if volume.is_premium %}
-                            <span class="premium-badge-small"><i class="fas fa-crown"></i> Premium</span>
-                            {% endif %}
+                            {{ volume.title }}{% if volume.is_premium %}<span class="premium-badge-small ms-2" title="Premium Volume"><i class="fas fa-crown"></i></span>{% endif %}
                         </a>
                         {% endfor %}
                     </div>
@@ -107,7 +104,7 @@
                                 <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
                                     <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
                                         <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
-                                        <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}</div>
+                                        <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}{% if chapter.is_premium or (chapter.volume and chapter.volume.is_premium) %}<span class="premium-badge-small ms-2" title="Premium Chapter"><i class="fas fa-crown"></i></span>{% endif %}</div>
                                         {% if chapter.created_at >= (now - timedelta(days=2)) %}
                                         <span class="badge bg-light text-dark ms-md-3">New</span>
                                         {% endif %}
@@ -133,7 +130,7 @@
                                 <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
                                     <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
                                         <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
-                                        <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}</div>
+                                        <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}{% if chapter.is_premium or (chapter.volume and chapter.volume.is_premium) %}<span class="premium-badge-small ms-2" title="Premium Chapter"><i class="fas fa-crown"></i></span>{% endif %}</div>
                                         {% if chapter.created_at >= (now - timedelta(days=2)) %}
                                         <span class="badge bg-light text-dark ms-md-3">New</span>
                                         {% endif %}
@@ -176,10 +173,7 @@
                 <div class="list-group mb-4 shadow-sm rounded">
                     {% for volume in volumes %}
                     <a href="{{ url_for('main.volume_detail_slug', novel_slug=novel.slug, volume_slug=volume.slug) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        {{ volume.title }}
-                        {% if volume.is_premium %}
-                        <span class="premium-badge-small"><i class="fas fa-crown"></i> Premium</span>
-                        {% endif %}
+                        {{ volume.title }}{% if volume.is_premium %}<span class="premium-badge-small ms-2" title="Premium Volume"><i class="fas fa-crown"></i></span>{% endif %}
                     </a>
                     {% endfor %}
                 </div>
@@ -211,7 +205,7 @@
                             <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
                                 <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
                                     <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
-                                    <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}</div>
+                                    <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}{% if chapter.is_premium or (chapter.volume and chapter.volume.is_premium) %}<span class="premium-badge-small ms-2" title="Premium Chapter"><i class="fas fa-crown"></i></span>{% endif %}</div>
                                     {% if chapter.created_at >= (now - timedelta(days=2)) %}
                                     <span class="badge bg-light text-dark ms-md-3">New</span>
                                     {% endif %}
@@ -237,7 +231,7 @@
                             <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
                                 <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
                                     <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
-                                    <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}</div>
+                                    <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}{% if chapter.is_premium or (chapter.volume and chapter.volume.is_premium) %}<span class="premium-badge-small ms-2" title="Premium Chapter"><i class="fas fa-crown"></i></span>{% endif %}</div>
                                     {% if chapter.created_at >= (now - timedelta(days=2)) %}
                                     <span class="badge bg-light text-dark ms-md-3">New</span>
                                     {% endif %}

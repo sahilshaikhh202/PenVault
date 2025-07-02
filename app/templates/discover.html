@@ -25,7 +25,7 @@
                             <option value="quote" {% if request.args.get('type') == 'quote' %}selected{% endif %}>💭 Quotes</option>
                             <option value="essay" {% if request.args.get('type') == 'essay' %}selected{% endif %}>📚 Essays</option>
                             <option value="webnovel" {% if request.args.get('type') == 'webnovel' %}selected{% endif %}>📚 Webnovels</option>
-                            <option value="other" {% if request.args.get('type') == 'other' %}selected{% endif %}>✨ Other</option>
+                            <option value="other" {% if request.args.get('type') == 'other' %}selected{% endif %}>Other</option>
                         </select>
                     </div>
                 </div>
@@ -35,10 +35,10 @@
     
     {% if stories.items %}
     <!-- Enhanced Stories Grid -->
-    <div class="stories-grid" role="main" aria-label="Stories collection">
-        <div class="row g-4">
+    <div class="stories-grid" role="main" aria-label="Stories collection" id="stories-grid">
+        <div class="row g-4" id="stories-list">
             {% for story in stories.items %}
-            <div class="col-md-6 col-lg-4">
+            <div class="col-md-6 col-lg-4 story-item">
                 <article class="story-card card h-100 border-0 shadow-sm" role="article" aria-labelledby="story-title-{{ story.id }}">
                     <!-- Cover Image -->
                     {% if story.cover_image and story.cover_image != 'default.jpg' %}
@@ -154,7 +154,7 @@
                         
                         <!-- Enhanced Story Footer -->
                         <footer class="story-footer mt-auto">
-                            <div class="story-stats d-flex justify-content-between align-items-center mb-3">
+                            <div class="story-stats d-flex justify-content-between align-items-center mb-3 flex-wrap">
                                 <div class="stats-group d-flex align-items-center gap-3">
                                     <span class="stat-item" aria-label="{{ story.likes }} likes">
                                         <i class="fas fa-heart text-danger me-1" aria-hidden="true"></i>
@@ -169,59 +169,106 @@
                                         <span class="stat-value">{{ story.views }}</span>
                                     </span>
                                 </div>
-                                <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=story.slug) }}{% endif %}" 
-                                   class="btn btn-primary btn-sm read-btn" 
-                                   role="button" 
-                                   aria-label="Read {{ story.title }}">
-                                    <i class="fas fa-book-open me-1" aria-hidden="true"></i>Read
-                                </a>
                             </div>
+                            <a href="{% if story.writing_type == 'webnovel' %}{{ url_for('main.novel_detail_slug', novel_slug=story.novel.slug) }}{% else %}{{ url_for('main.story_by_slug', story_slug=story.slug) }}{% endif %}" 
+                               class="btn btn-primary btn-sm read-btn w-100 mt-2" 
+                               role="button" 
+                               aria-label="Read {{ story.title }}">
+                                <i class="fas fa-book-open me-1" aria-hidden="true"></i>Read
+                            </a>
                         </footer>
                     </div>
                 </article>
             </div>
             {% endfor %}
         </div>
+        <div id="loading-spinner" class="text-center my-4" style="display:none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading more stories...</span>
+            </div>
+            <div class="mt-2 text-muted">Loading more stories...</div>
+        </div>
     </div>
     
-    <!-- Enhanced Pagination -->
-    <nav aria-label="Stories pagination" class="pagination-section mt-5">
-        <ul class="pagination justify-content-center pagination-lg">
-            {% if stories.has_prev %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('main.discover', page=stories.prev_num, type=request.args.get('type', '')) }}" 
-                   aria-label="Go to previous page">
-                    <i class="fas fa-chevron-left me-1" aria-hidden="true"></i>Previous
-                </a>
-            </li>
-            {% endif %}
-            
-            {% for page_num in stories.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
-                {% if page_num %}
-                    <li class="page-item {% if page_num == stories.page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('main.discover', page=page_num, type=request.args.get('type', '')) }}" 
-                           aria-label="Go to page {{ page_num }}" 
-                           {% if page_num == stories.page %}aria-current="page"{% endif %}>
-                            {{ page_num }}
-                        </a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link" aria-hidden="true">...</span>
-                    </li>
-                {% endif %}
-            {% endfor %}
-            
-            {% if stories.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('main.discover', page=stories.next_num, type=request.args.get('type', '')) }}" 
-                   aria-label="Go to next page">
-                    Next<i class="fas fa-chevron-right ms-1" aria-hidden="true"></i>
-                </a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
+    <script>
+    let currentPage = {{ stories.page }};
+    let hasNext = {{ 'true' if stories.has_next else 'false' }};
+    let isLoading = false;
+    const storiesList = document.getElementById('stories-list');
+    const spinner = document.getElementById('loading-spinner');
+    function createStoryHTML(story) {
+        // Minimal HTML for a story card (should match the server-side template)
+        let tagsHTML = '';
+        if (story.tags && story.tags.length) {
+            tagsHTML = '<div class="story-tags mb-3">' + story.tags.map(tag => `<a href="/tag/${tag.name}" class="tag-badge badge bg-primary text-white text-decoration-none me-1" role="button" aria-label="View stories tagged with ${tag.name}">#${tag.name}</a>`).join('') + '</div>';
+        }
+        return `
+        <div class="col-md-6 col-lg-4 story-item">
+            <article class="story-card card h-100 border-0 shadow-sm" role="article" aria-labelledby="story-title-${story.id}">
+                <div class="card-body d-flex flex-column">
+                    <header class="story-header mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <a href="/profile/${story.author.username}" class="author-link text-decoration-none d-flex align-items-center" aria-label="View ${story.author.username}'s profile">
+                                <img src="/static/uploads/${story.author.profile_picture || 'default.jpg'}" class="author-avatar rounded-circle me-2" width="32" height="32" alt="Profile picture of ${story.author.username}">
+                                <span class="author-name text-muted small fw-medium">${story.author.username}</span>
+                            </a>
+                        </div>
+                        <div class="story-meta d-flex align-items-center flex-wrap gap-2 mb-2">
+                            <span class="badge story-type-badge bg-primary">${story.writing_type.charAt(0).toUpperCase() + story.writing_type.slice(1)}</span>
+                            ${story.is_premium ? '<span class="premium-badge" aria-label="Premium content"><i class="fas fa-crown" aria-hidden="true"></i></span>' : ''}
+                        </div>
+                    </header>
+                    <div class="story-content flex-grow-1">
+                        <h3 id="story-title-${story.id}" class="story-title h5 fw-bold mb-2">
+                            <a href="${story.url}" class="text-decoration-none text-dark story-link">${story.title}</a>
+                        </h3>
+                        <div class="story-preview mb-3">
+                            <p class="text-muted small">${story.summary ? story.summary.substring(0, 100) + (story.summary.length > 100 ? '...' : '') : ''}</p>
+                        </div>
+                        ${tagsHTML}
+                    </div>
+                    <footer class="story-footer mt-auto">
+                        <div class="story-stats d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                            <div class="stats-group d-flex align-items-center gap-3">
+                                <span class="stat-item" aria-label="${story.likes} likes"><i class="fas fa-heart text-danger me-1" aria-hidden="true"></i><span class="stat-value">${story.likes}</span></span>
+                                <span class="stat-item" aria-label="${story.comments_count} comments"><i class="fas fa-comment text-info me-1" aria-hidden="true"></i><span class="stat-value">${story.comments_count}</span></span>
+                                <span class="stat-item" aria-label="${story.views} views"><i class="fas fa-eye text-secondary me-1" aria-hidden="true"></i><span class="stat-value">${story.views}</span></span>
+                            </div>
+                        </div>
+                        <a href="${story.url}" class="btn btn-primary btn-sm read-btn w-100 mt-2" role="button" aria-label="Read ${story.title}"><i class="fas fa-book-open me-1" aria-hidden="true"></i>Read</a>
+                    </footer>
+                </div>
+            </article>
+        </div>`;
+    }
+    async function loadMoreStories() {
+        if (!hasNext || isLoading) return;
+        isLoading = true;
+        spinner.style.display = 'block';
+        try {
+            const params = new URLSearchParams(window.location.search);
+            params.set('page', currentPage + 1);
+            params.set('ajax', '1');
+            const res = await fetch(`${window.location.pathname}?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                data.stories.forEach(story => {
+                    storiesList.insertAdjacentHTML('beforeend', createStoryHTML(story));
+                });
+                currentPage = data.page;
+                hasNext = data.has_next;
+            }
+        } finally {
+            spinner.style.display = 'none';
+            isLoading = false;
+        }
+    }
+    window.addEventListener('scroll', () => {
+        if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 200)) {
+            loadMoreStories();
+        }
+    });
+    </script>
     {% else %}
     <!-- Enhanced Empty State -->
     <div class="empty-state text-center py-5" role="status" aria-live="polite">
@@ -273,10 +320,12 @@
     }
     
     .filter-form .form-select {
-        border-radius: var(--border-radius-lg);
-        border: 2px solid transparent;
-        transition: all var(--transition-normal);
-        font-weight: var(--font-weight-medium);
+        min-width: 180px;
+        max-width: 100%;
+        width: auto;
+        padding-right: 2.5rem;
+        text-overflow: unset;
+        white-space: normal;
     }
     
     .filter-form .form-select:focus {
@@ -461,41 +510,69 @@
     
     /* Enhanced responsive design */
     @media (max-width: 768px) {
-        .discover-header {
-            padding: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
-        }
-        
-        .discover-header h1 {
-            font-size: 2rem;
-        }
-        
         .story-card {
+            flex-direction: column;
+            display: flex;
+            min-width: 0;
+            width: 100%;
             margin-bottom: var(--spacing-md);
         }
-        
-        .stats-group {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: var(--spacing-xs);
+        .story-cover-container {
+            height: 160px;
         }
-        
+        .story-title {
+            font-size: 1.1rem;
+        }
+        .card-body {
+            padding: var(--spacing-md);
+        }
         .story-footer {
             flex-direction: column;
-            gap: var(--spacing-md);
+            gap: var(--spacing-sm);
+            align-items: flex-start !important;
         }
-        
+        .stats-group {
+            flex-direction: row;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xs);
+        }
         .read-btn {
             width: 100%;
+            margin-top: var(--spacing-xs);
         }
-        
-        .pagination {
+        .author-link {
+            flex-direction: row;
+        }
+        .story-meta {
             flex-wrap: wrap;
             gap: var(--spacing-xs);
         }
-        
-        .pagination .page-link {
-            margin: 0;
+        .story-preview {
+            font-size: 0.95rem;
+        }
+        .story-tags {
+            margin-bottom: var(--spacing-xs);
+        }
+        .filter-form .form-select {
+            min-width: 140px;
+            font-size: 1rem;
+        }
+    }
+    @media (max-width: 480px) {
+        .story-card {
+            border-radius: var(--border-radius-md);
+        }
+        .story-cover-container {
+            height: 120px;
+        }
+        .card-body {
+            padding: var(--spacing-sm);
+        }
+        .story-title {
+            font-size: 1rem;
+        }
+        .read-btn {
+            font-size: 0.95rem;
         }
     }
     

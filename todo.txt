@@ -1,106 +1,69 @@
-Pulse Monetization Score (MS)=RoundTo10(0.05F+0.02root(V)+0.1L+0.5C)
-Where:
-
-𝐹
-F = number of followers
-
-𝑉
-V = views in the last 20 days
-
-𝐿
-L = likes across all content
-
-𝐶
-C = total comments
-
-RoundTo10(x) = rounds x to the nearest multiple of 10 (e.g., 93 → 90)
-
-| Tier Name    | MS Score Range   | Description                                 |
-| ------------ | --------------   | ------------------------------------------- |
-| 🔴 **Seed**  | 0–49            | Just started; learning and growing.         |
-| 🟠 **Spark** | 50–79           | Gaining some attention. Keep pushing!       |
-| 🟡 **Flame** | 80–109          | Solid start; visible to early readers.      |
-| 🟢 **Glow**  | 110–139         | Strong growth and decent engagement.        |
-| 🔵 **Shine** | 140–169         | Influential! Close to monetization.         |
-| 🟣 **Pulse** | 170–199         | Monetization unlocked! You're a pro.        |
-| 🟤 **Surge** | 200–249         | Top-tier creator. Consider premium content. |
-| 🟡✨ **Nova** | 250+           | Elite! You're among the platform's best.    |
-
-
-Pulse-Based Revenue Sharing Model
-✅ Step 1: Unlock Monetization
-One-time requirement: Reach Pulse Score ≥ 170 in any 20-day window.
-
-Once unlocked, monetization is permanent.
-
-📈 Step 2: Revenue % Scales with Pulse Tier
-Pulse Score Tier	Tier Name	Revenue Share %	Notes
-250+	Nova	90%	Elite creator
-200–249	Surge	80%	Top-tier visibility
-170–199	Pulse	70%	Monetization baseline
-140–169	Shine	50%	Active but reduced
-110–139	Glow	30%	Minimal share
-< 110	Below Glow	10% or 0%	Monetized but very low %
-
-💡 You can optionally set a minimum score (e.g., 100) below which revenue is paused, but this depends on how strict you want to be.
-
-🎮 Example Walkthrough:
-20-Day Period	Pulse Score	Monetized?	Revenue %
-Day 1–20	175	✅ Yes	70%
-Day 21–40	145	✅ Yes	50%
-Day 41–60	210	✅ Yes	80%
-Day 61–80	95	✅ Yes	10%
-
-make the following changes :, on statistics page add an i button beside pulse score display the tier list (not messages only list and range), if a logged out (or not signed in user) tries to like a writing(content), then redirect it to login page,
-a not signed in user can also view the profile (of other users) but cannot follow
-make all these changes without affecting the other working things.
-
-Your next task is to implement a complete point system for rewarding users with points based on specific actions and allowing them to spend those points to unlock premium content, understand the files and then do this. Do not modify or break any existing working functionality,templates(do not change the existing structures and designs of pages)
-
-✅ Implement the following **point system**, ensuring clean integration with existing user models and routes(routes in routes.py:
-
-1. **Create or extend the User model** to include a `points` field (integer) with a default of 0.
-
-2. **Add point-earning logic** for these user actions:
-   - Daily login → +5 pts (only once/day)
-   - Upload a new writing (post) → +25 pts (limit: 1/day)
-   - Gain a new follower → +5 pts
-   - Receive a comment (10+ words) → +3 pts (limit: 10/day)
-   - Make a meaningful comment (20+ words) → +4 pts (limit: 3/day)
-   - Share a post via platform share buttons → +5 pts (limit: 2/day)
-   - Refer a new user (referral code) → +50 pts (limit: 5 referrals)
-
-3. **Add a Pulse Tier Bonus System**:
-   - When a user reaches a new Pulse Tier for the first time, award them a one-time point bonus:
-     - Spark: +25 pts
-     - Flame: +50 pts
-     - Glow: +75 pts
-     - Shine: +100 pts
-     - Pulse: +150 pts
-     - Surge: +200 pts
-     - Nova: +300 pts
-   - Do **not** re-award points if they drop and re-enter the same tier.
-
-4. **Create a `points_transactions` table** to track all point activities (action, points, timestamp, user_id). This is for audit/history tracking.
-
-5. **Create a route `/redeem` or similar** to let users spend points for:
-   - Unlock premium post(or a premium chapter) → 50 pts
-   - Unlock premium volume(unlocks all chapters of that volume) → 100 pts
-   - Unlock entire novel → 250 pts
-   - Feature post on homepage(add a new section called featured stories(max10 at a time)on home page, which will display this post)  → 150 pts
-
-6. **Check before redemption** that user has enough points and log every redemption to `points_transactions`.
-
-7. Ensure you handle the following edge cases:
-   - Duplicate rewards (e.g., multiple logins in a day)
-   - Fake comments/short comments
-   - Repeated post uploads (only first counts per day)
-   - Reaching a Pulse Tier again after dropping out
-
-🔒 Make sure all changes are **modular, tested, and do not interfere with existing functionalities** like:
-- Pulse Score logic
-- Content uploading and visibility
-- Follower and comment system
-- Existing templates
-Make use of the best things
-At the end, show where and how each action triggers the point assignment (e.g., login route, post upload route, follow route, etc.) so I can test them easily.
+1. Security
+Checklist:
+[ ] Set a strong, secret SECRET_KEY in your environment variables (not in code).
+[ ] Ensure all forms use CSRF protection (Flask-WTF).
+[ ] Validate and sanitize all user input (forms, file uploads, query params).
+[ ] Use HTTPS in production (get an SSL certificate, configure Nginx/Apache).
+[ ] Set secure cookie flags in your config:
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+[ ] Never log or display sensitive information (passwords, tokens).
+[ ] Use parameterized queries (SQLAlchemy ORM does this by default).
+[ ] Regularly update dependencies to patch security vulnerabilities.
+2. Deployment
+Checklist:
+[ ] Prepare a requirements.txt or Pipfile with all dependencies.
+[ ] Use Gunicorn or uWSGI as your WSGI server.
+[ ] Set up Nginx or Apache as a reverse proxy (serves static files, handles SSL).
+[ ] Store all secrets and config in environment variables (use .env and python-dotenv for local dev).
+[ ] Set FLASK_ENV=production and DEBUG=False in production.
+[ ] Set up a process manager (systemd, supervisor, or Docker) to keep your app running.
+[ ] Test deployment on a staging server before going live.
+3. Performance
+Checklist:
+[ ] Add database indexes for foreign keys and frequently queried fields (check Alembic migrations).
+[ ] Use Flask-Caching or Redis for caching expensive queries or pages.
+[ ] Compress and resize images before upload/display (use Pillow or similar).
+[ ] Minify and bundle CSS/JS (use Flask-Assets, Webpack, or online tools).
+[ ] Serve static files via Nginx or a CDN.
+[ ] Enable Gzip compression on your web server.
+4. User Experience
+Checklist:
+[ ] Test all pages on mobile, tablet, and desktop (use Chrome DevTools and real devices).
+[ ] Ensure all interactive elements are accessible (keyboard navigation, ARIA labels).
+[ ] Provide clear navigation (FAQ, About, Contact, etc. are easy to find).
+[ ] Use loading spinners and feedback messages for actions (already present in your templates).
+[ ] Add tooltips or help text where users might get confused.
+[ ] Make error messages user-friendly and actionable.
+5. Monitoring & Logging
+Checklist:
+[ ] Set up Python logging (log errors, warnings, and important events to a file).
+[ ] Integrate an error monitoring service (Sentry, Rollbar, etc.).
+[ ] Set up email alerts for critical errors (optional).
+[ ] Schedule regular database and file backups (use cron jobs or your hosting provider’s tools).
+[ ] Monitor server health (CPU, RAM, disk space).
+6. Legal & Compliance
+Checklist:
+[ ] Review and update your Privacy Policy and Terms of Service pages.
+[ ] Ensure users can delete their accounts and data (already implemented).
+[ ] Clearly state how user data is used and stored.
+[ ] Add a cookie consent banner if required by your region.
+7. SEO & Analytics
+Checklist:
+[ ] Use descriptive <title>, <meta name="description">, and Open Graph tags on all pages.
+[ ] Generate and submit a sitemap.xml to Google Search Console.
+[ ] Add robots.txt to control search engine crawling.
+[ ] Integrate Google Analytics or another analytics tool.
+[ ] Use semantic HTML (headings, lists, etc.) for better SEO.
+8. Testing
+Checklist:
+[ ] Manually test all user flows (register, login, write, comment, unlock, etc.).
+[ ] Write unit tests for critical backend logic (use pytest or unittest).
+[ ] Test error cases (invalid input, unauthorized access, etc.).
+[ ] Test on different browsers and devices.
+9. Documentation
+Checklist:
+[ ] Update your README.md with setup, deployment, and usage instructions.
+[ ] Document environment variables and configuration options.
+[ ] Add a “Help” or “Getting Started” section for new users (could be in FAQ/About).
+[ ] Comment your code where logic is complex or non-obvious.

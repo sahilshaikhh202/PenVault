@@ -470,12 +470,14 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto" role="menubar">
+                    {% if featured_stories %}
                     <li class="nav-item" role="none">
                         <a class="nav-link" href="{{ url_for('main.index') }}#featured-stories" role="menuitem">
                             <i class="fas fa-star" aria-hidden="true"></i> 
                             <span>Featured</span>
                         </a>
                     </li>
+                    {% endif %}
                     <li class="nav-item" role="none">
                         <a class="nav-link" href="{{ url_for('main.discover') }}" role="menuitem">
                             <i class="fas fa-compass" aria-hidden="true"></i> 
@@ -610,6 +612,14 @@
                         <a href="{{ url_for('main.contact') }}" class="text-muted text-decoration-none" aria-label="Contact Support">
                             <i class="fas fa-envelope" aria-hidden="true"></i>
                             <span class="ms-1">Contact</span>
+                        </a>
+                        <a href="{{ url_for('main.faq') }}" class="text-muted text-decoration-none" aria-label="FAQ">
+                            <i class="fas fa-question-circle" aria-hidden="true"></i>
+                            <span class="ms-1">FAQ</span>
+                        </a>
+                        <a href="{{ url_for('main.about') }}" class="text-muted text-decoration-none" aria-label="About">
+                            <i class="fas fa-info-circle" aria-hidden="true"></i>
+                            <span class="ms-1">About</span>
                         </a>
                     </div>
                 </div>

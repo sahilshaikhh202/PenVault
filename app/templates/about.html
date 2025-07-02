@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-primary mb-3"><i class="fas fa-info-circle me-2"></i>About PenVault</h1>
+        <p class="lead text-muted">Learn more about our mission, values, and how PenVault empowers writers and readers.</p>
+    </div>
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm p-4 mb-4">
+                <h2 class="h4 fw-bold mb-3 text-primary">Our Mission</h2>
+                <p>PenVault is dedicated to building a supportive, inspiring community for writers and readers. Our mission is to help every writer find their voice and every story find its audience.</p>
+            </div>
+            <div class="card border-0 shadow-sm p-4 mb-4">
+                <h2 class="h4 fw-bold mb-3 text-primary">How It Works</h2>
+                <ul class="mb-0">
+                    <li><b>Write & Share:</b> Publish stories, poetry, essays, and more. Use our intuitive editor to bring your words to life.</li>
+                    <li><b>Discover:</b> Explore a diverse library of writings from authors around the world. Use tags, search, and recommendations to find what inspires you.</li>
+                    <li><b>Engage:</b> Comment, like, and follow your favorite writers. Build your audience and connect with fellow creatives.</li>
+                    <li><b>Earn & Unlock:</b> Earn points for your activity and use them to unlock premium content or feature your work.</li>
+                </ul>
+            </div>
+            <div class="card border-0 shadow-sm p-4 mb-4">
+                <h2 class="h4 fw-bold mb-3 text-primary">Our Values</h2>
+                <ul class="mb-0">
+                    <li><b>Creativity:</b> We celebrate originality and the power of storytelling.</li>
+                    <li><b>Community:</b> We foster a welcoming, inclusive space for all writers and readers.</li>
+                    <li><b>Growth:</b> We encourage learning, feedback, and personal development.</li>
+                    <li><b>Respect:</b> We value respectful interactions and constructive feedback.</li>
+                </ul>
+            </div>
+            <div class="text-center mt-4">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-2"><i class="fas fa-user-plus me-1"></i>Join PenVault</a>
+                <a href="{{ url_for('main.discover') }}" class="btn btn-outline-primary btn-lg"><i class="fas fa-compass me-1"></i>Discover Stories</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

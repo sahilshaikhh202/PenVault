@@ -35,10 +35,7 @@
                 {% for chapter in chapters %}
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                     <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}" class="text-decoration-none flex-grow-1">
-                        {{ chapter.title }}
-                        {% if chapter.is_premium %}
-                        <span class="premium-badge-small"><i class="fas fa-crown"></i> Premium</span>
-                        {% endif %}
+                        {{ chapter.title }}{% if chapter.is_premium or volume.is_premium %} <span class="premium-badge-small ms-2" title="Premium Chapter"><i class="fas fa-crown"></i></span>{% endif %}
                     </a>
                     {% if current_user.is_authenticated and novel.story.author == current_user %}
                     <div class="dropdown">
@@ -98,10 +95,7 @@
             {% for chapter in chapters %}
             <div class="list-group-item d-flex justify-content-between align-items-center">
                 <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=volume.slug, chapter_slug=chapter.slug) }}" class="text-decoration-none flex-grow-1">
-                {{ chapter.title }}
-                    {% if chapter.is_premium %}
-                    <span class="premium-badge-small"><i class="fas fa-crown"></i> Premium</span>
-                    {% endif %}
+                {{ chapter.title }}{% if chapter.is_premium or volume.is_premium %} <span class="premium-badge-small ms-2" title="Premium Chapter"><i class="fas fa-crown"></i></span>{% endif %}
                 </a>
                 {% if current_user.is_authenticated and novel.story.author == current_user %}
                 <div class="dropdown">

@@ -1,7 +1,153 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Enhanced Hero Section with better accessibility and modern design -->
+{% if current_user.is_authenticated %}
+  <!-- Combined Dashboard Section for Logged-in Users -->
+  <section class="mb-4">
+    <div class="card shadow-sm border-0 rounded-3 p-4">
+      <div class="row g-4 align-items-center">
+        <!-- Referral Banner/Card -->
+        <div class="col-12 col-lg-5 border-end-lg pe-lg-4 mb-4 mb-lg-0">
+          <h5 class="fw-bold text-primary mb-2">🎯 Invite a Friend and Earn Points!</h5>
+          <div class="input-group mb-2">
+            <input type="text" class="form-control form-control-lg" value="{{ current_user.referral_code or '' }}" id="referralCode" readonly>
+            <button class="btn btn-primary" type="button" onclick="copyReferralCode()">
+              <i class="fas fa-copy me-1"></i>Copy
+            </button>
+          </div>
+          <small class="text-muted d-block mb-2">Share your referral code and earn <b>25 points</b> for each friend who joins. Both you and your friend get rewarded! <span class="text-muted">(Max 3/month)</span></small>
+          <div class="progress mb-2" style="height: 8px;">
+            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ ((current_user.monthly_referral_count or 0) / 3) * 100 }}%"></div>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">This month: <b>{{ current_user.monthly_referral_count or 0 }}/3</b></span>
+            <span class="text-muted">Total: <b>{{ current_user.referral_count or 0 }}</b></span>
+            <span class="text-muted">Points: <b class="text-success">{{ (current_user.referral_count or 0) * 25 }}</b></span>
+          </div>
+        </div>
+        <!-- Continue Reading -->
+        <div class="col-12 col-lg-4 border-end-lg pe-lg-4 mb-4 mb-lg-0">
+          {% if continue_novel and continue_chapter %}
+          <h5 class="fw-bold text-success mb-2">📚 Continue Reading</h5>
+          <div class="mb-2 text-muted small">You were last reading <b>{{ continue_novel.title }}</b>.<br>Continue from chapter <b>{{ continue_chapter.title }}</b>?</div>
+          <a href="{{ url_for('main.chapter_view_slug', novel_slug=continue_novel.slug, volume_slug=continue_chapter.volume.slug if continue_chapter.volume else 'null', chapter_slug=continue_chapter.slug) }}" class="btn btn-success btn-sm">
+            <i class="fas fa-arrow-right me-1"></i>Continue Reading
+          </a>
+          {% else %}
+          <h5 class="fw-bold text-success mb-2">📚 Continue Reading</h5>
+          <div class="text-muted small">No unfinished novels. Start a new story or explore more!</div>
+          {% endif %}
+        </div>
+        <!-- Personal Writing Stats Preview -->
+        <div class="col-12 col-lg-3">
+          <h5 class="fw-bold text-info mb-2">📈 Your Writing Stats (This Week)</h5>
+          <div class="d-flex gap-3">
+            <div class="text-center flex-fill">
+              <div class="fs-2 fw-bold text-primary">{{ weekly_stats.stories_published }}</div>
+              <div class="small text-muted">Stories Published</div>
+            </div>
+            <div class="text-center flex-fill">
+              <div class="fs-2 fw-bold text-danger">{{ weekly_stats.likes_received }}</div>
+              <div class="small text-muted">Likes Received</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      function copyReferralCode() {
+        const referralCode = document.getElementById('referralCode');
+        referralCode.select();
+        referralCode.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(referralCode.value).then(function() {
+          referralCode.classList.add('is-valid');
+          setTimeout(() => referralCode.classList.remove('is-valid'), 1000);
+        });
+      }
+    </script>
+  </section>
+{% else %}
+  <!-- Enhanced Hero Section for guests -->
+  <section class="hero-section py-5 mb-5" role="banner" aria-labelledby="hero-title">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <h1 id="hero-title" class="display-4 fw-bold mb-3">
+            Where Words <span class="text-gradient-primary">Come to</span> Life
+          </h1>
+          <p class="lead mb-4 text-muted">
+            Join a community of creative writers sharing stories, poetry, and literary works. 
+            Find inspiration, connect with readers, and showcase your writing talent.
+          </p>
+          <div class="d-flex gap-3 flex-wrap">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg" role="button">
+              <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Sign Up
+            </a>
+            <a href="{{ url_for('main.discover') }}" class="btn btn-outline-secondary btn-lg" role="button">
+              <i class="fas fa-compass me-2" aria-hidden="true"></i>Discover Stories
+            </a>
+          </div>
+        </div>
+        <div class="col-lg-6 d-none d-lg-block">
+          <img src="{{ url_for('static', filename='images/writers-desk.png') }}" 
+               alt="Writer's desk with laptop, coffee, and notebook" 
+               class="img-fluid rounded shadow-lg" 
+               loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Enhanced Why Join Section with better visual hierarchy 
+  <section class="why-join-section py-5 mb-5 bg-white" role="region" aria-labelledby="why-join-title">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 id="why-join-title" class="h2 fw-bold mb-3">Why Join PenVault?</h2>
+            <p class="text-muted lead">A platform designed by writers, for writers, with everything you need to create, share, and connect.</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="feature-card p-4 text-center h-100" role="article">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-edit text-primary" style="font-size: 2.5rem;" aria-hidden="true"></i>
+                    </div>
+                    <h3 class="h5 fw-bold mb-3">Powerful Editor</h3>
+                    <p class="text-muted small">Write beautiful stories with our intuitive, feature-rich text editor designed for creative writing.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card p-4 text-center h-100" role="article">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-book text-primary" style="font-size: 2.5rem;" aria-hidden="true"></i>
+                    </div>
+                    <h3 class="h5 fw-bold mb-3">Showcase Your Work</h3>
+                    <p class="text-muted small">Create a beautiful portfolio of your writing and build a following of dedicated readers.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card p-4 text-center h-100" role="article">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-users text-primary" style="font-size: 2.5rem;" aria-hidden="true"></i>
+                    </div>
+                    <h3 class="h5 fw-bold mb-3">Connect & Collaborate</h3>
+                    <p class="text-muted small">Meet fellow writers, exchange feedback, and collaborate on creative projects.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card p-4 text-center h-100" role="article">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-chart-line text-primary" style="font-size: 2.5rem;" aria-hidden="true"></i>
+                    </div>
+                    <h3 class="h5 fw-bold mb-3">Grow Your Audience</h3>
+                    <p class="text-muted small">Get discovered with intelligent recommendations that connect your work with interested readers.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+  </section>-->
+{% endif %}
+
+<!-- Enhanced Hero Section with better accessibility and modern design 
 <section class="hero-section py-5 mb-5" role="banner" aria-labelledby="hero-title">
     <div class="container">
         <div class="row align-items-center">
@@ -36,8 +182,9 @@
             </div>
         </div>
     </div>
-</section>
+</section>-->
 
+{% if not current_user.is_authenticated %}
 <!-- Enhanced Why Join Section with better visual hierarchy -->
 <section class="why-join-section py-5 mb-5 bg-white" role="region" aria-labelledby="why-join-title">
     <div class="container">
@@ -86,7 +233,7 @@
         </div>
     </div>
 </section>
-
+{% endif %}
 {% if featured_stories %}
 <!-- Enhanced Featured Stories Section with better accessibility -->
 <section id="featured-stories" class="featured-stories-section py-5 mb-5 bg-white" role="region" aria-labelledby="featured-stories-title">
@@ -146,29 +293,7 @@
 </section>
 {% endif %}
 
-<!-- Enhanced Hero CTA Section with better visual impact -->
-<section class="hero-cta-section py-5 mb-5 bg-gradient-primary text-white text-center" role="region" aria-labelledby="cta-title">
-    <div class="container">
-        <div class="py-5">
-            <h2 id="cta-title" class="h1 fw-bold mb-4">Start Your Writing Journey Today</h2>
-            <p class="lead mb-4">Join our community of writers and readers to share your stories with the world.</p>
-            <div class="d-flex justify-content-center gap-3 flex-wrap">
-                {% if current_user.is_authenticated %}
-                <a href="{{ url_for('main.new_story') }}" class="btn btn-light btn-lg" role="button">
-                    <i class="fas fa-pen me-2" aria-hidden="true"></i>Write a Story
-                </a>
-                {% else %}
-                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg" role="button">
-                    <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Join PenVault
-                </a>
-                {% endif %}
-                <a href="{{ url_for('main.discover') }}" class="btn btn-outline-light btn-lg" role="button">
-                    <i class="fas fa-compass me-2" aria-hidden="true"></i>Discover Stories
-                </a>
-            </div>
-        </div>
-    </div>
-</section>
+
 
 <!-- Enhanced Popular Tags and User Content Section -->
 <section class="user-content-section py-5 mb-5" role="region" aria-labelledby="user-content-title">
@@ -289,7 +414,31 @@
     </div>
 </section>
 
-<!-- Enhanced Call to Action Section with better visual hierarchy -->
+<!-- Enhanced Hero CTA Section with better visual impact -->
+<section class="hero-cta-section py-5 mb-5 bg-gradient-primary text-white text-center" role="region" aria-labelledby="cta-title">
+    <div class="container">
+        <div class="py-5">
+            <h2 id="cta-title" class="h1 fw-bold mb-4">Start Your Writing Journey Today</h2>
+            <p class="lead mb-4">Join our community of writers and readers to share your stories with the world.</p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.new_story') }}" class="btn btn-light btn-lg" role="button">
+                    <i class="fas fa-pen me-2" aria-hidden="true"></i>Write a Story
+                </a>
+                {% else %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg" role="button">
+                    <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Join PenVault
+                </a>
+                {% endif %}
+                <a href="{{ url_for('main.discover') }}" class="btn btn-outline-light btn-lg" role="button">
+                    <i class="fas fa-compass me-2" aria-hidden="true"></i>Discover Stories
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced Call to Action Section with better visual hierarchy 
 <section class="cta-section py-5 mb-5 bg-primary text-white text-center" role="region" aria-labelledby="final-cta-title">
     <div class="container">
         <h2 id="final-cta-title" class="display-6 fw-bold mb-3">Ready to Share Your Story?</h2>
@@ -304,7 +453,7 @@
         </a>
         {% endif %}
     </div>
-</section>
+</section>-->
 
 <!-- Enhanced inline styles for better visual design -->
 <style>

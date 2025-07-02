@@ -336,10 +336,12 @@
                                         <a href="{{ url_for('main.chapter_view_slug', novel_slug=item.novel_slug, volume_slug=item.volume_slug, chapter_slug=item.chapter_slug) }}" class="text-decoration-none text-primary">
                                             {{ item.content_type }}: {{ item.title }}
                                         </a>
-                                    {% else %}
-                                        <a href="{{ url_for('main.story_by_slug', story_slug=item.story.slug) }}" class="text-decoration-none text-primary">
-                                    {{ item.content_type }}: {{ item.title }}
+                                    {% elif item.content_type == 'Story' and item.story_slug %}
+                                        <a href="{{ url_for('main.story_by_slug', story_slug=item.story_slug) }}" class="text-decoration-none text-primary">
+                                            {{ item.content_type }}: {{ item.title }}
                                         </a>
+                                    {% else %}
+                                        {{ item.content_type }}: {{ item.title }}
                                     {% endif %}
                                 </h6>
                                 <small class="text-muted">{{ item.unlocked_at.strftime('%Y-%m-%d %H:%M') }}</small>

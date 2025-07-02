@@ -443,14 +443,98 @@
     background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-dark) 100%);
 }
 
+@media (max-width: 992px) {
+    .card-body.p-4 {
+        padding: 1.25rem !important;
+    }
+    .card-title {
+        font-size: 1.1rem;
+    }
+    .btn {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+    .badge {
+        font-size: 0.95rem;
+        padding: 0.4em 0.7em;
+    }
+}
+
 @media (max-width: 768px) {
     .input-group-lg {
         flex-direction: column;
     }
-    
     .input-group-lg > * {
         border-radius: 0.5rem !important;
         margin-bottom: 0.5rem;
+        width: 100%;
+    }
+    .display-5, .display-6, h1, h2, h3, h4, h5 {
+        font-size: 1.3rem !important;
+    }
+    .card {
+        margin-bottom: 1.25rem;
+    }
+    .card-img-top {
+        height: 140px !important;
+    }
+    .card-body.p-4 {
+        padding: 1rem !important;
+    }
+    .card-title {
+        font-size: 1rem;
+    }
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.35em 0.6em;
+    }
+    .btn {
+        font-size: 0.95rem;
+        padding: 0.45rem 0.9rem;
+    }
+    .rounded-circle.me-2 {
+        width: 26px !important;
+        height: 26px !important;
+    }
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.5rem;
+    }
+    .btn-outline-primary {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    .badge.bg-light.text-dark.border {
+        max-width: 60px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .container, .row, .col-md-6, .col-lg-4 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    .card {
+        border-radius: 0.7rem;
+    }
+    .card-img-top {
+        height: 100px !important;
+    }
+    .card-body.p-4 {
+        padding: 0.7rem !important;
+    }
+    .card-title {
+        font-size: 0.95rem;
+    }
+    .badge {
+        font-size: 0.8rem;
+        padding: 0.3em 0.5em;
+    }
+    .btn {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.7rem;
     }
 }
 </style>

@@ -9,7 +9,7 @@ from app.forms import LoginForm, RegistrationForm, ProfileForm, StoryForm, Comme
 from app import db
 from datetime import datetime, timedelta
 import math
-from slugify import slugify
+from slugify import slugify  # or your own slugify function
 
 main = Blueprint('main', __name__)
 auth = Blueprint('auth', __name__)
@@ -17,39 +17,115 @@ auth = Blueprint('auth', __name__)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
 
+def generate_unique_slug(base_slug, model):
+    slug = base_slug
+    counter = 2
+    while model.query.filter_by(slug=slug).first():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+    return slug
+
 @main.route('/')
 @main.route('/index')
 def index():
-    # Get all tags for the sidebar
     tags = Tag.query.all()
-    # Get featured stories (published and featured within last 24 hours)
     twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
     featured_stories = Story.query.filter(
         Story.is_featured == True, 
         Story.is_published == True,
         Story.featured_at >= twenty_four_hours_ago
     ).order_by(Story.featured_at.desc()).limit(5).all()
-    return render_template('index.html', title='Home', tags=tags, featured_stories=featured_stories, timedelta=timedelta)
+
+    if current_user.is_authenticated:
+        # Referral card flag
+        referral_card = True
+
+        # --- Continue Reading Section ---
+        continue_novel = None
+        continue_chapter = None
+        # Find the most recent novel in chapter reading history where not all chapters are read
+        from app.models import ChapterReadingHistory, Novel, Chapter
+        # Get all chapter reading history for user, most recent first
+        recent_chapter_histories = ChapterReadingHistory.query.filter_by(user_id=current_user.id).order_by(ChapterReadingHistory.timestamp.desc()).all()
+        seen_novel_ids = set()
+        for ch in recent_chapter_histories:
+            if ch.novel_id in seen_novel_ids:
+                continue
+            seen_novel_ids.add(ch.novel_id)
+            novel = Novel.query.get(ch.novel_id)
+            if not novel:
+                continue
+            total_chapters = Chapter.query.filter_by(novel_id=novel.id).count()
+            # Find the highest order chapter the user has read
+            last_read_chapter = Chapter.query.get(ch.chapter_id)
+            if not last_read_chapter:
+                continue
+            last_order = last_read_chapter.order
+            # Check if there are more chapters after this
+            next_chapter = Chapter.query.filter_by(novel_id=novel.id).filter(Chapter.order > last_order).order_by(Chapter.order.asc()).first()
+            if next_chapter:
+                continue_novel = novel
+                continue_chapter = next_chapter
+                break
+        # --- Weekly Stats Preview ---
+        week_ago = datetime.utcnow() - timedelta(days=7)
+        stories_published = Story.query.filter(
+            Story.author_id == current_user.id,
+            Story.created_at >= week_ago,
+            Story.is_published == True
+        ).count()
+        likes_received = db.session.query(db.func.sum(Story.likes)).filter(
+            Story.author_id == current_user.id,
+            Story.created_at >= week_ago
+        ).scalar() or 0
+        weekly_stats = {
+            'stories_published': stories_published,
+            'likes_received': likes_received
+        }
+        return render_template('index.html', title='Home', tags=tags, featured_stories=featured_stories, timedelta=timedelta,
+            referral_card=referral_card, continue_novel=continue_novel, continue_chapter=continue_chapter, weekly_stats=weekly_stats)
+    else:
+        return render_template('index.html', title='Home', tags=tags, featured_stories=featured_stories, timedelta=timedelta)
 
 @main.route('/discover')
 def discover():
     page = request.args.get('page', 1, type=int)
     type_filter = request.args.get('type', None)
+    ajax = request.args.get('ajax', None)
     query = Story.query.filter_by(is_published=True)
-    
-    # Filter out content from disabled users and accounts scheduled for deletion
-    # Handle None values properly for existing users who haven't been migrated yet
     query = query.join(User).filter(
         (User.is_disabled.is_(None) | (User.is_disabled == False)) &
         (User.deletion_requested_at.is_(None))
     )
-    
     if type_filter:
         query = query.filter(Story.writing_type == type_filter)
-    # Always include webnovels in the discovery page
     stories = query.order_by(Story.created_at.desc()).paginate(
-        page=page, per_page=6, error_out=False)
+        page=page, per_page=9, error_out=False)
     tags = Tag.query.all()
+    if ajax:
+        # Return JSON for infinite scroll
+        def story_to_dict(story):
+            return {
+                'id': story.id,
+                'title': story.title,
+                'summary': story.summary or '',
+                'writing_type': story.writing_type,
+                'is_premium': story.is_premium,
+                'likes': story.likes,
+                'views': story.views,
+                'comments_count': story.comments.count(),
+                'author': {
+                    'username': story.author.username,
+                    'profile_picture': story.author.profile_picture or 'default.jpg',
+                },
+                'tags': [{'name': tag.name} for tag in story.tags],
+                'url': url_for('main.novel_detail_slug', novel_slug=story.novel.slug) if story.writing_type == 'webnovel' and story.novel else url_for('main.story_by_slug', story_slug=story.slug)
+            }
+        return jsonify({
+            'stories': [story_to_dict(story) for story in stories.items],
+            'page': stories.page,
+            'has_next': stories.has_next
+        })
     if Story.query.count() == 0 and current_user.is_authenticated:
         sample_story = Story(
             title="Welcome to ScribeHub",
@@ -61,7 +137,7 @@ def discover():
         db.session.add(sample_story)
         db.session.commit()
         stories = Story.query.filter_by(is_published=True).order_by(Story.created_at.desc()).paginate(
-            page=page, per_page=6, error_out=False)
+            page=page, per_page=9, error_out=False)
     return render_template('discover.html', title='Discover Stories', stories=stories, tags=tags)
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -275,6 +351,8 @@ def new_story():
             title = form.title.data if form.title.data else form.content.data[:50] + '...' if len(form.content.data) > 50 else form.content.data
         else:
             title = form.title.data if hasattr(form, 'title') else None
+        base_slug = slugify(title) if title else "quote"
+        slug = generate_unique_slug(base_slug, Story)  # Story is your model
         story = Story(
             title=title,
             content=form.content.data,
@@ -290,7 +368,8 @@ def new_story():
             essay_category=form.category.data if hasattr(form, 'category') else None,
             references=form.references.data if hasattr(form, 'references') else None,
             custom_type=form.custom_type.data if hasattr(form, 'custom_type') else None,
-            is_published=not form.save_draft.data  # Set is_published based on which button was clicked
+            is_published=not form.save_draft.data,  # Set is_published based on which button was clicked
+            slug=slug
         )
         # Always handle tags for all types
         if hasattr(form, 'tags') and form.tags.data:
@@ -901,6 +980,7 @@ def edit_story(story_id):
                     tag = Tag(name=tag_name)
                     db.session.add(tag)
                 story.tags.append(tag)
+        db.session.add(story)
         db.session.commit()
         flash('Your story has been updated.', 'success')
         return redirect(url_for('main.story_by_slug', story_slug=story.slug))
@@ -1542,13 +1622,21 @@ def chapter_view_slug(novel_slug, volume_slug, chapter_slug):
 def feed():
     # Get the IDs of users that the current user follows
     following_ids = [follow.followed_id for follow in current_user.following]
-    
     # Get stories from followed users, ordered by creation date
     stories = Story.query.filter(
         Story.author_id.in_(following_ids),
         Story.is_published == True
     ).order_by(Story.created_at.desc()).all()
-    
+    # Annotate each story with unlocked_by_current_user for premium stories
+    from app.models import UnlockedContent
+    unlocked_story_ids = set(
+        uc.story_id for uc in UnlockedContent.query.filter_by(user_id=current_user.id).all() if uc.story_id is not None
+    )
+    for story in stories:
+        if story.is_premium:
+            story.unlocked_by_current_user = (story.id in unlocked_story_ids)
+        else:
+            story.unlocked_by_current_user = True  # Non-premium stories are always unlocked
     return render_template('story/feed.html', stories=stories)
 
 @main.route('/drafts')
@@ -1938,7 +2026,7 @@ def redeem_points():
                 'title': story.title,
                 'author': story.author.username,
                 'unlocked_at': entry.unlocked_at,
-                'story_id': story.id
+                'story_slug': story.slug
             })
     
     # Get unlocked novels
@@ -2379,3 +2467,11 @@ def novel_comment(novel_slug):
     
     flash('Could not post comment. Please check your input.', 'danger')
     return redirect(url_for('main.novel_detail_slug', novel_slug=novel_slug))
+
+@main.route('/faq')
+def faq():
+    return render_template('faq.html', title='FAQ')
+
+@main.route('/about')
+def about():
+    return render_template('about.html', title='About')
