@@ -1,6 +1,6 @@
 from flask import Blueprint, abort, render_template, flash, redirect, url_for, request, current_app, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
-from werkzeug.urls import url_parse
+from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import FileStorage
 import os
@@ -163,7 +163,7 @@ def login():
             days_left = user.days_until_deletion()
             flash(f'Your account is scheduled for deletion in {days_left} days. You can cancel this in your settings.', 'warning')
             next_page = request.args.get('next')
-            if not next_page or url_parse(next_page).netloc != '':
+            if not next_page or urlparse(next_page).netloc != '':
                 next_page = url_for('main.index')
             return redirect(next_page)
         elif not user.is_account_active():
@@ -185,7 +185,7 @@ def login():
             flash('Error awarding points. Please try again.', 'error')
         
         next_page = request.args.get('next')
-        if not next_page or url_parse(next_page).netloc != '':
+        if not next_page or urlparse(next_page).netloc != '':
             next_page = url_for('main.index')
         
         # Check if user should see the tour
