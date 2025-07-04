@@ -3,6 +3,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from slugify import slugify
+from sqlalchemy.ext.hybrid import hybrid_property
 
 # Define association table for Story and Tag relationship
 story_tags = db.Table('story_tags',
@@ -401,6 +402,12 @@ class Novel(db.Model):
             if chapter.title.startswith(self.title):
                 chapter.slug = slugify(chapter.title)
 
+    @hybrid_property
+    def avg_rating(self):
+        if not self.ratings or len(self.ratings) == 0:
+            return 0
+        return sum(r.rating for r in self.ratings) / len(self.ratings)
+
 class Volume(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     novel_id = db.Column(db.Integer, db.ForeignKey('novel.id'), nullable=False)
@@ -486,15 +493,25 @@ class UnlockedContent(db.Model):
     user = db.relationship('User', backref='unlocked_content')
 
     __table_args__ = (
-        db.Index('uq_unlocked_story', 'user_id', 'story_id', unique=True, 
-                 postgresql_where=db.Column('story_id').isnot(None)),
-        db.Index('uq_unlocked_novel', 'user_id', 'novel_id', unique=True, 
-                 postgresql_where=db.Column('novel_id').isnot(None)),
-        db.Index('uq_unlocked_volume', 'user_id', 'volume_id', unique=True, 
-                 postgresql_where=db.Column('volume_id').isnot(None)),
-        db.Index('uq_unlocked_chapter', 'user_id', 'chapter_id', unique=True, 
-                 postgresql_where=db.Column('chapter_id').isnot(None)),
+        db.UniqueConstraint('user_id', 'story_id', name='uq_user_story_unlock'),
+        db.UniqueConstraint('user_id', 'novel_id', name='uq_user_novel_unlock'),
+        db.UniqueConstraint('user_id', 'volume_id', name='uq_user_volume_unlock'),
+        db.UniqueConstraint('user_id', 'chapter_id', name='uq_user_chapter_unlock'),
     )
+
+# --- NovelRating model for star ratings ---
+class NovelRating(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    novel_id = db.Column(db.Integer, db.ForeignKey('novel.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('novel_id', 'user_id', name='uq_novel_user_rating'),)
+
+    user = db.relationship('User', backref='novel_ratings')
+    novel = db.relationship('Novel', backref='ratings')
 
 class AccountAction(db.Model):
     """Audit log for account management actions"""

@@ -5,9 +5,12 @@
     <div class="mb-3">
         <a href="{{ url_for('main.discover') }}" class="text-decoration-none text-primary fw-semibold">&larr; Back to Discover</a>
     </div>
-    <div class="row g-5">
-        <div class="col-md-8">
+    <div class="row g-5 flex-column-reverse flex-md-row">
+        <div class="col-md-8 col-12">
             <h2 class="fw-bold display-6 mb-2">{{ novel.title }}</h2>
+            {% if novel.cover_image %}
+            <img src="{{ url_for('static', filename='uploads/' + novel.cover_image) }}" alt="Cover" class="img-fluid mb-3 rounded shadow-sm" style="max-width:200px;">
+            {% endif %}
             <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
                 <span class="badge bg-secondary">{{ novel.status|capitalize }}</span>
                 {% if novel.genre %}
@@ -21,6 +24,52 @@
                 {% if novel.is_mature %}<span class="badge bg-danger">Mature</span>{% endif %}
                 {% if novel.is_premium %}<span class="premium-badge ms-2"><i class="fas fa-crown"></i> Premium</span>{% endif %}
             </div>
+            <!-- Like, Save, Share Buttons -->
+            <div class="mb-3 d-flex flex-wrap align-items-center gap-2 novel-action-buttons">
+                <form method="POST" action="{{ url_for('main.like_story_by_slug', story_slug=novel.story.slug) }}" class="d-inline">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-heart"></i> Like <span class="ms-1">{{ novel.story.likes or 0 }}</span>
+                    </button>
+                </form>
+                {% if current_user.is_authenticated %}
+                    {% set is_saved = novel.story in current_user.saved_stories %}
+                    {% if is_saved %}
+                        <form method="POST" action="{{ url_for('main.unsave_story_by_slug', story_slug=novel.story.slug) }}" class="d-inline">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-bookmark"></i> Saved
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{{ url_for('main.save_story_by_slug', story_slug=novel.story.slug) }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="far fa-bookmark"></i> Save
+                        </a>
+                    {% endif %}
+                {% endif %}
+                <!-- Share Button (copy link) -->
+                <button type="button" class="btn btn-outline-info btn-sm" onclick="copyNovelLink()">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+            </div>
+            {% if novel.story.writing_type == 'webnovel' %}
+            <!-- Star Rating System (out of 10) -->
+            <div class="mb-3">
+                <div id="star-rating" class="d-flex align-items-center gap-2">
+                    {% set avg_rating = novel.avg_rating if novel.avg_rating is defined else 0 %}
+                    <span class="me-2">Rating:</span>
+                    <span id="star-container">
+                        {% for i in range(1, 11) %}
+                            <i class="fa-star fa-lg {% if avg_rating >= i %}fas text-warning{% else %}far text-secondary{% endif %} star-icon" data-value="{{ i }}"></i>
+                        {% endfor %}
+                    </span>
+                    <span class="ms-2">({{ '%.1f' % avg_rating }}/10)</span>
+                </div>
+                {% if current_user.is_authenticated and current_user != novel.story.author %}
+                <form id="rateForm" method="POST" action="{{ url_for('main.rate_novel', novel_slug=novel.slug) }}">
+                    <input type="hidden" name="rating" id="ratingInput" value="">
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
             <!-- Enhanced stats section -->
             <div class="mb-3">
                 <div class="d-flex gap-4 flex-wrap">
@@ -38,9 +87,6 @@
                 </div>
             </div>
             <p class="lead text-muted">{{ novel.summary }}</p>
-            {% if novel.cover_image %}
-            <img src="{{ url_for('static', filename='uploads/' + novel.cover_image) }}" alt="Cover" class="img-fluid mb-3 rounded shadow-sm" style="max-width:200px;">
-            {% endif %}
             <div class="mb-4 d-flex gap-2 flex-wrap">
                 {% if current_user.is_authenticated and current_user == novel.story.author %}
                 <a href="{{ url_for('main.new_volume', novel_slug=novel.slug) }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-plus"></i> Add Volume</a>
@@ -101,7 +147,7 @@
                             <div class="bg-light p-2 rounded mb-2 fw-bold">{{ volume.title }}</div>
                             <div class="list-group shadow-sm rounded">
                                 {% for chapter in chapters_by_volume[volume.id] %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
+                                <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}" style="text-decoration: none; cursor: pointer;">
                                     <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
                                         <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
                                         <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}{% if chapter.is_premium or (chapter.volume and chapter.volume.is_premium) %}<span class="premium-badge-small ms-2" title="Premium Chapter"><i class="fas fa-crown"></i></span>{% endif %}</div>
@@ -109,8 +155,7 @@
                                         <span class="badge bg-light text-dark ms-md-3">New</span>
                                         {% endif %}
                                     </div>
-                                    <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="btn btn-outline-primary btn-sm ms-2 flex-shrink-0">Read</a>
-                                </div>
+                                </a>
                                 {% endfor %}
                             </div>
                         </div>
@@ -127,7 +172,7 @@
                             <div class="bg-light p-2 rounded mb-2 fw-bold">Standalone Chapters</div>
                             <div class="list-group shadow-sm rounded">
                                 {% for chapter in standalone_chapters %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
+                                <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}" style="text-decoration: none; cursor: pointer;">
                                     <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
                                         <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
                                         <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}{% if chapter.is_premium or (chapter.volume and chapter.volume.is_premium) %}<span class="premium-badge-small ms-2" title="Premium Chapter"><i class="fas fa-crown"></i></span>{% endif %}</div>
@@ -135,8 +180,7 @@
                                         <span class="badge bg-light text-dark ms-md-3">New</span>
                                         {% endif %}
                                     </div>
-                                    <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="btn btn-outline-primary btn-sm ms-2 flex-shrink-0">Read</a>
-                                </div>
+                                </a>
                                 {% endfor %}
                             </div>
                         </div>
@@ -202,7 +246,7 @@
                         <div class="bg-light p-2 rounded mb-2 fw-bold">{{ volume.title }}</div>
                         <div class="list-group shadow-sm rounded">
                             {% for chapter in chapters_by_volume[volume.id] %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
+                            <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}" style="text-decoration: none; cursor: pointer;">
                                 <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
                                     <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
                                     <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}{% if chapter.is_premium or (chapter.volume and chapter.volume.is_premium) %}<span class="premium-badge-small ms-2" title="Premium Chapter"><i class="fas fa-crown"></i></span>{% endif %}</div>
@@ -210,8 +254,7 @@
                                     <span class="badge bg-light text-dark ms-md-3">New</span>
                                     {% endif %}
                                 </div>
-                                <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="btn btn-outline-primary btn-sm ms-2 flex-shrink-0">Read</a>
-                            </div>
+                            </a>
                             {% endfor %}
                         </div>
                     </div>
@@ -228,7 +271,7 @@
                         <div class="bg-light p-2 rounded mb-2 fw-bold">Standalone Chapters</div>
                         <div class="list-group shadow-sm rounded">
                             {% for chapter in standalone_chapters %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}">
+                            <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="list-group-item d-flex justify-content-between align-items-center chapter-list-item" data-chapter-order="{{ chapter.order }}" style="text-decoration: none; cursor: pointer;">
                                 <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100">
                                     <div class="fw-semibold text-primary">Chapter {{ chapter.order }}</div>
                                     <div class="ms-md-3 flex-grow-1 text-truncate">{{ chapter.title }}{% if chapter.is_premium or (chapter.volume and chapter.volume.is_premium) %}<span class="premium-badge-small ms-2" title="Premium Chapter"><i class="fas fa-crown"></i></span>{% endif %}</div>
@@ -236,8 +279,7 @@
                                     <span class="badge bg-light text-dark ms-md-3">New</span>
                                     {% endif %}
                                 </div>
-                                <a href="{{ url_for('main.chapter_view_slug', novel_slug=novel.slug, volume_slug=chapter.volume.slug if chapter.volume else 'null', chapter_slug=chapter.slug) }}" class="btn btn-outline-primary btn-sm ms-2 flex-shrink-0">Read</a>
-                            </div>
+                            </a>
                             {% endfor %}
                         </div>
                     </div>
@@ -245,7 +287,7 @@
                 </div>
             {% endif %}
         </div>
-        <div class="col-md-4">
+        <div class="col-md-4 col-12">
             <!-- Author Info -->
             <div class="card mb-4 shadow-sm border-0">
                 <div class="card-body text-center">
@@ -253,7 +295,13 @@
                          class="rounded-circle mb-3 shadow-sm" width="80" height="80" alt="{{ novel.story.author.username }}">
                     <h5 class="card-title fw-bold">{{ novel.story.author.username }}</h5>
                     <p class="text-muted small">{{ novel.story.author.bio if novel.story.author.bio else 'No bio yet.' }}</p>
-                    <a href="{{ url_for('main.profile', username=novel.story.author.username) }}" class="btn btn-sm btn-outline-primary mt-2">View Profile</a>
+                    {% if current_user.is_authenticated and current_user != novel.story.author and not current_user.is_following(novel.story.author) %}
+                        <form method="GET" action="{{ url_for('main.follow', username=novel.story.author.username) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-success mt-2">Follow</button>
+                        </form>
+                    {% else %}
+                        <a href="{{ url_for('main.profile', username=novel.story.author.username) }}" class="btn btn-sm btn-outline-primary mt-2">View Profile</a>
+                    {% endif %}
                 </div>
             </div>
             <!-- Related Content / Ads -->
@@ -324,111 +372,117 @@
                                     {% if comment.author == novel.story.author %}
                                     <span class="badge bg-primary ms-2">Author</span>
                                     {% endif %}
-                                    <small class="text-muted ms-2">{{ comment.created_at.strftime('%B %d, %Y at %I:%M %p') }}</small>
-                                    {% if current_user.is_authenticated and (current_user == comment.author or current_user == novel.story.author) %}
-                                    <div class="ms-auto">
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="fas fa-ellipsis-h"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                {% if current_user == comment.author %}
-                                                <li>
-                                                    <a class="dropdown-item" href="#" onclick="editComment({{ comment.id }}, '{{ comment.content|replace("'", "\\'")|replace("\n", "\\n") }}')">
-                                                        <i class="fas fa-edit me-2"></i>Edit
-                                                    </a>
-                                                </li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ comment.id }})">
-                                                        <i class="fas fa-trash me-2"></i>Delete
-                                                    </a>
-                                                </li>
-                                                {% elif current_user == novel.story.author %}
-                                                <li>
-                                                    <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ comment.id }})">
-                                                        <i class="fas fa-trash me-2"></i>Delete
-                                                    </a>
-                                                </li>
-                                                {% endif %}
-                                            </ul>
-                                        </div>
+                                </div>
+                                <div class="mb-1">
+                                    <small class="text-muted d-block">{{ comment.created_at.strftime('%B %d, %Y') }}</small>
+                                    <small class="text-muted d-block">{{ comment.created_at.strftime('at %I:%M %p') }}</small>
+                                </div>
+                                {% if current_user.is_authenticated and (current_user == comment.author or current_user == novel.story.author) %}
+                                <div class="ms-auto">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            {% if current_user == comment.author %}
+                                            <li>
+                                                <a class="dropdown-item" href="#" onclick="editComment({{ comment.id }}, '{{ comment.content|replace("'", "\\'")|replace("\n", "\\n") }}')">
+                                                    <i class="fas fa-edit me-2"></i>Edit
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ comment.id }})">
+                                                    <i class="fas fa-trash me-2"></i>Delete
+                                                </a>
+                                            </li>
+                                            {% elif current_user == novel.story.author %}
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ comment.id }})">
+                                                    <i class="fas fa-trash me-2"></i>Delete
+                                                </a>
+                                            </li>
+                                            {% endif %}
+                                        </ul>
                                     </div>
-                                    {% endif %}
-                                </div>
-                                
-                                <!-- Comment Content -->
-                                <div class="comment-content mb-2" id="comment-content-{{ comment.id }}">
-                                    <p class="mb-0">{{ comment.content|nl2br }}</p>
-                                </div>
-                                
-                                <!-- Comment Actions -->
-                                {% if current_user.is_authenticated %}
-                                <div class="comment-actions">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="replyToComment('{{ comment.author.username }}', {{ comment.id }})">
-                                        <i class="fas fa-reply me-1"></i>Reply
-                                    </button>
-                                </div>
-                                {% endif %}
-                                
-                                <!-- Replies -->
-                                {% if comment.replies.count() > 0 %}
-                                <div class="replies mt-3 ms-4">
-                                    {% for reply in comment.replies.order_by(Comment.created_at.asc()).all() %}
-                                    <div class="reply-item mb-3" id="comment-{{ reply.id }}">
-                                        <div class="d-flex gap-2">
-                                            <img src="{{ url_for('static', filename='uploads/' + reply.author.profile_picture) if reply.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
-                                                 class="rounded-circle" width="32" height="32" alt="{{ reply.author.username }}">
-                <div class="flex-grow-1">
-                    <div class="d-flex align-items-center mb-1">
-                                                    <a href="{{ url_for('main.profile', username=reply.author.username) }}" class="text-decoration-none">
-                                                        <span class="fw-semibold text-dark">{{ reply.author.username }}</span>
-                                                    </a>
-                                                    {% if reply.author == novel.story.author %}
-                                                    <span class="badge bg-primary ms-2">Author</span>
-                                                    {% endif %}
-                                                    <small class="text-muted ms-2">{{ reply.created_at.strftime('%B %d, %Y at %I:%M %p') }}</small>
-                                                    {% if current_user.is_authenticated and (current_user == reply.author or current_user == novel.story.author) %}
-                                                    <div class="ms-auto">
-                                                        <div class="dropdown">
-                                                            <button class="btn btn-sm btn-outline-secondary border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                                <i class="fas fa-ellipsis-h"></i>
-                                                            </button>
-                                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                                {% if current_user == reply.author %}
-                                                                <li>
-                                                                    <a class="dropdown-item" href="#" onclick="editComment({{ reply.id }}, '{{ reply.content|replace("'", "\\'")|replace("\n", "\\n") }}')">
-                                                                        <i class="fas fa-edit me-2"></i>Edit
-                                                                    </a>
-                                                                </li>
-                                                                <li><hr class="dropdown-divider"></li>
-                                                                <li>
-                                                                    <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ reply.id }})">
-                                                                        <i class="fas fa-trash me-2"></i>Delete
-                                                                    </a>
-                                                                </li>
-                                                                {% elif current_user == novel.story.author %}
-                                                                <li>
-                                                                    <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ reply.id }})">
-                                                                        <i class="fas fa-trash me-2"></i>Delete
-                                                                    </a>
-                                                                </li>
-                                                                {% endif %}
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                    {% endif %}
-                                                </div>
-                                                <div class="reply-content" id="comment-content-{{ reply.id }}">
-                                                    <p class="mb-0">{{ reply.content|nl2br }}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
                                 </div>
                                 {% endif %}
                             </div>
+                        </div>
+                            <!-- Comment Content -->
+                            <div class="comment-content mb-2" id="comment-content-{{ comment.id }}">
+                                <p class="mb-0">{{ comment.content|nl2br }}</p>
+                            </div>
+                            
+                            <!-- Comment Actions -->
+                            {% if current_user.is_authenticated %}
+                            <div class="comment-actions">
+                                <button class="btn btn-sm btn-outline-primary" onclick="replyToComment('{{ comment.author.username }}', {{ comment.id }})">
+                                    <i class="fas fa-reply me-1"></i>Reply
+                                </button>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Replies -->
+                            {% if comment.replies.count() > 0 %}
+                            <div class="replies mt-3 ms-4">
+                                {% for reply in comment.replies.order_by(Comment.created_at.asc()).all() %}
+                                <div class="reply-item mb-3" id="comment-{{ reply.id }}">
+                                    <div class="d-flex gap-2">
+                                        <img src="{{ url_for('static', filename='uploads/' + reply.author.profile_picture) if reply.author.profile_picture else url_for('static', filename='images/default-avatar.jpg') }}" 
+                                             class="rounded-circle" width="32" height="32" alt="{{ reply.author.username }}">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-1">
+                                                <a href="{{ url_for('main.profile', username=reply.author.username) }}" class="text-decoration-none">
+                                                    <span class="fw-semibold text-dark">{{ reply.author.username }}</span>
+                                                </a>
+                                                {% if reply.author == novel.story.author %}
+                                                <span class="badge bg-primary ms-2">Author</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="mb-1">
+                                                <small class="text-muted d-block">{{ reply.created_at.strftime('%B %d, %Y') }}</small>
+                                                <small class="text-muted d-block">{{ reply.created_at.strftime('at %I:%M %p') }}</small>
+                                            </div>
+                                            {% if current_user.is_authenticated and (current_user == reply.author or current_user == novel.story.author) %}
+                                            <div class="ms-auto">
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-outline-secondary border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fas fa-ellipsis-h"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end">
+                                                        {% if current_user == reply.author %}
+                                                        <li>
+                                                            <a class="dropdown-item" href="#" onclick="editComment({{ reply.id }}, '{{ reply.content|replace("'", "\\'")|replace("\n", "\\n") }}')">
+                                                                <i class="fas fa-edit me-2"></i>Edit
+                                                            </a>
+                                                        </li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ reply.id }})">
+                                                                <i class="fas fa-trash me-2"></i>Delete
+                                                            </a>
+                                                        </li>
+                                                        {% elif current_user == novel.story.author %}
+                                                        <li>
+                                                            <a class="dropdown-item text-danger" href="#" onclick="deleteComment({{ reply.id }})">
+                                                                <i class="fas fa-trash me-2"></i>Delete
+                                                            </a>
+                                                        </li>
+                                                        {% endif %}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="reply-content" id="comment-content-{{ reply.id }}">
+                                            <p class="mb-0">{{ reply.content|nl2br }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     {% else %}
@@ -663,7 +717,45 @@
                 }
             });
         });
+
+        // Star rating system for webnovel
+        {% if novel.story.writing_type == 'webnovel' and current_user.is_authenticated and current_user != novel.story.author %}
+        document.querySelectorAll('.star-icon').forEach(function(star) {
+            star.addEventListener('mouseenter', function() {
+                const val = parseInt(this.getAttribute('data-value'));
+                document.querySelectorAll('.star-icon').forEach(function(s, idx) {
+                    s.classList.toggle('fas', idx < val);
+                    s.classList.toggle('far', idx >= val);
+                    s.classList.toggle('text-warning', idx < val);
+                    s.classList.toggle('text-secondary', idx >= val);
+                });
+            });
+            star.addEventListener('mouseleave', function() {
+                const avg = {{ avg_rating|default(0) }};
+                document.querySelectorAll('.star-icon').forEach(function(s, idx) {
+                    s.classList.toggle('fas', idx < avg);
+                    s.classList.toggle('far', idx >= avg);
+                    s.classList.toggle('text-warning', idx < avg);
+                    s.classList.toggle('text-secondary', idx >= avg);
+                });
+            });
+            star.addEventListener('click', function() {
+                const val = this.getAttribute('data-value');
+                document.getElementById('ratingInput').value = val;
+                document.getElementById('rateForm').submit();
+            });
+        });
+        {% endif %}
     });
+
+    function copyNovelLink() {
+        const link = window.location.href;
+        navigator.clipboard.writeText(link).then(function() {
+            alert('Novel link copied to clipboard!');
+        }, function(err) {
+            alert('Failed to copy link: ' + err);
+        });
+    }
 </script>
 {% endblock scripts %}
 
@@ -736,14 +828,229 @@ body.dark-mode .premium-content-lock p {
     color: #b0b0b0;
 }
 @media (max-width: 768px) {
-    .card-body, .p-5 {
-        padding: 2rem 1rem !important;
+    .container.py-5 {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
     }
     .display-6 {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
     }
     .stats-item {
         font-size: 0.95rem;
+        gap: 0.3rem;
+    }
+    .premium-badge, .premium-badge-small {
+        font-size: 0.85rem;
+        padding: 0.2rem 0.5rem;
+    }
+    .mb-4, .mb-3, .mt-4, .py-5, .p-5 {
+        margin-bottom: 1rem !important;
+        margin-top: 1rem !important;
+        padding: 1rem 0.5rem !important;
+    }
+    .row.g-5 {
+        --bs-gutter-x: 0.5rem;
+        --bs-gutter-y: 0.5rem;
+    }
+    .col-md-8, .col-md-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    .list-group-item, .btn, .btn-sm, .btn-outline-primary, .btn-outline-secondary, .btn-outline-danger, .btn-outline-info, .btn-outline-success {
+        width: 100%;
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+    }
+    .list-group-item .btn {
+        margin-left: 0 !important;
+        margin-top: 0.5rem;
+    }
+    .volume-block .list-group-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+    .chapter-list-item {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+    .chapter-list-item > .d-flex {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.3rem !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+    .chapter-list-item .btn,
+    .chapter-list-item .btn.ms-2 {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    .stats-item {
+        flex-direction: row;
+        gap: 0.3rem;
+    }
+    .premium-content-lock {
+        padding: 1.5rem 0.5rem;
+    }
+    .card-body, .p-5 {
+        padding: 1rem 0.5rem !important;
+    }
+    .fw-bold, .fw-semibold {
+        font-size: 1rem !important;
+    }
+    .lead {
+        font-size: 1rem;
+    }
+    .comment-form, .replies {
+        padding: 1rem !important;
+    }
+    .comment-item, .reply-item {
+        padding-bottom: 0.5rem !important;
+    }
+    .rounded, .rounded-3, .rounded-circle {
+        border-radius: 0.5rem !important;
+    }
+    .img-fluid {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+    .gap-2, .gap-3, .gap-4, .gap-5 {
+        gap: 0.5rem !important;
+    }
+    .d-flex.gap-4.flex-wrap {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    .mb-2 {
+        margin-bottom: 0.5rem !important;
+    }
+    .mb-1 {
+        margin-bottom: 0.25rem !important;
+    }
+    .me-1, .me-2, .me-3 {
+        margin-right: 0.25rem !important;
+    }
+    .ms-2, .ms-3, .ms-4 {
+        margin-left: 0.25rem !important;
+    }
+    .flex-md-row {
+        flex-direction: column !important;
+    }
+    .align-items-md-center {
+        align-items: flex-start !important;
+    }
+    .flex-grow-1, .w-100 {
+        width: 100% !important;
+    }
+    .text-truncate {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+    }
+    #volumesChaptersContainer, .volume-block {
+        overflow-x: hidden !important;
+    }
+    body, .container, .row, .col-md-8, .col-md-4, .col-12 {
+        overflow-x: hidden !important;
+    }
+    /* Comment section mobile improvements */
+    .comments-section .card-body {
+        padding: 1rem 0.5rem !important;
+    }
+    .comment-item, .reply-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding-bottom: 0.5rem !important;
+        gap: 0.5rem !important;
+    }
+    .comment-item .d-flex, .reply-item .d-flex {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+    .comment-item img, .reply-item img {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    .comment-form .form-control {
+        font-size: 0.95rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+    .comment-form .btn, .comment-actions .btn, .dropdown-menu .dropdown-item {
+        width: 100% !important;
+        margin-top: 0.25rem !important;
+        font-size: 0.95rem !important;
+    }
+    .comment-actions {
+        width: 100% !important;
+        margin-top: 0.25rem !important;
+    }
+    .comment-content, .reply-content {
+        font-size: 0.97rem !important;
+        word-break: break-word !important;
+    }
+    .replies {
+        background: #f4f6fa !important;
+        border-radius: 0.5rem !important;
+        padding: 0.75rem 0.5rem !important;
+        margin-left: 0 !important;
+    }
+    .reply-item {
+        margin-left: 0 !important;
+        border-left: 2px solid #e0e0e0 !important;
+        padding-left: 0.5rem !important;
+    }
+    .badge, .fw-semibold, .fw-bold {
+        font-size: 0.95rem !important;
+    }
+    .card-title, .card-header h4 {
+        font-size: 1.1rem !important;
+    }
+    .dropdown-menu {
+        min-width: 120px !important;
+    }
+    .comment-form .d-flex {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+    .comment-form img {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    .comment-form .flex-grow-1 {
+        width: 100% !important;
+    }
+    .comment-form .btn-primary {
+        margin-left: 0 !important;
+    }
+    .comment-form .btn-outline-secondary {
+        margin-left: 0 !important;
+    }
+    .comment-form .d-flex.align-items-start {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+    }
+    .comment-form .mb-2 {
+        margin-bottom: 0.25rem !important;
+    }
+    .comment-form small {
+        font-size: 0.85rem !important;
+    }
+    .comment-item .ms-auto, .reply-item .ms-auto {
+        margin-left: auto !important;
+    }
+    .comment-item .dropdown, .reply-item .dropdown {
+        margin-left: auto !important;
+    }
+    .comment-item .badge, .reply-item .badge {
+        margin-left: 0.25rem !important;
+    }
+    .comment-item .text-muted, .reply-item .text-muted {
+        font-size: 0.85rem !important;
     }
 }
     /* Comment section styles */

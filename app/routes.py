@@ -4,7 +4,7 @@ from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import FileStorage
 import os
-from app.models import User, Story, Comment, Tag, Follow, Novel, Volume, Chapter, ReadingHistory, PointsTransaction, UnlockedContent, ChapterReadingHistory
+from app.models import User, Story, Comment, Tag, Follow, Novel, Volume, Chapter, ReadingHistory, PointsTransaction, UnlockedContent, ChapterReadingHistory, NovelRating
 from app.forms import LoginForm, RegistrationForm, ProfileForm, StoryForm, CommentForm, SearchForm, PoetryForm, QuoteForm, EssayForm, NovelForm, VolumeForm, ChapterForm, OtherWritingForm, EditCommentForm
 from app import db
 from datetime import datetime, timedelta
@@ -888,6 +888,9 @@ def like_story_by_slug(story_slug):
         db.session.commit()
         flash('You have liked this story.', 'success')
     
+    # If this is a webnovel with a related novel, redirect to the novel detail page
+    if story.writing_type == 'webnovel' and story.novel:
+        return redirect(url_for('main.novel_detail_slug', novel_slug=story.novel.slug))
     return redirect(url_for('main.story_by_slug', story_slug=story.slug))
 
 @main.route('/story/<int:story_id>/save')
@@ -919,8 +922,11 @@ def save_story_by_slug(story_slug):
         current_user.saved_stories.append(story)
         db.session.commit()
         flash('Story saved to your reading list!')
-        
-    return redirect(url_for('main.story_by_slug', story_slug=story_slug))
+    
+    # If this is a webnovel with a related novel, redirect to the novel detail page
+    if story.writing_type == 'webnovel' and story.novel:
+        return redirect(url_for('main.novel_detail_slug', novel_slug=story.novel.slug))
+    return redirect(url_for('main.story_by_slug', story_slug=story.slug))
 
 @main.route('/story/<int:story_id>/delete', methods=['POST'])
 @login_required
@@ -2475,3 +2481,30 @@ def faq():
 @main.route('/about')
 def about():
     return render_template('about.html', title='About')
+
+@main.route('/novel/<novel_slug>/rate', methods=['POST'])
+@login_required
+def rate_novel(novel_slug):
+    novel = Novel.query.filter_by(slug=novel_slug).first_or_404()
+    if current_user == novel.story.author:
+        flash('Authors cannot rate their own novel.', 'warning')
+        return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+    try:
+        rating = int(request.form.get('rating', 0))
+        if not (1 <= rating <= 10):
+            flash('Invalid rating value.', 'danger')
+            return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+        # Check if user already rated
+        existing = NovelRating.query.filter_by(novel_id=novel.id, user_id=current_user.id).first()
+        if existing:
+            existing.rating = rating
+            existing.updated_at = datetime.utcnow()
+        else:
+            new_rating = NovelRating(novel_id=novel.id, user_id=current_user.id, rating=rating)
+            db.session.add(new_rating)
+        db.session.commit()
+        flash('Your rating has been submitted!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error submitting rating.', 'danger')
+    return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
