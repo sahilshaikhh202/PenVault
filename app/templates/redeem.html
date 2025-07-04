@@ -285,31 +285,6 @@
                     </div>
                 </div>
             </div>
-            <!-- Premium Content Unlocked by Others -->
-            {% if unlocked_user_premium_content %}
-            <div class="card mb-4 mt-4 shadow-sm border-0 rounded-3">
-                <div class="card-header bg-white border-0 pb-0">
-                    <h4 class="mb-0 fw-bold">Premium Content Unlocked by Others</h4>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        {% for item in unlocked_user_premium_content %}
-                        <div class="list-group-item rounded-3 mb-2">
-                            <div class="d-flex w-100 justify-content-between align-items-center">
-                                <h6 class="mb-1 fw-semibold">
-                                    <a href="{{ url_for('main.profile', username=item.unlocked_by.username) }}" class="text-decoration-none text-primary">
-                                        {{ item.unlocked_by.username }}
-                                    </a> unlocked your {{ item.content_type }}: {{ item.title }}
-                                </h6>
-                                <small class="text-muted">{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
-                            </div>
-                            <p class="mb-1 text-info">Spent {{ item.points_spent }} points</p>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
         </div>
         <div class="col-md-4">
             <!-- Your Unlocked Premium Content -->
@@ -358,26 +333,21 @@
                     <h5 class="mb-0 fw-bold">Point History</h5>
                 </div>
                 <div class="card-body">
-                    <div class="list-group">
-                        {% for transaction in transactions %}
-                        <div class="list-group-item rounded-3 mb-2">
-                            <div class="d-flex w-100 justify-content-between align-items-center">
-                                <h6 class="mb-1 fw-semibold">{{ transaction.action }}</h6>
-                                <small class="text-muted">{{ transaction.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
-                            </div>
-                            <p class="mb-1">
-                                {% if transaction.points > 0 %}
-                                <span class="text-success">+{{ transaction.points }} points</span>
-                                {% else %}
-                                <span class="text-danger">{{ transaction.points }} points</span>
-                                {% endif %}
-                            </p>
-                            {% if transaction.details %}
-                            <small class="text-muted">{{ transaction.details }}</small>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
+                    <div id="point-history-list" class="list-group" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Transactions will be loaded here by JS -->
                     </div>
+                    <button id="load-more-btn" class="btn btn-outline-primary w-100 mt-2">Load More</button>
+                </div>
+            </div>
+            <div class="card shadow-sm border-0 rounded-3 mt-4">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="mb-0 fw-bold">Premium Content Unlocked by Others</h5>
+                </div>
+                <div class="card-body">
+                    <div id="unlocked-by-others-list" class="list-group" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Unlocked by others will be loaded here by JS -->
+                    </div>
+                    <button id="load-more-unlocked-btn" class="btn btn-outline-primary w-100 mt-2">Load More</button>
                 </div>
             </div>
         </div>
@@ -409,6 +379,76 @@ function copyReferralCode() {
         console.error('Could not copy text: ', err);
     });
 }
+let offset = 0;
+const limit = 10;
+let total = 0;
+function renderTransaction(t) {
+    return `<div class='list-group-item rounded-3 mb-2'>
+        <div class='d-flex w-100 justify-content-between align-items-center'>
+            <h6 class='mb-1 fw-semibold'>${t.action}</h6>
+            <small class='text-muted'>${t.timestamp}</small>
+        </div>
+        <p class='mb-1'>
+            ${t.points > 0 ? `<span class='text-success'>+${t.points} points</span>` : `<span class='text-danger'>${t.points} points</span>`}
+        </p>
+        ${t.details ? `<small class='text-muted'>${t.details}</small>` : ''}
+    </div>`;
+}
+function loadTransactions() {
+    fetch(`/api/point-history?offset=${offset}&limit=${limit}`)
+        .then(r => r.json())
+        .then(data => {
+            total = data.total;
+            const list = document.getElementById('point-history-list');
+            data.transactions.forEach(t => {
+                list.insertAdjacentHTML('beforeend', renderTransaction(t));
+            });
+            offset += data.transactions.length;
+            if (offset >= total) {
+                document.getElementById('load-more-btn').style.display = 'none';
+            } else {
+                document.getElementById('load-more-btn').style.display = '';
+            }
+        });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    loadTransactions();
+    document.getElementById('load-more-btn').addEventListener('click', loadTransactions);
+});
+let unlockedOffset = 0;
+const unlockedLimit = 10;
+let unlockedTotal = 0;
+function renderUnlockedItem(item) {
+    return `<div class='list-group-item rounded-3 mb-2 d-flex justify-content-between align-items-center'>
+        <div>
+            <a href='/profile/${item.username}' class='fw-bold text-primary text-decoration-none'>${item.username}</a>
+            unlocked your ${item.content_type}: ${item.title}<br>
+            <span class='text-info'>Spent ${item.points_spent} points</span>
+        </div>
+        <div><small class='text-muted'>${item.timestamp}</small></div>
+    </div>`;
+}
+function loadUnlockedByOthers() {
+    fetch(`/api/unlocked-by-others?offset=${unlockedOffset}&limit=${unlockedLimit}`)
+        .then(r => r.json())
+        .then(data => {
+            unlockedTotal = data.total;
+            const list = document.getElementById('unlocked-by-others-list');
+            data.items.forEach(item => {
+                list.insertAdjacentHTML('beforeend', renderUnlockedItem(item));
+            });
+            unlockedOffset += data.items.length;
+            if (unlockedOffset >= unlockedTotal) {
+                document.getElementById('load-more-unlocked-btn').style.display = 'none';
+            } else {
+                document.getElementById('load-more-unlocked-btn').style.display = '';
+            }
+        });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    loadUnlockedByOthers();
+    document.getElementById('load-more-unlocked-btn').addEventListener('click', loadUnlockedByOthers);
+});
 </script>
 {% endblock %}
 

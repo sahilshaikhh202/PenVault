@@ -972,7 +972,8 @@ def edit_story(story_id):
         # Handle cover image upload
         if hasattr(form, 'cover_image') and form.cover_image.data:
             file = form.cover_image.data
-            if file and allowed_file(file.filename):
+            # Only proceed if file is a file-like object with a filename attribute
+            if hasattr(file, 'filename') and file.filename and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
                 story.cover_image = filename
@@ -2508,3 +2509,114 @@ def rate_novel(novel_slug):
         db.session.rollback()
         flash('Error submitting rating.', 'danger')
     return redirect(url_for('main.novel_detail_slug', novel_slug=novel.slug))
+
+@main.route('/api/point-history')
+@login_required
+def api_point_history():
+    try:
+        offset = int(request.args.get('offset', 0))
+        limit = int(request.args.get('limit', 10))
+    except ValueError:
+        offset = 0
+        limit = 10
+    q = PointsTransaction.query.filter_by(user_id=current_user.id).order_by(PointsTransaction.timestamp.desc())
+    total = q.count()
+    transactions = q.offset(offset).limit(limit).all()
+    data = [
+        {
+            'action': t.action,
+            'points': t.points,
+            'timestamp': t.timestamp.strftime('%Y-%m-%d %H:%M'),
+            'details': t.details
+        } for t in transactions
+    ]
+    return jsonify({'transactions': data, 'total': total})
+
+@main.route('/api/unlocked-by-others')
+@login_required
+def api_unlocked_by_others():
+    try:
+        offset = int(request.args.get('offset', 0))
+        limit = int(request.args.get('limit', 10))
+    except ValueError:
+        offset = 0
+        limit = 10
+    # Build the unlocked_user_premium_content list as in redeem_points
+    unlocked_user_premium_content = []
+    # Unlocked Stories
+    user_premium_stories = Story.query.filter_by(author_id=current_user.id, is_premium=True).all()
+    for story in user_premium_stories:
+        unlocked = UnlockedContent.query.filter_by(story_id=story.id).all()
+        for entry in unlocked:
+            transaction = PointsTransaction.query.filter_by(
+                user_id=entry.user_id,
+                action='unlock_premium_story',
+                details=f'Unlocked story: {story.title}'
+            ).order_by(PointsTransaction.timestamp.desc()).first()
+            if transaction:
+                unlocked_user_premium_content.append({
+                    'username': entry.user.username,
+                    'content_type': 'Story',
+                    'title': story.title,
+                    'points_spent': -transaction.points,
+                    'timestamp': transaction.timestamp.strftime('%Y-%m-%d %H:%M')
+                })
+    # Unlocked Novels
+    user_premium_novels = Novel.query.join(Story).filter(Novel.is_premium==True, Story.author_id==current_user.id).all()
+    for novel in user_premium_novels:
+        unlocked = UnlockedContent.query.filter_by(novel_id=novel.id).all()
+        for entry in unlocked:
+            transaction = PointsTransaction.query.filter_by(
+                user_id=entry.user_id,
+                action='unlock_premium_novel',
+                details=f'Unlocked novel: {novel.title}'
+            ).order_by(PointsTransaction.timestamp.desc()).first()
+            if transaction:
+                unlocked_user_premium_content.append({
+                    'username': entry.user.username,
+                    'content_type': 'Novel',
+                    'title': novel.title,
+                    'points_spent': -transaction.points,
+                    'timestamp': transaction.timestamp.strftime('%Y-%m-%d %H:%M')
+                })
+    # Unlocked Volumes
+    user_premium_volumes = Volume.query.join(Novel).join(Story).filter(Volume.is_premium==True, Story.author_id==current_user.id).all()
+    for volume in user_premium_volumes:
+        unlocked = UnlockedContent.query.filter_by(volume_id=volume.id).all()
+        for entry in unlocked:
+            transaction = PointsTransaction.query.filter_by(
+                user_id=entry.user_id,
+                action='unlock_premium_volume',
+                details=f'Unlocked volume: {volume.title}'
+            ).order_by(PointsTransaction.timestamp.desc()).first()
+            if transaction:
+                unlocked_user_premium_content.append({
+                    'username': entry.user.username,
+                    'content_type': 'Volume',
+                    'title': volume.title,
+                    'points_spent': -transaction.points,
+                    'timestamp': transaction.timestamp.strftime('%Y-%m-%d %H:%M')
+                })
+    # Unlocked Chapters
+    user_premium_chapters = Chapter.query.join(Novel).join(Story).filter(Chapter.is_premium==True, Story.author_id==current_user.id).all()
+    for chapter in user_premium_chapters:
+        unlocked = UnlockedContent.query.filter_by(chapter_id=chapter.id).all()
+        for entry in unlocked:
+            transaction = PointsTransaction.query.filter_by(
+                user_id=entry.user_id,
+                action='unlock_premium_chapter',
+                details=f'Unlocked chapter: {chapter.title}'
+            ).order_by(PointsTransaction.timestamp.desc()).first()
+            if transaction:
+                unlocked_user_premium_content.append({
+                    'username': entry.user.username,
+                    'content_type': 'Chapter',
+                    'title': chapter.title,
+                    'points_spent': -transaction.points,
+                    'timestamp': transaction.timestamp.strftime('%Y-%m-%d %H:%M')
+                })
+    # Sort and paginate
+    unlocked_user_premium_content.sort(key=lambda x: x['timestamp'], reverse=True)
+    total = len(unlocked_user_premium_content)
+    paginated = unlocked_user_premium_content[offset:offset+limit]
+    return jsonify({'items': paginated, 'total': total})

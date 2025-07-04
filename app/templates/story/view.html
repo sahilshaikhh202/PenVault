@@ -494,6 +494,12 @@
                                     <option value="#edf2ff">Cool</option>
                                 </select>
                             </div>
+                            {% if current_user.is_authenticated and current_user.id == story.author_id %}
+                            <hr class="dropdown-divider">
+                            <a class="dropdown-item text-primary" href="{{ url_for('main.edit_story', story_id=story.id) }}">
+                                <i class="fas fa-edit me-2"></i>Edit Story
+                            </a>
+                            {% endif %}
                         </div>
                     </div>
                     {% if story.writing_type == 'poetry' %}
@@ -577,6 +583,12 @@
                                 <option value="#edf2ff">Cool</option>
                             </select>
                         </div>
+                        {% if current_user.is_authenticated and current_user.id == story.author_id %}
+                        <hr class="dropdown-divider">
+                        <a class="dropdown-item text-primary" href="{{ url_for('main.edit_story', story_id=story.id) }}">
+                            <i class="fas fa-edit me-2"></i>Edit Story
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
                 {% if story.writing_type == 'poetry' %}
